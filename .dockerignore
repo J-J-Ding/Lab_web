@@ -1,0 +1,17 @@
+**
+!backend/
+!backend/**
+!deploy/
+!deploy/docker/
+!deploy/docker/backend.Dockerfile
+**/.git
+**/__pycache__
+**/*.py[cod]
+**/.env
+**/.env.*
+**/*.key
+**/*.pem
+**/*.sqlite3
+**/*.db
+**/*.dump
+**/*.sql
