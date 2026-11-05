@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>学科竞赛 - 智能系统实验室</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <link rel="stylesheet" href="../../css/pagination.css" />
+  <style>
+    .category-content {
+      padding-top: 70px;
+    }
+    .item-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 0;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 0;
+    }
+    .item-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+    .item-thumbnail {
+      background: var(--bg-secondary);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+    .item-thumbnail img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s ease;
+    }
+    .item-card:hover .item-thumbnail img {
+      transform: scale(1.05);
+    }
+    .item-content-wrapper {
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+    .item-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 15px;
+    }
+    .item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .item-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .item-content {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 15px;
+    }
+    .item-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+    .item-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .item-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+    .item-link:hover {
+      color: var(--primary-dark);
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: linear-gradient(135deg, #e67e22, #f39c12);
+      color: #fff;
+    }
+    .btn-sm {
+      padding: 8px 20px;
+      font-size: 14px;
+    }
+    #contentList {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .item-card[data-date] {
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .empty {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-light);
+    }
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 统一导航栏 -->
+  <div id="navbar-container"></div>
+  
+  <main class="main-content category-content">
+    <section class="section">
+      <div class="section-container">
+        <div class="section-header">
+          <h2>学科竞赛</h2>
+          <p class="section-subtitle">Competitions</p>
+        </div>
+
+        <div id="contentList">
+          <!-- 竞赛卡片将通过JS自动加载并排序 -->
+        </div>
+
+        <!-- 分页控件 -->
+        <div class="pagination-container" id="pagination">
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../js/search.js"></script>
+  <script src="../../js/navbar-loader.js"></script>
+  <script src="../../js/pagination.js"></script>
+  <script>
+    // 竞赛数据列表 - 按时间从新到老排列
+    const competitionsData = [
+      {
+        date: '2025-12-28',
+        thumbnail: '20261228金融科技竞赛/封面图.jpg',
+        title: '第四届中国研究生金融科技创新大赛',
+        award: '国家级特等奖',
+        summary: '第四届中国研究生金融科技创新大赛全国总决赛于2025年12月26日至28日在南京市建邺区举办。我院学子在本次比赛中奋勇争先，凭借扎实的科研功底与突出的创新能力，在八强争冠赛中斩获季军（全国第三名），取得我校在该赛事中的历史最佳成绩，为学校再添荣誉。',
+        members: '丁俊杰, 张柏珵, 陈卓, 任俊霖',
+        link: '20261228金融科技竞赛/index.html'
+      },
+      
+      // 在此处添加更多竞赛，格式如下：
+      // {
+      //   date: 'YYYY-MM-DD',
+      //   thumbnail: '竞赛文件夹/封面图.jpg',
+      //   title: '竞赛名称',
+      //   award: '获奖等级',
+      //   summary: '竞赛简介或获奖情况',
+      //   members: '获奖成员',
+      //   link: '竞赛文件夹/index.html'
+      // },
+    ];
+
+    // 按日期从新到旧排序（最新的在前）
+    function sortCompetitionsByDate() {
+      return competitionsData.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA; // 降序：从新到旧
+      });
+    }
+
+    // 渲染竞赛卡片
+    function renderCompetitionCards() {
+      const container = document.getElementById('contentList');
+      const sortedCompetitions = sortCompetitionsByDate(); // 使用排序后的数据
+
+      if (sortedCompetitions.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">🏆</div>
+            <p>暂无竞赛记录</p>
+          </div>
+        `;
+        return;
+      }
+
+      // 使用分页数据渲染
+      const currentPageItems = window.getCurrentPageItems ? window.getCurrentPageItems() : sortedCompetitions;
+
+      container.innerHTML = currentPageItems.map(competition => `
+        <div class="item-card" data-date="${competition.date}">
+          <div class="item-thumbnail">
+            <img src="${competition.thumbnail}" alt="${competition.title}" onerror="this.onerror=null; this.src='../../lab-logo.png'" />
+          </div>
+          <div class="item-content-wrapper">
+            <div class="item-title">${competition.title}</div>
+            <div class="item-meta">
+              <span>🏆 ${competition.award}</span>
+              <span>📅 ${competition.date}</span>
+            </div>
+            <div class="item-content">
+              <p>${competition.summary}</p>
+            </div>
+            <div class="item-footer">
+              <div class="item-author">
+                <span>👤 ${competition.members}</span>
+              </div>
+              <a href="${competition.link}" class="btn btn-sm">查看详情</a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 暴露给分页模块使用的渲染函数
+    window.renderContent = renderCompetitionCards;
+
+    // 页面加载完成后自动渲染
+    document.addEventListener('DOMContentLoaded', function() {
+      const sortedCompetitions = sortCompetitionsByDate();
+      if (window.initPagination) {
+        window.initPagination(sortedCompetitions);
+        renderCompetitionCards();
+      } else {
+        renderCompetitionCards();
+      }
+    });
+  </script>
+</body>
+</html>

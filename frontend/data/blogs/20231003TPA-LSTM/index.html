@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>技术博客</title>
+  <link rel="stylesheet" href="../../../css/style.css" />
+  <link rel="stylesheet" href="../css/blog_detail.css" />
+</head>
+<body>
+  <!-- 统一导航栏 -->
+  <div id="navbar-container"></div>
+
+  <main class="main-content">
+    <section class="section">
+      <div class="section-container">
+        <div class="back-button">
+          <a href="../index.html" class="btn btn-outline">← 返回博客列表</a>
+        </div>
+
+        <div class="blog-detail-container">
+          <!-- 博客头部 -->
+          <div class="blog-header">
+            <div class="blog-badge">技术分享</div>
+            <h1 class="blog-title" data-search="title">TPA-LSTM</h1>  <!-- 需要修改 -->
+            <div class="blog-meta">
+              <span class="blog-meta-item">👤 作者：陈悦江</span>  <!-- 需要修改 -->
+              <span class="blog-meta-item">📅 发布时间：2023-10-03</span>  <!-- 需要修改 -->
+            </div>
+          </div>
+
+          <!-- 博客摘要 -->
+          <div class="blog-section" data-search="abstract">
+            <h2 class="blog-section-title">📝 摘要</h2>
+            <div class="blog-content">  <!-- 需要修改 -->
+              <p>TPA-LSTM是一种结合了Transformer注意力机制和LSTM长短期记忆网络的技术，用于处理序列数据。该模型在保持LSTM原有优势的基础上，引入了Transformer的自注意力机制，能够更好地捕捉序列中的长距离依赖关系。</p>
+            </div>
+          </div>
+
+          <!-- 博客正文 -->
+          <div class="blog-section" data-search="content">
+            <h2 class="blog-section-title">📖 正文</h2>
+            <div class="blog-content">  <!-- 需要修改 -->
+              <h3>一、xxx</h3>  <!-- 标题 -->
+              <p>xxx</p>  <!-- 段落 -->
+              <img src="相关性热力图.png" alt="相关性热力图" class="blog-image" />  <!-- 图片，在需要的位置插入，并修改src路径 -->
+              <h3>二、xxx</h3>
+              <p>xxx</p>
+
+              <p>以下是使用 PyTorch 构建简单神经网络的代码示例：</p>
+              <pre><code>  <!-- 放置代码 -->
+                import torch
+                import torch.nn as nn
+                import torch.optim as optim
+
+                # 定义神经网络模型
+                class SimpleNN(nn.Module):
+                    def __init__(self):
+                        super(SimpleNN, self).__init__()
+                        self.fc1 = nn.Linear(784, 512)
+                        self.fc2 = nn.Linear(512, 256)
+                        self.fc3 = nn.Linear(256, 10)
+                        self.relu = nn.ReLU()
+
+                    def forward(self, x):
+                        x = self.relu(self.fc1(x))
+                        x = self.relu(self.fc2(x))
+                        x = self.fc3(x)
+                        return x
+
+                # 初始化模型
+                model = SimpleNN()
+                criterion = nn.CrossEntropyLoss()
+                optimizer = optim.Adam(model.parameters(), lr=0.001)
+              </code></pre>
+
+              <h3>三、xxx</h3>
+              <p>xxx</p>
+
+              <h3>四、实践建议</h3>
+              <p>xxx</p>
+              <p><strong>1. xxx：</strong>xxx</p>
+              <p><strong>2. xxx：</strong>xxx</p>
+              <p><strong>3. xxx：</strong>xxx</p>
+              <p><strong>4. xxx：</strong>xxx</p>
+
+              <h3>五、总结</h3>
+              <p>xxx</p>
+            </div>
+          </div>
+
+          <!-- 标签 -->  <!--   需要修改，可以选择性保留 -->
+          <div class="blog-section" data-search="tags">
+            <h2 class="blog-section-title">🏷️ 标签</h2>
+            <div class="tags-container">
+              <div class="tag-item">🧠 深度学习</div>
+              <div class="tag-item">🔥 PyTorch</div>
+              <div class="tag-item">🎯 机器学习</div>
+              <div class="tag-item">💻 人工智能</div>
+              <div class="tag-item">📚 教程</div>
+            </div>
+          </div>
+
+          <!-- 作者信息 -->
+          <div class="blog-section" data-search="author">
+            <h2 class="blog-section-title">👤 作者简介</h2>
+            <div class="author-info">
+              <div class="author-avatar">👨‍💻</div>
+              <div class="author-details">
+                <div class="author-name">陈悦江</div>  <!-- 需要修改 -->
+                <div class="author-role">智能系统实验室硕士研究生（已毕业）</div>  <!-- 需要修改 -->
+                <div class="author-bio">专注于深度学习研究，发表多篇高水平论文，参与国家级重点项目多项。</div>  <!-- 需要修改 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 相关文章 -->  <!-- 可以选择性保留 -->
+          <div class="blog-section" data-search="related">
+            <h2 class="blog-section-title">📚 相关文章</h2>
+            <div class="related-posts">
+              
+              <!-- -------------- -->
+              <a href="./index.html" class="related-post-item">  <!-- 需要修改 -->
+                <span class="related-post-icon">📝</span>
+                <span class="related-post-title">卷积神经网络详解</span>  <!-- 需要修改 -->
+                <span class="related-post-date">2025-01-10</span>  <!-- 需要修改 -->
+              </a>
+              <!-- -------------- -->
+                <a href="./index.html" class="related-post-item">  <!-- 需要修改 -->
+                <span class="related-post-icon">📝</span>
+                <span class="related-post-title">卷积神经网络详解</span>  <!-- 需要修改 -->
+                <span class="related-post-date">2025-01-10</span>  <!-- 需要修改 -->
+              </a>
+              <!-- -------------- -->
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../../js/search.js"></script>
+  <script src="../../../js/navbar-loader.js"></script>
+</body>
+</html>

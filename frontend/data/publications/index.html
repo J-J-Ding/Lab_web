@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>出版刊物 - 智能系统实验室</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <link rel="stylesheet" href="../../css/pagination.css" />
+  <style>
+    .category-content {
+      padding-top: 70px;
+    }
+    .item-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 0;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 0;
+    }
+    .item-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+    .item-thumbnail {
+      background: var(--bg-secondary);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+    .item-thumbnail img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s ease;
+    }
+    .item-card:hover .item-thumbnail img {
+      transform: scale(1.05);
+    }
+    .item-content-wrapper {
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+    .item-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 15px;
+    }
+    .item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .item-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .item-content {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 15px;
+    }
+    .item-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+    .item-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .item-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+    .item-link:hover {
+      color: var(--primary-dark);
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: linear-gradient(135deg, #0066cc, #004499);
+      color: #fff;
+    }
+    .btn-sm {
+      padding: 8px 20px;
+      font-size: 14px;
+    }
+    #contentList {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .item-card[data-date] {
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .empty {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-light);
+    }
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 统一导航栏 -->
+  <div id="navbar-container"></div>
+
+  <main class="main-content category-content">
+    <section class="section">
+      <div class="section-container">
+        <div class="section-header">
+          <h2>出版刊物</h2>
+          <p class="section-subtitle">Books & Publications</p>
+        </div>
+
+        <div id="contentList">
+          <!-- 刊物卡片由 JavaScript 自动渲染和排序 -->
+        </div>
+
+        <!-- 分页控件 -->
+        <div class="pagination-container" id="pagination">
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../js/search.js"></script>
+  <script src="../../js/navbar-loader.js"></script>
+  <script src="../../js/pagination.js"></script>
+  <script>
+    // 刊物数据 - 所有刊物信息集中在这里管理，无需手动排序
+    const publicationsData = [
+      {
+        date: '2025-06',
+        thumbnail: '202506自动控制原理/封面图.png',
+        title: '深度学习原理与应用',
+        type: '学术专著',
+        pages: '456页',
+        summary: '本书系统介绍了xxx',
+        authors: '王燕舞, 肖江文',
+        link: '202506自动控制原理/index.html'
+      },
+      
+    ];
+
+    // 按日期自动排序（从新到旧）
+    function sortPublicationsByDate() {
+      return publicationsData.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA; // 降序：从新到旧
+      });
+    }
+
+    // 渲染刊物卡片
+    function renderPublicationCards() {
+      const contentList = document.getElementById('contentList');
+      const sortedPublications = sortPublicationsByDate();
+
+      if (sortedPublications.length === 0) {
+        contentList.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">📚</div>
+            <h3>暂无刊物</h3>
+            <p>敬请期待...</p>
+          </div>
+        `;
+        return;
+      }
+
+      // 使用分页数据渲染
+      const currentPageItems = window.getCurrentPageItems ? window.getCurrentPageItems() : sortedPublications;
+
+      contentList.innerHTML = currentPageItems.map(pub => `
+        <div class="item-card" data-date="${pub.date}">
+          <div class="item-thumbnail">
+            <img src="${pub.thumbnail}" alt="${pub.title}" onerror="this.onerror=null; this.src='../../lab-logo.png'" />
+          </div>
+          <div class="item-content-wrapper">
+            <div class="item-title">${pub.title}</div>
+            <div class="item-meta">
+              <span>📄 ${pub.type}</span>
+              <span>📅 ${formatDate(pub.date)}</span>
+              <span>📚 ${pub.pages}</span>
+            </div>
+            <div class="item-content">
+              ${pub.summary}
+            </div>
+            <div class="item-footer">
+              <div class="item-author">
+                <span>👤</span>
+                <a href="../members/index.html" class="item-link">${pub.authors}</a>
+              </div>
+              <a href="${pub.link}" class="btn btn-sm">查看详情</a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 暴露给分页模块使用的渲染函数
+    window.renderContent = renderPublicationCards;
+
+    // 格式化日期（YYYY-MM -> YYYY年M月）
+    function formatDate(dateStr) {
+      const [year, month] = dateStr.split('-');
+      return `${year}年${parseInt(month)}月`;
+    }
+
+    // 页面加载完成后自动渲染
+    document.addEventListener('DOMContentLoaded', function() {
+      const sortedPublications = sortPublicationsByDate();
+      if (window.initPagination) {
+        window.initPagination(sortedPublications);
+        renderPublicationCards();
+      } else {
+        renderPublicationCards();
+      }
+    });
+  </script>
+
+</body>
+</html>

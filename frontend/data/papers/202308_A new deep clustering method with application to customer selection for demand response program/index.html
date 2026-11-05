@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>发表论文</title>
+  <link rel="stylesheet" href="../../../css/style.css" />
+  <link rel="stylesheet" href="../css/paper_detail.css" />
+  
+</head>
+<body>
+  <!-- 统一导航栏 -->
+  <div id="navbar-container"></div>
+  
+  <main class="main-content">
+    <section class="section">
+      <div class="section-container">
+        <div class="back-button">
+          <a href="../index.html" class="btn btn-outline">← 返回论文列表</a>
+        </div>
+
+        <div class="paper-detail-container">
+          <!-- 论文头部 -->
+          <div class="paper-header">
+            <h1 class="paper-title" data-search="title">A New Deep Clustering Method for Demand Response Program</h1>  <!-- 需要修改 -->  
+            <div class="paper-authors">
+              <a href="../../members/index.html" class="paper-author-link">👤 Jiang-Wen Xiao, Yutao Xie, Hongliang Fang, Yan-Wu Wang</a>  <!-- 需要修改 -->  
+            </div>
+          </div>
+
+          <!-- 论文摘要 -->
+          <div class="paper-section" data-search="abstract">
+            <h2 class="paper-section-title">📝 论文摘要</h2>
+            <div class="paper-abstract">  <!-- 需要修改 -->  
+              Demand response (DR) is regarded as a promising solution to the problem of renewable energy integration, while it remains one of the key barriers for DR to target the right customers, i.e. the customers with high potential in peak reduction. Exploring the electricity consumption behaviors of customers can help DR program practitioners evaluate customers’ peak reduction potential. Clustering has been the most common approach to describe customers’ consumption behaviors in the literature. However, the existing clustering methods suffer from either unscalability or poor performance when handling a large number of daily load curves. To overcome these issues, a new deep learning-based clustering method is proposed in this paper, which integrates both intra-cluster compactness and inter-cluster separation into the objective function of clustering for consideration. Based on the clustering results, a new customer selection framework is developed to identify the potential good candidates for DR programs, which takes the stability of consumption behaviors and the characteristics at peak hours into account. Case studies on a London dataset demonstrate the superiority of the proposed clustering method over classical K-means and two state-of-the-art deep clustering methods in terms of clustering validity indexes. Furthermore, the simulations performed on an actual price-based pilot show that the customers selected by the proposed customer selection framework contribute to 59 % of total peak reduction with only accounting for 23 % of population.
+            </div>
+          </div>
+
+          <!-- 关键词 -->
+          <div class="paper-section" data-search="keywords">
+            <h2 class="paper-section-title">🏷️ 关键词</h2>
+            <div class="keywords-container">  <!-- 需要修改 -->  
+              <span class="keyword-tag">Demand response</span>
+              <span class="keyword-tag">Smart meter</span>
+              <span class="keyword-tag">Customer selection</span>
+              <span class="keyword-tag">Deep clustering</span>
+              <span class="keyword-tag">Intra-cluster compactness</span>
+              <span class="keyword-tag">Inter-cluster separation</span>
+            </div>
+          </div>
+
+          <!-- 技术路线 -->
+          <div class="paper-section" data-search="framework">
+            <h2 class="paper-section-title">🎨 技术路线</h2>
+
+            <!-- ------------ -->
+            <div class="paper-framework">
+              <img src="framework1.png" alt="Framework" class="paper-framework-image" onerror="this.src='../../../lab-logo.png'" />  <!-- 需要修改 -->  
+              <p class="paper-framework-caption">The network structure of the proposed clustering method.</p>  <!-- 需要修改 -->  
+            </div>
+            <!-- ------------ -->
+            <div class="paper-framework">
+              <img src="framework2.png" alt="Framework" class="paper-framework-image" onerror="this.src='../../../lab-logo.png'" />  <!-- 需要修改 -->  
+              <p class="paper-framework-caption">The schematic of the proposed customer selection framework.</p>  <!-- 需要修改 -->  
+            </div>
+            <!-- ------------ -->
+            
+          </div>
+
+          <!-- 论文信息 -->
+          <div class="paper-section" data-search="info">
+            <h2 class="paper-section-title">📊 论文信息</h2>
+            <div class="paper-list">
+              <div class="paper-list-item">
+                <span class="paper-list-icon">📚</span>
+                <span class="paper-list-label">期刊/会议名称</span>
+                <span class="paper-list-value">International Journal of Electrical Power & Energy Systems</span>  <!-- 需要修改 -->  
+              </div>
+              <div class="paper-list-item">
+                <span class="paper-list-icon">📊</span>
+                <span class="paper-list-label">影响因子</span>
+                <span class="paper-list-value">5.2</span>  <!-- 需要修改 -->  
+              </div>
+              <div class="paper-list-item">
+                <span class="paper-list-icon">🔗</span>
+                <span class="paper-list-label">DOI</span>
+                <span class="paper-list-value">https://doi.org/10.1016/j.ijepes.2023.109072</span>  <!-- 需要修改 -->  
+              </div>
+            </div>
+          </div>
+
+          <!-- 资源下载 -->
+          <div class="paper-section" data-search="download">
+            <h2 class="paper-section-title">📥 资源下载</h2>
+            <div class="paper-links">
+
+              <a href="https://www.sciencedirect.com/science/article/pii/S0142061523001291" target="_blank" class="paper-link-card">  <!-- 需要修改 -->  
+                <div class="paper-link-icon">🌐</div>
+                <div class="paper-link-info">
+                  <div class="paper-link-title">论文官网</div>
+                  <div class="paper-link-desc">查看原文网页</div>
+                </div>
+              </a>
+
+              <a href="paper.pdf" target="_blank" class="paper-link-card">  <!-- 需要修改 -->  
+                <div class="paper-link-icon">📄</div>
+                <div class="paper-link-info">
+                  <div class="paper-link-title">论文原文</div>
+                  <div class="paper-link-desc">下载PDF文档</div>
+                </div>
+              </a>
+
+            </div>
+          </div>
+
+          <!-- BibTeX 引用 -->
+          <div class="paper-section" data-search="bibtex">
+            <h2 class="paper-section-title">📋 BibTeX 引用</h2>
+            <div class="bibtex-container">
+              <pre class="bibtex-code">  <!-- 需要修改 -->  
+@article{XIAO2023109072,
+title = {A new deep clustering method with application to customer selection for demand response program},
+journal = {International Journal of Electrical Power & Energy Systems},
+volume = {150},
+pages = {109072},
+year = {2023},
+issn = {0142-0615},
+doi = {https://doi.org/10.1016/j.ijepes.2023.109072},
+url = {https://www.sciencedirect.com/science/article/pii/S0142061523001291},
+author = {Jiang-Wen Xiao and Yutao Xie and Hongliang Fang and Yan-Wu Wang},
+keywords = {Demand response, Smart meter, Customer selection, Deep clustering, Intra-cluster compactness, Inter-cluster separation},
+}
+              </pre>
+            </div>
+            <button class="btn btn-copy" onclick="copyBibTeX()">
+              📋 复制 BibTeX
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../../js/search.js"></script>
+  <script>
+    function copyBibTeX() {
+      const bibtex = `@article{DBFNET2024,
+  title={DBFNET: Regional wind-photovoltaic combined power generation forecasting based on a novel multi-task learning framework},
+  author={Ding, Junjie and Xiao, Jiangwen},
+  journal={IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)},
+  year={2026},
+  volume={XX},
+  number={X},
+  pages={XXX-XXX}
+`;
+
+      navigator.clipboard.writeText(bibtex).then(() => {
+        alert('✅ BibTeX 已复制到剪贴板！');
+      }).catch(err => {
+        alert('❌ 复制失败，请手动复制');
+      });
+    }
+  </script>
+  <script src="../../../js/navbar-loader.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>技术博客 - 智能系统实验室</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <link rel="stylesheet" href="../../css/pagination.css" />
+  <style>
+    .category-content {
+      padding-top: 70px;
+    }
+    .item-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 0;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 0;
+    }
+    .item-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+    .item-thumbnail {
+      background: var(--bg-secondary);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+    .item-thumbnail img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s ease;
+    }
+    .item-card:hover .item-thumbnail img {
+      transform: scale(1.05);
+    }
+    .item-content-wrapper {
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+    .item-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 15px;
+    }
+    .item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .item-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .item-content {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 15px;
+    }
+    .item-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+    .item-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .item-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+    .item-link:hover {
+      color: var(--primary-dark);
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: linear-gradient(135deg, #0066cc, #004499);
+      color: #fff;
+    }
+    .btn-sm {
+      padding: 8px 20px;
+      font-size: 14px;
+    }
+    #contentList {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .item-card[data-date] {
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .empty {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-light);
+    }
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 统一导航栏 -->
+  <div id="navbar-container"></div>
+
+  <main class="main-content category-content">
+    <section class="section">
+      <div class="section-container">
+        <div class="section-header">
+          <h2>技术博客</h2>
+          <p class="section-subtitle">Technical Blogs</p>
+        </div>
+
+        <div id="contentList">
+          <!-- 博客卡片将通过JS自动加载并排序 -->
+        </div>
+
+        <!-- 分页控件 -->
+        <div class="pagination-container" id="pagination">
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../js/search.js"></script>
+  <script src="../../js/navbar-loader.js"></script>
+  <script src="../../js/pagination.js"></script>
+  <script>
+    // 博客数据列表 - 按时间从新到老排列
+    const blogsData = [
+      {
+        date: '2023-10-03',
+        thumbnail: '20231003TPA-LSTM/封面图.png',
+        title: 'TPA-LSTM',
+        author: '陈悦江',
+        category: '技术分享',
+        summary: 'TPA-LSTM是一种结合了Transformer注意力机制和LSTM长短期记忆网络的技术，用于处理序列数据。',
+        link: '20231003TPA-LSTM/index.html'
+      },
+      
+      // 在此处添加更多博客，格式如下：
+      // {
+      //   date: 'YYYY-MM-DD',
+      //   thumbnail: '博客文件夹/封面图.png',
+      //   title: '博客标题',
+      //   author: '作者姓名',
+      //   category: '博客分类',
+      //   summary: '博客摘要或简介',
+      //   link: '博客文件夹/index.html'
+      // },
+    ];
+
+    // 按日期从新到旧排序（最新的在前）
+    function sortBlogsByDate() {
+      return blogsData.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA; // 降序：从新到旧
+      });
+    }
+
+    // 渲染博客卡片
+    function renderBlogCards() {
+      const container = document.getElementById('contentList');
+      const sortedBlogs = sortBlogsByDate(); // 使用排序后的数据
+
+      if (sortedBlogs.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">📝</div>
+            <p>暂无博客</p>
+          </div>
+        `;
+        return;
+      }
+
+      // 使用分页数据渲染
+      const currentPageItems = window.getCurrentPageItems ? window.getCurrentPageItems() : sortedBlogs;
+
+      container.innerHTML = currentPageItems.map(blog => `
+        <div class="item-card" data-date="${blog.date}">
+          <div class="item-thumbnail">
+            <img src="${blog.thumbnail}" alt="${blog.title}" onerror="this.onerror=null; this.src='../../lab-logo.png'" />
+          </div>
+          <div class="item-content-wrapper">
+            <div class="item-title">${blog.title}</div>
+            <div class="item-meta">
+              <span>👤 作者：${blog.author}</span>
+              <span>📅 ${blog.date}</span>
+            </div>
+            <div class="item-content">
+              <p>${blog.summary}</p>
+            </div>
+            <div class="item-footer">
+              <div class="item-author">
+                <span>🏷️</span>
+                <span>${blog.category}</span>
+              </div>
+              <a href="${blog.link}" class="btn btn-sm">阅读全文</a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 暴露给分页模块使用的渲染函数
+    window.renderContent = renderBlogCards;
+
+    // 页面加载完成后自动渲染
+    document.addEventListener('DOMContentLoaded', function() {
+      const sortedBlogs = sortBlogsByDate();
+      if (window.initPagination) {
+        window.initPagination(sortedBlogs);
+        renderBlogCards();
+      } else {
+        renderBlogCards();
+      }
+    });
+  </script>
+</body>
+</html>

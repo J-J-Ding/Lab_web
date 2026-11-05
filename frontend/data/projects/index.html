@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>课题项目 - 智能系统实验室</title>
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .category-content {
+      padding-top: 70px;
+    }
+    .item-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 0;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 0;
+    }
+    .item-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+    .item-thumbnail {
+      background: var(--bg-secondary);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+    .item-thumbnail img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.3s ease;
+    }
+    .item-card:hover .item-thumbnail img {
+      transform: scale(1.05);
+    }
+    .item-content-wrapper {
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+    .item-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 15px;
+    }
+    .item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      color: var(--text-light);
+      font-size: 14px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .item-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .item-content {
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 15px;
+    }
+    .item-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+    }
+    .item-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .item-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+    .item-link:hover {
+      color: var(--primary-dark);
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      color: #fff;
+    }
+    .btn-sm {
+      padding: 8px 20px;
+      font-size: 14px;
+    }
+    #contentList {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .item-card[data-date] {
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 40px;
+      padding: 20px 0;
+    }
+    .pagination-btn {
+      padding: 8px 16px;
+      border: 1px solid var(--border-color);
+      background: #fff;
+      color: var(--text-primary);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      min-width: 80px;
+    }
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--primary-color);
+      color: #fff;
+      border-color: var(--primary-color);
+    }
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .pagination-info {
+      color: var(--text-secondary);
+      font-size: 14px;
+      padding: 0 20px;
+    }
+    .pagination-pages {
+      display: flex;
+      gap: 5px;
+    }
+    .pagination-page {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border-color);
+      background: #fff;
+      color: var(--text-primary);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pagination-page:hover {
+      background: var(--primary-color);
+      color: #fff;
+      border-color: var(--primary-color);
+    }
+    .pagination-page.active {
+      background: var(--primary-color);
+      color: #fff;
+      border-color: var(--primary-color);
+    }
+    .empty {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-light);
+    }
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 统一导航栏 -->
+  <div id="navbar-container"></div>
+
+  <main class="main-content category-content">
+    <section class="section">
+      <div class="section-container">
+        <div class="section-header">
+          <h2>课题项目</h2>
+          <p class="section-subtitle">Research Projects</p>
+        </div>
+
+        <div id="contentList">
+          <!-- 项目卡片由 JavaScript 自动渲染和排序 -->
+        </div>
+
+        <!-- 分页控件 -->
+        <div class="pagination-container" id="pagination">
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../js/search.js"></script>
+  <script src="../../js/navbar-loader.js"></script>
+  <script>
+    // 项目数据 - 所有项目信息集中在这里管理，无需手动排序
+    const projectsData = [
+      {
+        date: '2025-08',
+        thumbnail: '202508Hubei_Innovation/封面图.png',
+        title: '基于储能群体智能微电网的主配微协同控制与优化技术研究',
+        category: '湖北省技术创新计划重点研发项目',
+        period: '2025.08-2027.08',
+        summary: '本项目针对基于储能群体智能微电网的主配微协同控制与优化技术开展研究，围绕储能群体智能、主配微协同控制、优化调度等关键技术展开研究。',
+        authors: '王燕舞',
+        link: '202508Hubei_Innovation/index.html'
+      },
+      {
+        date: '2026-01',
+        thumbnail: '202601NSFC_Heterogeneous/封面图.png',
+        title: '主体异化下多智能体系统博弈协同控制研究',
+        category: '国家自然科学基金面上项目',
+        period: '2026.01-2029.12',
+        summary: '本项目针对主体异化下多智能体系统博弈协同控制问题开展研究，深入研究主体异化对多智能体系统协同的影响，建立异质主体的博弈模型。',
+        authors: '王燕舞',
+        link: '202601NSFC_Heterogeneous/index.html'
+      },
+      {
+        date: '2023-01',
+        thumbnail: '202301NSFC_Key_Project/封面图.png',
+        title: '区域能源互联网的分布式协同控制与智能决策',
+        category: '国家自然科学基金重点项目',
+        period: '2023.01-2027.12',
+        summary: '本项目是国家自然科学基金重点项目，针对区域能源互联网的分布式协同控制与智能决策问题开展深入研究。',
+        authors: '王燕舞',
+        link: '202301NSFC_Key_Project/index.html'
+      },
+      {
+        date: '2022-01',
+        thumbnail: '202201NSFC_Game_Theory/封面图.png',
+        title: '非完备信息下多尺度网联系统的博弈协同及其应用研究',
+        category: '国家自然科学基金面上项目',
+        period: '2022.01-2025.12',
+        summary: '本项目针对非完备信息下多尺度网联系统的博弈协同问题开展研究，深入研究非完备信息下的博弈理论，建立多尺度网联系统博弈协同框架。',
+        authors: '王燕舞',
+        link: '202201NSFC_Game_Theory/index.html'
+      },
+      {
+        date: '2021-10',
+        thumbnail: '202110Hubei_Microgrid/封面图.png',
+        title: '直流微电网系统网联安全协同控制研究',
+        category: '湖北省科技厅面上基金项目',
+        period: '2021.10-2023.09',
+        summary: '本项目针对直流微电网系统网联安全协同控制问题开展研究，深入研究直流微电网的网络安全问题，建立网联安全威胁模型。',
+        authors: '刘骁康、肖江文、王燕舞等8人',
+        link: '202110Hubei_Microgrid/index.html'
+      },
+      {
+        date: '2019-01',
+        thumbnail: '201901Defense_Lab/封面图.png',
+        title: '异构无人系统编队控制关键技术研究',
+        category: '国防科技重点实验室基金',
+        period: '2019-2020',
+        summary: '本项目针对异构无人系统编队控制的关键技术开展研究，深入研究异构无人系统的编队控制理论，建立异构系统统一建模方法。',
+        authors: '王燕舞',
+        link: '201901Defense_Lab/index.html'
+      },
+      {
+        date: '2018-01',
+        thumbnail: '201801NSFC_DC_Microgrid/封面图.png',
+        title: '多尺度自主体网络协同及其在直流微网中的应用',
+        category: '国家自然科学基金面上项目',
+        period: '2018.01-2021.12',
+        summary: '本项目针对多尺度自主体网络协同及其在直流微网中的应用开展研究，深入研究多尺度自主体网络的协同控制理论。',
+        authors: '王燕舞',
+        link: '201801NSFC_DC_Microgrid/index.html'
+      },
+      {
+        date: '2017-08',
+        thumbnail: '201708NSFC_Excellent/封面图.png',
+        title: '时空受限的混杂多自主体网络协同及其在智能电网中的应用',
+        category: '湖北省自然科学基金杰出青年基金',
+        period: '2017.08-2020.07',
+        summary: '本项目针对时空受限的混杂多自主体网络协同问题开展研究，深入研究时空受限条件下的混杂多自主体网络协同控制理论。',
+        authors: '王燕舞',
+        link: '201708NSFC_Excellent/index.html'
+      },
+      {
+        date: '2016-01',
+        thumbnail: '201601Microgrid_PI/封面图.png',
+        title: '新能源微电网优化控制任务PI团队建设',
+        category: '协同创新中心团队建设',
+        period: '2016.01-2017.12',
+        summary: '本项目依托新能源微电网湖北省协同创新中心，开展新能源微电网优化控制PI团队建设，围绕微电网的协调优化、分布式控制等关键技术展开研究。',
+        authors: '王燕舞',
+        link: '201601Microgrid_PI/index.html'
+      },
+      {
+        date: '2016-01',
+        thumbnail: '201601NARI_Temp/封面图.png',
+        title: '基于无源无线测温技术的变电站设备故障预警算法研究',
+        category: '企业委托项目',
+        period: '2016.01-2016.06',
+        summary: '本项目针对变电站设备故障预警问题，基于无源无线测温技术开展算法研究，围绕无源无线传感信号处理、温度特征提取等关键技术展开研究。',
+        authors: '王燕舞',
+        link: '201601NARI_Temp/index.html'
+      },
+      {
+        date: '2014-01',
+        thumbnail: '201401NSFC_Multiagent/封面图.png',
+        title: '复杂多自主体网络的多协调性与控制',
+        category: '国家自然科学基金面上项目',
+        period: '2014.01-2017.12',
+        summary: '本项目针对复杂多自主体网络的多协调性与控制问题开展深入研究，围绕多协调性的统一理论框架、协同控制算法设计等关键科学问题展开研究。',
+        authors: '王燕舞',
+        link: '201401NSFC_Multiagent/index.html'
+      },
+      {
+        date: '2012-01',
+        thumbnail: '201201Central_University/封面图.png',
+        title: '基于数字通信的复杂多自主体网络一致性研究',
+        category: '中央高校基本科研业务费资助',
+        period: '2012.01-2013.12',
+        summary: '本项目针对基于数字通信的复杂多自主体网络一致性问题开展研究，深入研究数字通信对多自主体网络一致性的影响。',
+        authors: '王燕舞',
+        link: '201201Central_University/index.html'
+      },
+      {
+        date: '2011-01',
+        thumbnail: '201101NSFC_Internet/封面图.png',
+        title: '互联网突发事件下复杂网络的演化动力学与对抗控制研究',
+        category: '国家自然科学基金面上项目',
+        period: '2011.01-2013.12',
+        summary: '本项目针对互联网突发事件下复杂网络的演化动力学与对抗控制问题开展研究，深入研究互联网复杂网络的演化动力学机制。',
+        authors: '王燕舞',
+        link: '201101NSFC_Internet/index.html'
+      },
+      {
+        date: '2009-01',
+        thumbnail: '200901NCET/封面图.png',
+        title: '突发事件下复杂动态网络的动力学分析、控制与同步',
+        category: '教育部新世纪优秀人才支持计划',
+        period: '2009.01-2011.12',
+        summary: '本项目依托教育部新世纪优秀人才支持计划，针对突发事件下复杂动态网络的动力学分析、控制与同步问题开展研究。',
+        authors: '王燕舞',
+        link: '200901NCET/index.html'
+      },
+      {
+        date: '2008-01',
+        thumbnail: '200801NSFC_Youth/封面图.png',
+        title: '混合型复杂动态网络的非线性动力学与控制研究',
+        category: '国家自然科学基金青年基金',
+        period: '2008.01-2010.12',
+        summary: '本项目针对混合型复杂动态网络的非线性动力学与控制问题开展深入研究，围绕混合型网络的非线性动力学分析、同步控制机制等关键技术展开研究。',
+        authors: '王燕舞',
+        link: '200801NSFC_Youth/index.html'
+      }
+    ];
+
+    // 分页相关变量
+    let currentPage = 1;
+    const itemsPerPage = 5;
+
+    // 按年份自动排序（从新到旧）
+    function sortProjectsByDate() {
+      return projectsData.sort((a, b) => {
+        const dateA = a.date.replace(/-/g, '');
+        const dateB = b.date.replace(/-/g, '');
+        return dateB.localeCompare(dateA); // 降序：从新到旧
+      });
+    }
+
+    // 获取当前页的项目
+    function getCurrentPageProjects(projects) {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      return projects.slice(startIndex, endIndex);
+    }
+
+    // 计算总页数
+    function getTotalPages(projects) {
+      return Math.ceil(projects.length / itemsPerPage);
+    }
+
+    // 渲染分页控件
+    function renderPagination(totalPages) {
+      const paginationContainer = document.getElementById('pagination');
+
+      if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      let paginationHTML = `
+        <button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+          上一页
+        </button>
+        <div class="pagination-pages">
+      `;
+
+      for (let i = 1; i <= totalPages; i++) {
+        paginationHTML += `
+          <button class="pagination-page ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+            ${i}
+          </button>
+        `;
+      }
+
+      paginationHTML += `
+        </div>
+        <button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+          下一页
+        </button>
+        <span class="pagination-info">
+          第 ${currentPage} / ${totalPages} 页，共 ${projectsData.length} 项
+        </span>
+      `;
+
+      paginationContainer.innerHTML = paginationHTML;
+    }
+
+    // 跳转到指定页
+    function goToPage(page) {
+      const sortedProjects = sortProjectsByDate();
+      const totalPages = getTotalPages(sortedProjects);
+
+      if (page < 1 || page > totalPages) return;
+
+      currentPage = page;
+      renderProjectCards();
+
+      // 滚动到列表顶部
+      document.getElementById('contentList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // 渲染项目卡片
+    function renderProjectCards() {
+      const contentList = document.getElementById('contentList');
+      const sortedProjects = sortProjectsByDate();
+      const currentProjects = getCurrentPageProjects(sortedProjects);
+      const totalPages = getTotalPages(sortedProjects);
+
+      if (sortedProjects.length === 0) {
+        contentList.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">📋</div>
+            <h3>暂无项目</h3>
+            <p>敬请期待...</p>
+          </div>
+        `;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+
+      contentList.innerHTML = currentProjects.map(project => `
+        <div class="item-card" data-date="${project.date}">
+          <div class="item-thumbnail">
+            <img src="${project.thumbnail}" alt="项目封面图" onerror="this.onerror=null; this.src='../../lab-logo.png'" />
+          </div>
+          <div class="item-content-wrapper">
+            <div class="item-title">${project.title}</div>
+            <div class="item-meta">
+              <span>🏷️ ${project.category}</span>
+              <span>📅 ${project.period}</span>
+            </div>
+            <div class="item-content">
+              ${project.summary}
+            </div>
+            <div class="item-footer">
+              <div class="item-author">
+                <span>👤</span>
+                <a href="../members/index.html" class="item-link">${project.authors}</a>
+              </div>
+              <a href="${project.link}" class="btn btn-sm">查看详情</a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // 渲染分页控件
+      renderPagination(totalPages);
+    }
+
+    // 页面加载完成后自动渲染
+    document.addEventListener('DOMContentLoaded', renderProjectCards);
+  </script>
+
+</body>
+</html>
