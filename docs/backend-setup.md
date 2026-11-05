@@ -1,6 +1,6 @@
 # 后端运行说明（V1 + V2）
 
-当前包含 Django/DRF、PostgreSQL、Session 认证和角色权限管理 API，以及 `GET /api/health/`。V2 接口、CSRF、ROOT 初始化与请求示例见 [认证 API 说明](auth-api.md)。已有 `frontend/` 和系统 Nginx 继续原样运行；后端只有服务器本机可访问，没有配置公网 `/api/` 代理。
+当前包含 Django/DRF、PostgreSQL、Session 认证和角色权限管理 API，以及 `GET /api/health/`。V2 接口、CSRF、ROOT 初始化与请求示例见 [认证 API 说明](auth-api.md)。已有 `frontend/` 和系统 Nginx 继续原样运行；后端仍只绑定服务器回环地址；当前系统 Nginx 已配置 `/api/` 同源代理，V3 保留原配置。前端认证开发与发布边界见 [V3 说明](frontend-auth.md)。
 
 ## 环境准备
 
@@ -136,4 +136,4 @@ sudo env HTTPS_PROXY=http://127.0.0.1:18080 HTTP_PROXY=http://127.0.0.1:18080 NO
 
 依赖和镜像通过官方 PyPI / Docker Hub 获取；锁定的 Python 依赖见 requirements.txt，验收使用的镜像标识见验收报告。
 
-当前仍在 arc-update，系统 Nginx 配置未改。通过评审后才可合并 main 和配置公网 API 反向代理；配置时保留 `/api/` 路径，设置实际域名的 ALLOWED_HOSTS，并另行评审公网 HTTPS、可信代理、域名及 CSRF 部署策略。
+当前仍在 arc-update。V3 检查时系统 Nginx 已有 `/api/` 代理，本次不修改它；前端代码仅在独立副本开发，部署和 main 合并另获确认。公网 HTTPS、可信代理、域名和 CSRF 部署策略仍需按实际入口评审。

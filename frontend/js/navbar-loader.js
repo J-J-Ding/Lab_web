@@ -33,6 +33,12 @@ function loadNavbar() {
                 fixAllNavbarLinks(pathSegments);
                 setActiveNavItem();
                 initializeSearch();
+                loadAuthAssets(pathSegments).then(() => {
+                    window.LabAuth.initNavigation(navbarContainer);
+                }).catch(() => {
+                    const status = navbarContainer.querySelector('[data-auth-loading]');
+                    if (status) status.textContent = '账号服务暂不可用';
+                });
             });
         })
         .catch(error => {
@@ -227,6 +233,29 @@ function initializeSearch() {
             }
         });
     }
+}
+
+// Resolve shared account resources relative to the existing site root, including deep detail pages.
+let authAssetsPromise;
+function loadAuthAssets(pathSegments) {
+    if (authAssetsPromise) return authAssetsPromise;
+    const dataIndex = pathSegments.indexOf('data');
+    const resolveAsset = path => new URL(calculateRelativePath(path, pathSegments, dataIndex), window.location.href).href;
+    const styleURL = resolveAsset('css/auth.css?v=3');
+    if (![...document.querySelectorAll('link[rel="stylesheet"]')].some(link => link.href === styleURL)) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet'; link.href = styleURL;
+        document.head.appendChild(link);
+    }
+    authAssetsPromise = new Promise((resolve, reject) => {
+        if (window.LabAuth) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = resolveAsset('js/auth.js?v=3');
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+    return authAssetsPromise;
 }
 
 // 页面加载完成后加载导航栏

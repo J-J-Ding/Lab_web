@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>登录账号 - 智能系统实验室</title>
+  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/auth.css?v=3">
+  <script defer src="js/auth.js?v=3"></script>
+  <script defer src="js/navbar-loader.js"></script>
+</head>
+<body data-auth-page="login">
+  <div id="navbar-container"></div>
+  <main class="auth-main">
+    <section class="auth-card" aria-labelledby="page-title">
+      <p class="auth-eyebrow">智能系统实验室 · 账号服务</p>
+      <h1 id="page-title">登录账号</h1>
+      <p class="auth-intro">登录后查看个人中心，维护账号资料与密码。</p>
+      <p id="auth-status" class="auth-message" role="status" aria-live="polite"></p>
+      <button type="button" class="auth-button" data-auth-retry hidden>重试</button>
+      <form id="login-form" class="auth-form" novalidate>
+<div class="auth-field"><label for="username">用户名</label><input type="text" name="username" id="username" maxlength="150" required autocomplete="username"></div>
+<div class="auth-field"><label for="password">密码</label><input type="password" name="password" id="password" maxlength="128" required autocomplete="current-password"></div>
+        <button type="submit" class="auth-button" disabled>登录账号</button>
+      </form>
+      <p id="login-status" class="auth-message" role="status" aria-live="polite"></p>
+      <p class="auth-footer">还没有账号？<a href="register.html">注册</a></p>
+    </section>
+  </main>
+  <noscript><p class="auth-main">账号功能需要启用 JavaScript，官网栏目仍可通过浏览器访问。</p></noscript>
+</body>
+</html>

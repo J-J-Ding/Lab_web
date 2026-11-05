@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>个人中心 - 智能系统实验室</title>
+  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/auth.css?v=3">
+  <script defer src="js/auth.js?v=3"></script>
+  <script defer src="js/navbar-loader.js"></script>
+</head>
+<body data-auth-page="profile">
+  <div id="navbar-container"></div>
+  <main class="auth-main auth-profile">
+    <section class="auth-card auth-profile-summary">
+      <p class="auth-eyebrow">智能系统实验室 · 我的账号</p>
+      <h1>个人中心</h1>
+      <p id="auth-status" class="auth-message" role="status" aria-live="polite">正在验证登录状态…</p>
+      <button type="button" class="auth-button" data-auth-retry hidden>重试</button>
+      <dl class="auth-summary" id="profile-summary" hidden>
+        <div><dt>用户名</dt><dd data-user-name></dd></div>
+        <div><dt>当前身份</dt><dd class="auth-role" data-user-role></dd></div>
+      </dl>
+    </section>
+    <div id="profile-content" class="auth-columns" hidden>
+      <section class="auth-card" aria-labelledby="profile-title">
+        <h2 id="profile-title">个人资料</h2>
+        <p class="auth-intro">用户名和身份由系统管理，此处仅修改本人资料。</p>
+        <form id="profile-form" class="auth-form" novalidate>
+<div class="auth-field"><label for="last_name">姓氏</label><input type="text" name="last_name" id="last_name" maxlength="150" autocomplete="family-name"></div>
+<div class="auth-field"><label for="first_name">名字</label><input type="text" name="first_name" id="first_name" maxlength="150" autocomplete="given-name"></div>
+<div class="auth-field"><label for="email">电子邮箱</label><input type="email" name="email" id="email" maxlength="254" autocomplete="email"></div>
+          <button type="submit" class="auth-button" disabled>保存资料</button>
+        </form>
+        <p id="profile-status" class="auth-message" role="status" aria-live="polite"></p>
+      </section>
+      <section class="auth-card" aria-labelledby="password-title">
+        <h2 id="password-title">修改密码</h2>
+        <p class="auth-intro">修改后保留当前登录，其他旧会话将失效。</p>
+        <form id="password-form" class="auth-form" novalidate>
+<div class="auth-field"><label for="old_password">旧密码</label><input type="password" name="old_password" id="old_password" maxlength="128" required autocomplete="current-password"></div>
+<div class="auth-field"><label for="new_password">新密码</label><input type="password" name="new_password" id="new_password" maxlength="128" required autocomplete="new-password" minlength="8"></div>
+<div class="auth-field"><label for="confirm_new_password">确认新密码</label><input type="password" name="confirm_new_password" id="confirm_new_password" maxlength="128" required autocomplete="new-password" minlength="8"></div>
+          <button type="submit" class="auth-button" disabled>修改密码</button>
+        </form>
+        <p id="password-status" class="auth-message" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </main>
+  <noscript><p class="auth-main">账号功能需要启用 JavaScript，官网栏目仍可通过浏览器访问。</p></noscript>
+</body>
+</html>

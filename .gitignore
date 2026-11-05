@@ -24,3 +24,5 @@ data/exports/*
 data/media/*
 !data/media/.gitkeep
 .worktrees/
+.browser-artifacts/
+.playwright/
