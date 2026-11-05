@@ -1,5 +1,9 @@
 # V3 前端认证：开发、验证与发布
 
+## 当前工作约定与部署状态
+
+用户已明确授权将 V3 更新到 `/opt/Lab_web`，本目录已同步 V3 提交 `496e005`，认证页面已由现有 Nginx 提供。后续直接在当前项目修改，不再自行使用临时开发副本；具体规则见 AGENTS.md。下文的独立副本说明保留为首次 V3 实施记录，不再作为后续开发要求。公网 HTTPS 和真实账号登录验证仍未执行。
+
 代码在 arc-update。注册、登录、个人中心使用原生 HTML/CSS/JavaScript，对接 V2 Session API；没有新增后端接口、数据库迁移或前端构建步骤。三页分别为 register.html、login.html、profile.html。
 
 本次开发副本在 `/tmp/lab-web-v3-work`，线上部署仍在 `/opt/Lab_web`。开发完成与推送不会自动发布到线上：Nginx 直接读取线上 frontend，所以不要在该目录编辑或复制文件来预览。
