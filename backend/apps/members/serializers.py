@@ -1,0 +1,89 @@
+from django.utils import timezone
+from rest_framework import serializers
+from apps.accounts.serializers import StrictSerializer,StrictString,StrictBoolean
+from .models import MemberRevision,EducationEntry,AlumniDestination
+
+
+class StrictInteger(serializers.IntegerField):
+    def to_internal_value(self,data):
+        if not isinstance(data,int) or isinstance(data,bool):
+            self.fail('invalid')
+        return super().to_internal_value(data)
+
+
+class EducationInput(StrictSerializer):
+    school=StrictString(max_length=200)
+    major=StrictString(max_length=200,required=False,allow_blank=True,default='')
+    degree=StrictString(max_length=100,required=False,allow_blank=True,default='')
+    start_date=serializers.DateField(required=False,allow_null=True,default=None)
+    end_date=serializers.DateField(required=False,allow_null=True,default=None)
+    is_public=StrictBoolean(required=False,default=False)
+    position=StrictInteger(min_value=1,max_value=100)
+    def validate(self,attrs):
+        if attrs['start_date'] and attrs['end_date'] and attrs['start_date']>attrs['end_date']:
+            raise serializers.ValidationError('End date must follow start date.')
+        return attrs
+
+
+class AlumniInput(StrictSerializer):
+    graduation_year=StrictInteger(min_value=1900)
+    degree=StrictString(max_length=100,required=False,allow_blank=True,default='')
+    destination_type=serializers.ChoiceField(choices=['WORK','STUDY','OTHER'])
+    organization=StrictString(max_length=200,required=False,allow_blank=True,default='')
+    is_public=StrictBoolean(required=False,default=False)
+    def validate_graduation_year(self,value):
+        if value>timezone.localdate().year+10:
+            raise serializers.ValidationError('Graduation year is too far in the future.')
+        return value
+
+
+class DraftInput(StrictSerializer):
+    lock_version=StrictInteger(min_value=0)
+    display_name=StrictString(max_length=150,allow_blank=True,required=False)
+    slug=serializers.SlugField(max_length=160,allow_unicode=True,allow_blank=True,required=False)
+    bio=StrictString(max_length=10000,allow_blank=True,required=False)
+    public_contact_email=serializers.EmailField(max_length=254,allow_blank=True,required=False)
+    public_contact_enabled=StrictBoolean(required=False)
+    avatar_asset=serializers.UUIDField(allow_null=True,required=False)
+    education=EducationInput(many=True,required=False,max_length=30)
+    research_areas=serializers.ListField(child=StrictString(max_length=100),max_length=30,required=False)
+    alumni=AlumniInput(allow_null=True,required=False)
+    def validate_education(self,value):
+        positions=[v['position'] for v in value]
+        if len(positions)!=len(set(positions)):
+            raise serializers.ValidationError('Education positions must be unique.')
+        return value
+    def validate_research_areas(self,value):
+        if len({v.casefold() for v in value})!=len(value):
+            raise serializers.ValidationError('Research areas must be unique.')
+        return value
+
+
+def draft_data(profile,revision):
+    if revision is None:
+        return None
+    result={f:getattr(revision,f) for f in ('number','display_name','slug','bio','member_kind','public_member_status','public_contact_email','public_contact_enabled','state')}
+    result.update(id=str(revision.pk),lock_version=profile.lock_version,avatar_asset=str(revision.avatar_asset_id) if revision.avatar_asset_id else None)
+    result['education']=list(revision.education.values('school','major','degree','start_date','end_date','is_public','position'))
+    result['research_areas']=[link.area.name for link in revision.research_links.select_related('area')]
+    alumni=AlumniDestination.objects.filter(revision=revision).values('graduation_year','degree','destination_type','organization','is_public').first()
+    result['alumni']=alumni
+    return result
+
+
+def public_member(profile):
+    """Projection ready for V6; no public endpoint is exposed in V4."""
+    rev=profile.published_revision
+    if not profile.public_visible or not rev or rev.state!='PUBLISHED' or rev.public_member_status=='LEFT':
+        return None
+    data={'id':str(profile.pk),'display_name':rev.display_name,'slug':rev.slug,'bio':rev.bio,
+          'member_kind':rev.member_kind,'public_member_status':rev.public_member_status,
+          'research_areas':[link.area.name for link in rev.research_links.select_related('area')]}
+    if profile.contact_visible and rev.public_contact_enabled:
+        data['public_contact_email']=rev.public_contact_email
+    if profile.education_visible:
+        data['education']=list(rev.education.filter(is_public=True).values('school','major','degree','start_date','end_date'))
+    if profile.alumni_visible:
+        data['alumni']=AlumniDestination.objects.filter(revision=rev,is_public=True).values('graduation_year','degree','destination_type','organization').first()
+    # V4 does not expose avatar URLs or raw asset keys.
+    return data

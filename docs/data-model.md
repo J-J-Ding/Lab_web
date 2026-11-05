@@ -1,0 +1,64 @@
+# V4 数据模型与事务约束
+
+## 模块边界
+
+- accounts：保留现有User/角色/Session与AuthAuditLog，User主键和历史迁移不变。
+- members：成员档案、私有联系方式、版本化教育/方向/去向、申请容器与资产引用。
+- content：稳定成果身份、类型明细版本、唯一标识、贡献者、项目/资产关联。
+- workflow：共享版本状态和仅追加用途的BusinessAuditLog；V4无审批API。
+- assets：私有默认资产元数据；V4无上传下载路由。
+
+```mermaid
+erDiagram
+  User ||--o| MemberProfile : binds
+  MemberProfile ||--o{ MemberRevision : versions
+  MemberProfile ||--o| MemberPrivateData : private
+  MemberProfile ||--o| Contributor : represents
+  MemberRevision ||--o{ EducationEntry : contains
+  MemberRevision ||--o{ MemberResearchArea : links
+  ResearchArea ||--o{ MemberResearchArea : classifies
+  MemberRevision ||--o| AlumniDestination : contains
+  ContentItem ||--o{ ContentRevision : versions
+  ContentItem ||--o{ ContentIdentifier : reserves
+  ContentRevision ||--o{ RevisionContribution : authors
+  Contributor ||--o{ RevisionContribution : contributes
+  ContentRevision ||--|| TypedDetail : exactly_one
+  ContentRevision ||--o{ ContentProjectLink : outputs
+  ContentItem ||--o{ ContentProjectLink : target_project
+  AssetFile ||--o{ RevisionAsset : attaches
+  AssetFile ||--o{ MemberRevisionAsset : attaches
+```
+
+## 字段与权威来源
+
+稳定业务对象与版本使用UUID，不替换已有User的整数主键。业务表内部辅助关系使用默认BigAutoField。ContentItem.kind限定八类且创建后不可变（防止已建立项目入边失效），创建者/最后编辑者与时间位于身份表；ContentRevision有递增number、标题摘要、状态、编辑者、提交时间和base_published_revision。
+
+PAPER/PROJECT/AWARD/ACTIVITY/NEWS/BLOG/PUBLICATION/LAB_PAGE各对应一张独立明细表，字段见 [V4 spec](../specs/V4-统一成员资料与科研内容数据库.md)。明细以revision为一对一主键，不把全部类型装入JSON。项目经费内部默认不出现在安全展示投影中。
+
+Contributor可链接一个MemberProfile，也可仅有外部姓名/单位。RevisionContribution保存职责、顺序、通信作者标记与署名/单位快照；正式成员改名不改历史署名。AUTHOR顺序同版本唯一，同人不同职责可存在但同版本/人/职责唯一。关系附着revision而非实时ContentItem，避免待审版本污染公开作者。
+
+MemberProfile.membership_status为内部资格，MemberRevision.member_kind/public_member_status为审核后的公开身份；都不等于User.role。公开隐私门以public_visible/contact_visible/education_visible/alumni_visible四个布尔字段实现，不使用任意JSON。只有公开指针与对应门均允许才投影字段；账号邮箱/电话/管理备注不进入公开serializer。
+
+教育/去向在版本上，未勾选is_public的数据不公开。原件路径仅AssetFile内部storage_key，V4接口不返回路径或未经授权文件URL。全局ResearchArea规范词创建后不可改名，纠正词项需建立新词并以新版本审核替换关系，避免历史快照被间接改写。MemberSlug保留跨版本URL占位；MembershipApplication仅建立状态/目标/证明/审核人容器，V5才开放审批。
+
+## PostgreSQL约束
+
+普通Unique/Check覆盖版本号、活动稿唯一、账号一对一、职责排序、日期顺序、成员/申请状态、类型枚举和唯一标识。DOI去前缀空白并小写，项目号去空白大写，ISBN去连字符空白且校验checksum；ContentIdentifier以(scheme,value)唯一、引用稳定item，不能因新草稿清空旧标识而创建重复成果。
+
+延迟constraint trigger在事务提交时检查：每个内容版本必须且只能有一个匹配类型明细；发布/工作指针必须属于本对象且状态正确；基线版本同对象；关联项目必须PROJECT且非自身；贡献职责符合类型；明细的标识必须有本对象规范化占位。允许同事务先建revision再建detail，不允许半套数据提交。Identifier保留值不可直接重分配给别的对象。
+
+BEFORE trigger保护非DRAFT版本及其明细/署名/关联/教育等快照，拒绝插入、修改、删除其子行；账号删除导致edited_by置null不修改内容快照。后续审批可仅按明确状态转换修改state，不能顺便改正文。子表检查锁定父版本，防止并发发布与写子表交错。
+
+延迟图约束锁定稳定对象，使并发关系校验不基于过时图。业务服务也按actor→对象→版本顺序加锁；用户/对象权限在写事务里重查，不信任早先认证快照。lock_version避免两个标签最后写入覆盖。
+
+## 服务与审计
+
+members.services提供本人草稿初始化/复制/更新、管理者建立未绑定档案和内部绑定原语；绑定无HTTP端点，不能改角色或自动认领重名。content.services提供受控创建草稿与贡献关系，CUSTOMER不能借内部服务获得投稿权；学生须有效ACTIVE成员，ROOT/ADMIN/TEACHER按既有业务管理权限。无发布、审批或批量导入API。
+
+BusinessAuditLog只记录actor及快照ID、目标UUID、版本、动作、结果、字段名和请求UUID；资料值、密码、Token和完整正文不写日志。成功写入与审计同事务，审计失败回滚资料；API对数据库故障返回脱敏503。
+
+## 迁移与扩展
+
+assets/members/content/workflow各有initial迁移，content与members另有图约束SQL迁移。成员图约束依赖content图约束中的共享不可变函数；逆迁移按Django依赖顺序先解除成员触发器。生产回退默认保留新表，绝不为了退应用逆迁移删除成员/成果。
+
+V5继续建立编辑授权、追加确认事件、审核决策和身份申请流程；V6公开API/旧资料迁移与受控文件；V7 AI只能生成候选。V4不提前实现它们。

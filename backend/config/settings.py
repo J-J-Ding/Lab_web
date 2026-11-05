@@ -25,6 +25,11 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.accounts.apps.AccountsConfig",
     "apps.core.apps.CoreConfig",
+    "apps.assets.apps.AssetsConfig",
+    "apps.members.apps.MembersConfig",
+    "apps.content.apps.ContentConfig",
+    "apps.workflow.apps.WorkflowConfig",
+
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

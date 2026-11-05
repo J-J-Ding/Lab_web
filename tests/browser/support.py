@@ -13,7 +13,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = Path(os.environ.get('LAB_V3_EVIDENCE', '/tmp/lab-web-v3-evidence'))
-COMPOSE = ['sudo', '-n', 'docker', 'compose', '--project-directory', '/opt/Lab_web', '-f', '/opt/Lab_web/docker-compose.yml', '--env-file', '/opt/Lab_web/.env']
+COMPOSE = json.loads(os.environ.get('LAB_BROWSER_COMPOSE', '[]'))
 
 
 def run(args, *, data=None):
@@ -33,7 +33,7 @@ def free_port():
 class Environment:
     def __init__(self):
         suffix = f'{os.getpid()}_{secrets.token_hex(3)}'
-        self.database = f'lab_web_v3_browser_{suffix}'
+        self.database = f'test_lab_web_browser_{suffix}'
         self.container = f'lab-web-v3-api-{suffix}'
         self.port = free_port()
         self.created_database = False
@@ -41,7 +41,9 @@ class Environment:
         self.server = None
 
     def start(self):
-        assert self.database.startswith('lab_web_v3_browser_') and self.port not in (80, 8000)
+        if not COMPOSE or '-p' not in COMPOSE or not COMPOSE[COMPOSE.index('-p') + 1].startswith('lab-web-test-v4-'):
+            raise RuntimeError('Use tests/support/v4_environment.py browser: isolated Compose configuration is required.')
+        assert self.database.startswith('test_lab_web_browser_') and self.port not in (80, 8000)
         try:
             run(COMPOSE + ['exec', '-T', 'db', 'sh', '-c', 'createdb -U "$POSTGRES_USER" "$1"', 'v3-test', self.database])
             self.created_database = True
@@ -135,7 +137,7 @@ django.setup()
 from django.db import connection
 from apps.accounts.models import User
 assert connection.settings_dict['NAME'] == {self.database!r}
-assert connection.settings_dict['NAME'].startswith('lab_web_v3_browser_')
+assert connection.settings_dict['NAME'].startswith('test_lab_web_browser_')
 with connection.cursor() as cursor:
     cursor.execute('SELECT current_database()')
     assert cursor.fetchone()[0] == {self.database!r}
@@ -156,6 +158,6 @@ data=json.load(sys.stdin)
             run(['sudo', '-n', 'docker', 'stop', self.container])
             self.created_container = False
         if self.created_database:
-            assert self.database.startswith('lab_web_v3_browser_')
+            assert self.database.startswith('test_lab_web_browser_')
             run(COMPOSE + ['exec', '-T', 'db', 'sh', '-c', 'dropdb -U "$POSTGRES_USER" "$1"', 'v3-test', self.database])
             self.created_database = False

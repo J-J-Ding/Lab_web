@@ -1,0 +1,20 @@
+from django.db import models
+
+
+class ContentKind(models.TextChoices):
+    PAPER='PAPER'
+    PROJECT='PROJECT'
+    AWARD='AWARD'
+    ACTIVITY='ACTIVITY'
+    NEWS='NEWS'
+    BLOG='BLOG'
+    PUBLICATION='PUBLICATION'
+    LAB_PAGE='LAB_PAGE'
+
+
+CONTRIBUTION_ROLES={
+    'PAPER':('AUTHOR',), 'PROJECT':('LEAD','PARTICIPANT'),
+    'AWARD':('WINNER','ADVISOR'), 'ACTIVITY':('ORGANIZER','PARTICIPANT'),
+    'NEWS':('AUTHOR',), 'BLOG':('AUTHOR',),
+    'PUBLICATION':('AUTHOR','EDITOR'), 'LAB_PAGE':(),
+}
