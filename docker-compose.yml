@@ -20,13 +20,17 @@ services:
     restart: unless-stopped
 
   backend:
-    image: lab-web-backend:v1
+    image: lab-web-backend:v2
     build:
       context: .
       dockerfile: deploy/docker/backend.Dockerfile
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
+      DJANGO_COOKIE_SECURE: ${DJANGO_COOKIE_SECURE:-False}
+      AUTH_LOGIN_WINDOW_SECONDS: ${AUTH_LOGIN_WINDOW_SECONDS:-900}
+      AUTH_LOGIN_ACCOUNT_IP_LIMIT: ${AUTH_LOGIN_ACCOUNT_IP_LIMIT:-10}
+      AUTH_LOGIN_IP_LIMIT: ${AUTH_LOGIN_IP_LIMIT:-60}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost}
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
       POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}

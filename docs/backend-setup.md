@@ -1,6 +1,6 @@
-# 后端运行说明（V1）
+# 后端运行说明（V1 + V2）
 
-本阶段只有 Django/DRF、用户基础模型和 PostgreSQL，以及 `GET /api/health/`。已有 `frontend/` 和系统 Nginx 继续原样运行；后端只有服务器本机可访问，没有配置公网 `/api/` 代理。
+当前包含 Django/DRF、PostgreSQL、Session 认证和角色权限管理 API，以及 `GET /api/health/`。V2 接口、CSRF、ROOT 初始化与请求示例见 [认证 API 说明](auth-api.md)。已有 `frontend/` 和系统 Nginx 继续原样运行；后端只有服务器本机可访问，没有配置公网 `/api/` 代理。
 
 ## 环境准备
 
@@ -102,7 +102,7 @@ curl --fail-with-body http://127.0.0.1:8000/api/health/
 
 普通用户默认 CUSTOMER，允许 ADMIN、TEACHER、STUDENT、CUSTOMER；数据库约束禁止 ROOT 等其他值。ROOT 表示 `is_superuser=True`，与 role 独立。默认超级用户也保留 CUSTOMER role，角色不自动设置 is_staff 或 is_superuser。
 
-本阶段没有登录、注册、业务授权 API 或管理页面，未实现 README 中完整的权限管理流程；不要将已存在的 role 字段等同于已落实业务权限。
+V2 已实现注册、登录、个人资料/密码及管理用户 API，按 ROOT/业务角色执行权限检查；尚未开发前端管理页面、身份申请或简历等业务。具体权限和字段白名单见认证 API 说明。
 
 ## 数据与停机
 
@@ -136,4 +136,4 @@ sudo env HTTPS_PROXY=http://127.0.0.1:18080 HTTP_PROXY=http://127.0.0.1:18080 NO
 
 依赖和镜像通过官方 PyPI / Docker Hub 获取；锁定的 Python 依赖见 requirements.txt，验收使用的镜像标识见验收报告。
 
-当前仍在 arc-update，系统 Nginx 配置未改。通过评审后才可合并 main 和配置公网 API 反向代理；配置时保留 `/api/` 路径，设置实际域名的 ALLOWED_HOSTS，并另行设计 HTTPS、认证、CSRF 及权限安全边界。
+当前仍在 arc-update，系统 Nginx 配置未改。通过评审后才可合并 main 和配置公网 API 反向代理；配置时保留 `/api/` 路径，设置实际域名的 ALLOWED_HOSTS，并另行评审公网 HTTPS、可信代理、域名及 CSRF 部署策略。
