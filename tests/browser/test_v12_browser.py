@@ -68,7 +68,7 @@ result={}
    page.goto(self.env.url+'/login.html');page.locator('[name=username]').fill(name);page.locator('[name=password]').fill(password);page.get_by_role('button',name='登录账号',exact=True).click();page.wait_for_url('**/profile.html')
    page.locator('[name=display_name]').fill('实际投递访客');page.get_by_role('button',name='保存资料',exact=True).click();expect(page.locator('#business-status')).to_contain_text('已保存')
    template=Path(__file__).resolve().parents[2]/'backend/apps/members/templates/cv-v12.docx';page.locator('#resume-file').set_input_files(str(template));page.get_by_role('button',name='上传简历文件',exact=True).click();expect(page.locator('#resume-file-status')).to_contain_text('已上传')
-   page.get_by_role('button',name='保存简历',exact=True).click();expect(page.locator('#resume-list')).to_contain_text('我的简历');page.get_by_role('button',name='预览并投递简历',exact=True).click();expect(page.locator('#resume-list')).to_contain_text('实际投递访客');page.get_by_role('button',name='确认共享并投递',exact=True).click();expect(page.locator('#resume-submissions')).to_contain_text('已投递')
+   page.get_by_role('button',name='保存简历',exact=True).click();expect(page.locator('#resume-list')).to_contain_text('我的简历');page.get_by_role('button',name='预览并投递简历',exact=True).click();expect(page.locator('#resume-preview')).to_contain_text('实际投递访客');page.get_by_role('button',name='确认共享并投递',exact=True).click();expect(page.locator('#resume-submissions')).to_contain_text('已投递')
    page.once('dialog',lambda d:d.accept());page.get_by_role('button',name='撤回投递',exact=True).click();expect(page.locator('#resume-submissions')).to_contain_text('已撤回')
   finally:context.close()
  def test_ai_disabled_and_quota_failure_keep_instructions(self):
