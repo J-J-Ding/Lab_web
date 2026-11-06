@@ -139,7 +139,7 @@
   if(!$('.v10-sidebar a[href="#team-cv"]'))$('.v10-sidebar a[href="#resume-section"]').before(link('生成简历Word','#team-cv'));
   const section=N('section',undefined,{class:'work-card',id:'team-cv'});$('#resume-section').before(section);section.append(N('h2','生成个人简历Word'),N('p','根据已保存的个人资料与本人参与的当前成果生成；先保存资料再预览。内部成果需逐项选择并确认，文件可能包含内部信息。'));
   const preview=N('div'),controls=N('div');section.append(C.button('预览 / 刷新简历内容',load),link('下载空白模板','/api/members/me/cv-template.docx'),preview,controls);
-  async function load(){const cv=await C.request('/api/members/me/cv-data/');preview.replaceChildren(N('h3',cv.profile.display_name||'姓名待填写'));controls.replaceChildren();
+  async function load(){const cv=await C.request('/api/members/me/cv-data/');preview.replaceChildren(N('h3',cv.profile.display_name||'姓名待填写'));controls.replaceChildren();preview.append(N('p','模板：'+(cv.template_name||'基础版'),{class:'v10-caption'}));
    const profile=cv.profile;for(const key of ['bio','research_areas','education','cv_private'])if(profile[key])preview.append(N('p',({bio:'个人介绍',research_areas:'研究方向',education:'教育经历',cv_private:'简历补充资料'})[key]+'：'+displayValue(key,profile[key])));
    if(cv.missing_fields.length)preview.append(N('p','待完善：'+cv.missing_fields.join('、')));
    const list=N('div');const ordered=[...cv.achievements];

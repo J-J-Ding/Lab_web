@@ -1,4 +1,4 @@
-"""Fill the reviewed, server-owned OOXML template; no uploaded templates or remote assets."""
+"""Render server-owned academic OOXML layouts; no uploaded templates or remote assets."""
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -17,7 +17,8 @@ from apps.content.models import DETAIL_MODELS
 from apps.content.direct_services import readable
 from .direct import get_profile,profile_data
 
-VERSION='v12.1'
+VERSION='v16.blue-academic.1'
+LEGACY_VERSION='v12.1'
 TEMPLATE=Path(__file__).parent/'templates/cv-v12.docx'
 W='{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 ET.register_namespace('w',W[1:-1])
@@ -41,14 +42,14 @@ class CVData(BusinessAPIView):
     @transaction.atomic
     def get(self,request):
         actor,profile,items=own(request)
-        return Response({'template_version':VERSION,'profile':profile_data(profile,actor),'achievements':[achievement(i,profile) for i in items.order_by('-public_sort_date','id')],'missing_fields':[] if profile.published_revision and profile.published_revision.display_name else ['姓名']})
+        return Response({'template_version':VERSION,'template_name':'蓝白学术版','profile':profile_data(profile,actor),'achievements':[achievement(i,profile) for i in items.order_by('-public_sort_date','id')],'missing_fields':[] if profile.published_revision and profile.published_revision.display_name else ['姓名']})
 
 
 class CVInput(StrictSerializer):
     item_ids=serializers.ListField(child=serializers.UUIDField(),max_length=100,required=False)
     sections=serializers.ListField(child=serializers.ChoiceField(choices=SECTIONS),max_length=8,required=False)
     include_team=StrictBoolean(default=False)
-    template_version=serializers.ChoiceField(choices=[VERSION],default=VERSION)
+    template_version=serializers.ChoiceField(choices=[VERSION,LEGACY_VERSION],default=VERSION)
 
 
 def text(p):return ''.join(t.text or '' for t in p.iter(W+'t'))
@@ -64,10 +65,10 @@ def fill(p,values):
     return p
 
 
-def generate(profile,items,sections):
+def generate(profile,items,sections,template_version=VERSION):
     r=profile.published_revision or profile.draft_revision
     private=getattr(profile,'private_data',None);cv=private.cv_data if private else {}
-    values={'姓名':r.display_name if r else '', '联系电话':private.phone if private else '', '联系邮箱':private.internal_contact if private else '', '政治面貌':cv.get('political_status',''),'技能简介':cv.get('skills',''),'研究方向':'、'.join(l.area.name for l in r.research_links.select_related('area')) if r else ''}
+    values={'姓名':r.display_name if r else '', '联系电话':private.phone if private else '', '联系邮箱':r.public_contact_email if r and r.public_contact_email else private.internal_contact if private and '@' in private.internal_contact else '', '政治面貌':cv.get('political_status',''),'技能简介':cv.get('skills',''),'研究方向':'、'.join(l.area.name for l in r.research_links.select_related('area')) if r else ''}
     blocks={key:[] for key in SECTIONS}
     if r:
         for e in r.education.all():blocks['教育经历'].append({'起止时间':f'{e.start_date or ""} — {e.end_date or ""}','学校':e.school,'专业及学位':' '.join(filter(None,[e.education_level,e.major,e.degree])),'成绩课程及补充说明':cv.get('education_note','')})
@@ -85,6 +86,9 @@ def generate(profile,items,sections):
             if d.category=='HONOR':blocks['荣誉奖项'].append({'荣誉名称':rev.title,'年份':d.award_date.year if d.award_date else ''})
             else:blocks['学科竞赛'].append({'日期':d.award_date or '', '赛事或作品名称':d.event_name or rev.title,'本人角色':roles,'赛事概要':rev.summary,'本人职责':duty,'奖项与级别':' '.join([d.award_name,d.level])})
         elif item.kind=='PUBLICATION':blocks['论文'].append({'作者署名':names,'论文题目':rev.title,'期刊或会议':d.publisher,'年份':d.publication_date.year if d.publication_date else '', 'DOI或链接':d.isbn})
+    if template_version==VERSION:
+        from .blue_cv import render
+        return render(profile,values,blocks,sections)
     src=ZipFile(TEMPLATE);root=ET.fromstring(src.read('word/document.xml'));body=root.find(W+'body');children=list(body)
     output=[];i=0
     while i<len(children):
@@ -125,12 +129,13 @@ class GenerateCV(BusinessAPIView):
             if len(ids)!=len(set(ids)) or len(items)!=len(ids):raise ValidationError({'item_ids':'Select your current available contributions only.'})
             ordered={i.pk:i for i in items};items=[ordered[pk] for pk in ids]
         if any(i.visibility_scope=='TEAM' for i in items) and not options['include_team']:raise ValidationError({'include_team':'Explicitly confirm including selected internal achievements.'})
-        content=generate(profile,items,options.get('sections',SECTIONS))
-        record(actor,profile,'member.cv.generated',('template:'+VERSION,'items:'+str(len(items))))
+        content=generate(profile,items,options.get('sections',SECTIONS),options['template_version'])
+        record(actor,profile,'member.cv.generated',('template:'+options['template_version'],'items:'+str(len(items))))
         response=HttpResponse(content,content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document');response['Content-Disposition']='attachment; filename="personal-cv.docx"';response['Cache-Control']='no-store';return response
 
 
 class BlankCV(BusinessAPIView):
     def get(self,request):
         if request.user.role not in ('TEACHER','STUDENT') or request.user.is_superuser:raise PermissionDenied()
-        response=HttpResponse(TEMPLATE.read_bytes(),content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document');response['Content-Disposition']='attachment; filename="cv-template.docx"';response['Cache-Control']='no-store';return response
+        from .blue_cv import blank
+        response=HttpResponse(blank(),content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document');response['Content-Disposition']='attachment; filename="cv-template.docx"';response['Cache-Control']='no-store';return response
