@@ -21,7 +21,7 @@ class V14BrowserTests(unittest.TestCase):
    page.get_by_role('button',name='添加教育经历',exact=True).click();page.locator('[name=school]').fill('不公开学校');page.locator('[name=education_level]').select_option('硕士研究生');page.locator('[name=degree]').select_option('硕士');page.get_by_role('button',name='保存资料',exact=True).click();expect(page.locator('#business-status')).to_contain_text('已保存');page.reload();expect(page.locator('[name=cv_gender]')).to_have_value('女');expect(page.locator('[name=native_city]')).to_have_value('4201')
    for target in ['education','profile-research','security','resume-section']:
     page.locator('.v10-sidebar a[href="#'+target+'"]').click();expect(page.locator('.v10-sidebar a[href="#'+target+'"]')).to_have_attribute('aria-current','true');self.assertEqual(page.locator('.v10-sidebar [aria-current=true]').count(),1)
-   page.goto(self.env.url+'/data/members/index.html');expect(page.locator('#public-content')).to_contain_text('固定字段成员');expect(page.locator('#public-content')).to_contain_text('硕士研究生');expect(page.locator('#public-content')).not_to_contain_text('不公开学校');self.assertEqual(errors,[])
+   page.goto(self.env.url+'/data/members/index.html?q='+__import__('urllib.parse',fromlist=['quote']).quote('固定字段成员'));expect(page.locator('#public-content')).to_contain_text('固定字段成员');expect(page.locator('#public-content')).to_contain_text('硕士研究生');expect(page.locator('#public-content')).not_to_contain_text('不公开学校');self.assertEqual(errors,[])
   finally:context.close()
  def test_home_motion_photo_menu_and_filter_changes(self):
   user='v14w_'+secrets.token_hex(4);password='Test123456';self.env.seed(user,password,'STUDENT',False)
@@ -46,7 +46,7 @@ result={'pdf':base64.b64encode(V14Contracts().pdf()).decode()}
    self.login(page,visitor,password);self.fill_required(page);page.locator('[name=display_name]').fill('PDF浏览器投递');page.get_by_role('button',name='保存资料',exact=True).click();expect(page.locator('#business-status')).to_contain_text('已保存')
    page.locator('#resume-file').set_input_files({'name':'超大简历.pdf','mimeType':'application/pdf','buffer':b'%PDF-'+b'0'*(20*1024*1024)});page.get_by_role('button',name='上传简历文件',exact=True).click();expect(page.locator('#resume-file-status')).to_contain_text('不超过20 MiB');expect(page.get_by_role('button',name='上传简历文件',exact=True)).to_be_enabled();page.locator('#resume-file').set_input_files({'name':'含文字图片链接简历.pdf','mimeType':'application/pdf','buffer':base64.b64decode(fixture['pdf'])});page.get_by_role('button',name='上传简历文件',exact=True).click();expect(page.locator('#resume-file-status')).to_contain_text('已上传');page.get_by_role('button',name='保存并预览投递',exact=True).click();expect(page.locator('#resume-preview')).to_contain_text('PDF浏览器投递');page.get_by_role('button',name='确认共享并投递',exact=True).click();expect(page.locator('#resume-status')).to_contain_text('已投递')
    self.login(staff,teacher,password);staff.goto(self.env.url+'/notifications.html');notice=staff.locator('#notification-list article').filter(has_text='PDF浏览器投递');notice.get_by_role('link',name='查看投递资料').click();expect(staff.locator('#submission-detail')).to_contain_text('PDF浏览器投递')
-   staff.goto(self.env.url+'/content-editor.html');staff.locator('[name=kind]').select_option('PAPER');staff.locator('[name=title]').fill('只限团队网页样本');staff.locator('[name=visibility_scope]').select_option('TEAM');staff.get_by_role('button',name='保存并生效',exact=True).click();staff.wait_for_url('**/content-editor.html?id=*');item=staff.url.split('id=')[1]
+   staff.goto(self.env.url+'/content-editor.html');staff.wait_for_load_state('networkidle');staff.locator('[name=kind]').select_option('PAPER');staff.locator('[name=title]').fill('只限团队网页样本');staff.locator('[name=visibility_scope]').select_option('TEAM');staff.get_by_role('button',name='保存并生效',exact=True).click();staff.wait_for_url('**/content-editor.html?id=*');item=staff.url.split('id=')[1]
    staff.goto(self.env.url+'/data/papers/index.html');expect(staff.locator('#public-content')).to_contain_text('只限团队网页样本');page.goto(self.env.url+'/data/papers/index.html');expect(page.locator('#public-status')).to_contain_text('共');expect(page.locator('#public-content')).not_to_contain_text('只限团队网页样本')
    staff.locator('[data-auth-logout]').click();expect(staff.locator('#public-content')).not_to_contain_text('只限团队网页样本');self.assertEqual(staff.request.get(self.env.url+'/api/site/content/'+item+'/').status,404);self.assertEqual(errors,[])
   finally:vc.close();tc.close()
@@ -72,7 +72,7 @@ result={'png':base64.b64encode(b.getvalue()).decode()}
   context=self.browser.new_context(viewport={'width':1440,'height':1000});page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
   try:
    self.login(page,name,password);expect(page.locator('[data-account-identity]')).to_contain_text(name);expect(page.locator('.account-avatar-fallback')).to_be_visible()
-   self.fill_required(page);page.locator('[name=avatar_file]').set_input_files({'name':'avatar.png','mimeType':'image/png','buffer':base64.b64decode(fixture['png'])});page.get_by_role('button',name='上传头像',exact=True).click();expect(page.locator('.v10-file-status').first).to_contain_text('已上传');page.get_by_role('button',name='保存资料',exact=True).click();expect(page.locator('#business-status')).to_contain_text('已保存');expect(page.locator('.account-avatar')).to_be_visible();expect(page.locator('.account-avatar-fallback')).to_be_hidden()
+   self.fill_required(page);page.locator('[name=bio]').fill('上传头像时保留的未保存简介');page.locator('[name=avatar_file]').set_input_files({'name':'avatar.png','mimeType':'image/png','buffer':base64.b64decode(fixture['png'])});page.get_by_role('button',name='上传头像',exact=True).click();expect(page.locator('.v10-file-status').first).to_contain_text('头像已保存');expect(page.locator('.profile-photo-preview img')).to_be_visible();expect(page.locator('.account-avatar')).to_be_visible();expect(page.locator('[name=bio]')).to_have_value('上传头像时保留的未保存简介');self.assertLess(page.get_by_role('button',name='上传头像',exact=True).bounding_box()['width'],160);page.get_by_role('button',name='保存资料',exact=True).click();expect(page.locator('#business-status')).to_contain_text('已保存');expect(page.locator('.account-avatar')).to_be_visible();expect(page.locator('.account-avatar-fallback')).to_be_hidden()
    page.goto(self.env.url+'/manage/index.html');search=page.locator('[name=account_q]');expect(search).to_be_visible();search.fill(target);row=page.locator('.account-table tbody tr').filter(has_text=target);expect(row).to_have_count(1);expect(page.locator('.account-table th')).to_have_count(4);row.locator('[name=role]').select_option('TEACHER');row.get_by_role('button',name='保存身份与状态',exact=True).click();expect(page.locator('#business-status')).to_contain_text('已更新');expect(row.locator('[name=role]')).to_have_value('TEACHER')
    row.locator('[name=new_password]').fill('ChangedPass123');row.get_by_role('button',name='重置密码',exact=True).click();expect(page.locator('#business-status')).to_contain_text('密码已重置');expect(row.locator('[name=new_password]')).to_have_value('')
    search.fill('没有此账号');expect(page.locator('.account-table tbody')).to_contain_text('没有匹配的账号');search.fill(name);expect(page.locator('.account-table tbody')).to_contain_text(name)
@@ -98,4 +98,33 @@ result={'png':base64.b64encode(b.getvalue()).decode()}
    for image in images.all():expect(image).to_have_css('object-fit','contain')
    page.locator('#home-papers').scroll_into_view_if_needed();page.screenshot(path=str(EVIDENCE/'home-complete-covers.png'))
    page.goto(self.env.url+'/statistics.html');button=page.get_by_role('button',name='更新统计',exact=True);expect(button).to_be_visible();self.assertLessEqual(button.bounding_box()['height'],48);self.assertGreaterEqual(button.bounding_box()['height'],40)
+  finally:context.close()
+
+ def test_management_lists_five_per_page_and_directory_photos(self):
+  root='pagerroot_'+secrets.token_hex(4);prefix='pager_'+secrets.token_hex(4);password='Test123456'
+  self.env.seed(root,password,'TEACHER',True)
+  self.env.orm("""
+from apps.accounts.models import User
+from apps.members.models import MemberProfile,MemberRevision
+from apps.assets.models import AssetFile
+from PIL import Image
+from io import BytesIO
+from pathlib import Path
+from django.conf import settings
+import uuid
+b=BytesIO();Image.new('RGB',(40,60),(30,120,160)).save(b,format='PNG');key=uuid.uuid4().hex+'.png';Path(settings.PRIVATE_MEDIA_ROOT).mkdir(parents=True,exist_ok=True);Path(settings.PRIVATE_MEDIA_ROOT,key).write_bytes(b.getvalue())
+for i in range(7):
+ u=User.objects.create_user(username='"""+prefix+"""'+str(i),role='STUDENT')
+ p=MemberProfile.objects.create(user=u,created_by=u,updated_by=u)
+ key=uuid.uuid4().hex+'.png';Path(settings.PRIVATE_MEDIA_ROOT,key).write_bytes(b.getvalue())
+ a=AssetFile.objects.create(owner=u,purpose='avatar',storage_key=key,mime_type='image/png',size=len(b.getvalue()),sha256='0'*64,scan_status='CLEAN',visibility='PRIVATE')
+ r=MemberRevision.objects.create(profile=p,number=1,display_name='"""+prefix+"""'+str(i),member_kind='STUDENT',state='PUBLISHED',avatar_asset=a,edited_by=u)
+ p.published_revision=r;p.save()
+result={}
+""")
+  context=self.browser.new_context(viewport={'width':1440,'height':1000});page=context.new_page()
+  try:
+   self.login(page,root,password);page.goto(self.env.url+'/manage/index.html');page.locator('#directory-filter [name=q]').fill(prefix);page.locator('#directory-filter').get_by_role('button',name='查找成员',exact=True).click();expect(page.locator('#directory-list article')).to_have_count(5);expect(page.locator('#directory-list .directory-photo img')).to_have_count(5);expect(page.locator('#directory-list .directory-photo img').first).to_be_visible();page.locator('#directory-list').get_by_role('button',name='下一页',exact=True).click();expect(page.locator('#directory-list article')).to_have_count(2);page.locator('#directory-list').get_by_role('button',name='上一页',exact=True).click();expect(page.locator('#directory-list article')).to_have_count(5)
+   search=page.locator('[name=account_q]');search.fill(prefix);expect(page.locator('#account-list>.v10-caption')).to_have_text('共 7 个账号');expect(page.locator('.account-table tbody tr')).to_have_count(5);page.locator('#account-pages').get_by_role('button',name='下一页',exact=True).click();expect(page.locator('.account-table tbody tr')).to_have_count(2)
+   EVIDENCE.mkdir(parents=True,exist_ok=True);page.screenshot(path=str(EVIDENCE/'directory-avatar-pagination.png'),full_page=True)
   finally:context.close()

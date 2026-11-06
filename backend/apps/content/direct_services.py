@@ -42,8 +42,15 @@ def name_for(profile):
     return revision.display_name.strip() if revision else ''
 
 
+def avatar_for(profile):
+    revision=profile.published_revision or profile.draft_revision
+    asset=revision.avatar_asset if revision and revision.avatar_asset_id else None
+    if not asset or asset.purpose!='avatar' or asset.scan_status!='CLEAN' or asset.deletion_requested_at:return None
+    return f'/api/assets/{asset.pk}/download/'
+
+
 def directory():
-    return MemberProfile.objects.filter(user__is_active=True,user__role__in=['TEACHER','STUDENT'],merged_into__isnull=True).select_related('user','published_revision','draft_revision').order_by('user_id')
+    return MemberProfile.objects.filter(user__is_active=True,user__role__in=['TEACHER','STUDENT'],merged_into__isnull=True).select_related('user','published_revision__avatar_asset','draft_revision__avatar_asset').order_by('user_id')
 
 
 def asset_check(actor, ids, previous=()):

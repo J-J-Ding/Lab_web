@@ -40,16 +40,18 @@
   return String(value??'');
  }
  function markSaved(text='已保存，修改立即生效。'){dirty=false;C.status(text);}
- function bind(form,action){form?.addEventListener('input',()=>dirty=true);C.bind(form,action);}
+ function bind(form,action){form?.addEventListener('input',event=>{if(event.target.name!=='avatar_file')dirty=true;});C.bind(form,action);}
  async function upload(input,purpose,status){
   const file=input.files[0];if(!file)throw {status:400,data:{detail:'请先选择文件。'}};
   const limit=(['avatar','image'].includes(purpose)?5:purpose==='proof'?10:20)*1024*1024;
   if(!file.size||file.size>limit){status.textContent='文件须大于0且不超过'+(limit/1024/1024)+' MiB，当前文件为'+(file.size/1024/1024).toFixed(2)+' MiB。';throw {status:400,data:{detail:status.textContent}};}
   const body=new FormData();body.append('file',file);body.append('purpose',purpose);status.textContent='正在上传并校验 '+file.name+'（'+(file.size/1024/1024).toFixed(2)+' MiB，最多等待60秒）…';
-  try{const asset=await C.request('/api/assets/',{method:'POST',file:body});status.textContent='已上传：'+file.name+'，请保存表单。';dirty=true;return {...asset,name:file.name};}
+  try{const asset=await C.request('/api/assets/',{method:'POST',file:body});status.textContent='已上传：'+file.name+'，请保存表单。';if(purpose!=='avatar')dirty=true;return {...asset,name:file.name};}
   catch(e){status.textContent=C.errorText(e)+' 原表单内容已保留。';throw e;}
  }
  function ownURL(path){return '/api/members/'+(new URLSearchParams(location.search).get('member')||'me')+'/'+path+'/';}
+ function pager(parent,data,page,load){const nav=N('nav',undefined,{class:'record-pagination','aria-label':'列表翻页'});nav.append(N('span','第 '+page+' / '+Math.max(1,Math.ceil(data.count/5))+' 页 · 共 '+data.count+' 条'));for(const [title,url,delta] of [['上一页',data.previous,-1],['下一页',data.next,1]]){const button=C.button(title,()=>load(page+delta));button.disabled=!url;nav.append(button);}parent.append(nav);}
+ async function pagedHistory(box,path,restore,page=1){const rows=await C.request(path+'?page='+page+'&page_size=5');renderHistory(box,rows.results,restore);pager(box,rows,page,next=>pagedHistory(box,path,restore,next));}
  function renderHistory(box,rows,restore){
   box.replaceChildren();if(!rows.length){box.append(N('p','暂无修改记录'));return;}
   for(const row of rows){const article=N('article');article.append(N('h3',row.title||row.display_name||'资料修改'),N('p',new Date(row.created_at).toLocaleString()));article.append(C.button('恢复这次记录',async()=>{if(dirty&&!confirm('恢复将替换表单中未保存的内容，是否继续？'))return;await restore(row);markSaved('已恢复为一条新的修改记录。');}));box.append(article);}
@@ -59,10 +61,15 @@
   const choices=values=>[['','请选择'],...values.map(v=>[v,v])];
   const years=[['','请选择年份'],...Array.from({length:new Date().getFullYear()+11-1900},(_,i)=>{const y=new Date().getFullYear()+10-i;return [String(y),String(y)+'年'];})];
   const endpoint=ownURL('profile');let data=await C.request(endpoint),avatar=data.avatar_asset||null;
-  const f=$('#business-profile-form'),box=$('#profile-fields');f.addEventListener('input',()=>profileDirty=true);
+  const f=$('#business-profile-form'),box=$('#profile-fields');f.addEventListener('input',event=>{if(event.target.name!=='avatar_file')profileDirty=true;});
   $('#identity-summary').textContent=(data.display_name||'请完善你的姓名')+' · '+user.identity;
   function render(){
    box.replaceChildren();
+   const avatarPanel=N('section',undefined,{class:'profile-avatar-panel','aria-label':'头像上传与预览'}),controls=N('div',undefined,{class:'profile-avatar-controls'}),photo=N('div',undefined,{class:'profile-photo-preview'}),empty=N('span','未设置照片'),image=N('img',undefined,{alt:'个人照片预览'});photo.append(image,empty);avatarPanel.append(controls,photo);box.append(avatarPanel);
+   function showPhoto(){image.hidden=!avatar;empty.hidden=!!avatar;if(avatar)image.src='/api/assets/'+avatar+'/download/';else image.removeAttribute('src');}image.onerror=()=>{image.hidden=true;empty.hidden=false;empty.textContent='照片暂时无法加载';};showPhoto();
+   const file=field(controls,'avatar_file','头像','file');file.accept='.png,.jpg,.jpeg,.webp';
+   const status=N('p',avatar?'已保存头像，可上传替换。':'请选择个人照片上传。',{class:'v10-file-status',role:'status'});
+   const uploadAvatar=C.button('上传头像',async()=>{try{const a=await upload(file,'avatar',status);data=await C.request(endpoint,{method:'PATCH',data:{lock_version:data.lock_version,avatar_asset:a.id}});avatar=data.avatar_asset;showPhoto();await LabAuth.refreshUser(true);status.textContent='头像已保存，其他资料修改请另行保存。';}catch(e){status.textContent=C.errorText(e);throw e;}});controls.append(uploadAvatar,status);
    field(box,'display_name','姓名','text',data.display_name);field(box,'public_member_status','成员状态','select',data.public_member_status||'ACTIVE',false,[['ACTIVE','在读/在岗'],['ALUMNI','已毕业'],['LEFT','已离开']]);field(box,'bio','个人简介','textarea',data.bio);
    $('#research-fields').replaceChildren();field($('#research-fields'),'research_areas','研究方向（用逗号分隔）','text',(data.research_areas||[]).join('，'));
    field(box,'public_contact_email','邮箱','email',data.public_contact_email,true);field(box,'highest_education','最高学历','select',data.highest_education,false,choices(['本科','硕士研究生','博士研究生']));field(box,'enrollment_year','年级 / 入学年份','select',data.enrollment_year,false,years);
@@ -76,8 +83,6 @@
      for(const entry of cv[key]||[])add(entry);section.append(C.button('添加'+label,()=>{add();dirty=true;profileDirty=true;}));box.append(section);
     }
    }
-   const file=field(box,'avatar_file','头像','file');file.accept='.png,.jpg,.jpeg,.webp';
-   const status=N('p',avatar?'已保存头像，可上传替换。':'未设置头像',{class:'v10-file-status',role:'status'});box.append(C.button('上传头像',async()=>{const a=await upload(file,'avatar',status);avatar=a.id;profileDirty=true;}),status);
    $('#education-rows').replaceChildren();for(const row of data.education||[])educationRow(row);
    renderAlumni(data.alumni);syncAlumni();
    f.elements.public_member_status.onchange=syncAlumni;
@@ -125,7 +130,7 @@
    }
    data=await C.request(endpoint,{method:'PATCH',data:payload});render();await LabAuth.refreshUser(true);profileDirty=false;markSaved();$('#identity-summary').textContent=(data.display_name||'姓名待完善')+' · '+user.identity;
   });
-  $('#profile-history').onclick=async()=>{try{const rows=await C.request(ownURL('history'));renderHistory($('#history-list'),rows.results,async row=>{data=await C.request(ownURL('restore'),{method:'POST',data:{lock_version:data.lock_version,source_revision:row.id}});avatar=data.avatar_asset;render();});}catch(e){C.showError(e);}};
+  $('#profile-history').onclick=async()=>{try{await pagedHistory($('#history-list'),ownURL('history'),async row=>{data=await C.request(ownURL('restore'),{method:'POST',data:{lock_version:data.lock_version,source_revision:row.id}});avatar=data.avatar_asset;render();});}catch(e){C.showError(e);}};
   const editingOther=new URLSearchParams(location.search).has('member');$('#security').hidden=editingOther;$('#resume-section').hidden=editingOther;if(!editingOther){await resume();if(['TEACHER','STUDENT'].includes(user.role)&&!user.is_superuser)await teamCV();}
   setupProfileNav();
  }
@@ -159,7 +164,7 @@
   const form=$('#workspace-filter');field(form,'scope','内容目录','select','normal',false,[['normal','正常内容'],['deleted','已删除']]);form.classList.add('list-toolbar');const reset=N('button','重置',{type:'reset'});form.append(form.querySelector('button[type=submit]'),reset);const initial=new URLSearchParams(location.search);form.elements.mine.checked=initial.get('mine')==='1';form.elements.kind.value=initial.get('kind')||'';form.elements.q.value=initial.get('q')||'';form.elements.scope.value=initial.get('scope')||'normal';let page=Math.max(1,Number(initial.get('page'))||1);let loadTicket=0;
   async function load(){
    const ticket=++loadTicket;const query=new URLSearchParams({page});for(const key of ['kind','q','scope'])if(formValue(form,key))query.set(key,formValue(form,key));if(form.elements.mine.checked)query.set('mine','1');
-   history.replaceState({},'',location.pathname+'?'+query);const data=await C.request('/api/content/items/?'+query);if(ticket!==loadTicket)return;const box=$('#workspace-list');box.replaceChildren();
+   history.replaceState({},'',location.pathname+'?'+query);let data;try{data=await C.request('/api/content/items/?'+query);}catch(e){if(e.status===404&&page>1){page--;return load();}throw e;}if(ticket!==loadTicket)return;const box=$('#workspace-list');box.replaceChildren();
    for(const row of data.results){const article=N('article'),r=row.revision;if(row.cover_asset){const img=N('img',undefined,{src:'/api/assets/'+row.cover_asset+'/download/',alt:'内容封面',class:'record-thumbnail',loading:'lazy'});article.append(img);}article.append(N('h3',r?.title||'历史工作稿'));if(r?.summary)article.append(N('p',r.summary));article.append(N('p',labels[row.kind]+' · '+(row.visibility_scope==='TEAM'?'团队可见':'公开网站')+(row.visible?'':' · 已撤下')));if(row.can_edit&&!row.deleted)article.append(link('编辑内容 →','/content-editor.html?id='+encodeURIComponent(row.id)));else if(row.visibility_scope==='PUBLIC'&&row.visible)article.append(link('查看公开详情 →','/content.html?id='+encodeURIComponent(row.id)));else article.append(C.button('查看团队内容',()=>{const details=N('div');if(r?.summary)details.append(N('p',r.summary));for(const [key,value] of Object.entries(r?.detail||{}))if(value!==null&&value!==''&&value!==undefined)details.append(N('p',(schemas[row.kind]?.find(f=>f[0]===key)?.[1]||key)+'：'+value));article.append(details);}));if(row.can_edit){if(row.deleted)article.append(C.button('恢复内容',async()=>{await C.request('/api/content/items/'+row.id+'/undelete/',{method:'POST',data:{lock_version:row.lock_version}});await load();C.status('已恢复至正常目录，默认不公开；请核对后编辑保存。');}));else article.append(C.button('移入已删除',async()=>{if(!confirm('将此内容移入已删除目录？公开页面和附件引用将撤下，历史记录保留。'))return;await C.request('/api/content/items/'+row.id+'/delete/',{method:'POST',data:{lock_version:row.lock_version}});await load();}));}box.append(article);}
    if(!data.count)box.append(N('p','暂无符合条件的内容。',{class:'empty-note'}));
    $('#workspace-pages').replaceChildren();for(const [text,exists,delta] of [['上一页',data.previous,-1],['下一页',data.next,1]]){const b=C.button(text,async()=>{page+=delta;await load();});b.disabled=!exists;$('#workspace-pages').append(b);}
@@ -205,12 +210,12 @@
    item=await C.request(item?'/api/content/items/'+item.id+'/':'/api/content/items/',{method:item?'PATCH':'POST',data:payload});markSaved();
    if(!id){location.replace('/content-editor.html?id='+encodeURIComponent(item.id));return;}
   });
-  $('#content-history').onclick=async()=>{try{const data=await C.request('/api/content/items/'+item.id+'/history/');renderHistory($('#history-list'),data.results,async row=>{item=await C.request('/api/content/items/'+item.id+'/restore/',{method:'POST',data:{lock_version:item.lock_version,source_revision:row.id}});dirty=false;location.reload();});}catch(e){C.showError(e);}};
+  $('#content-history').onclick=async()=>{try{await pagedHistory($('#history-list'),'/api/content/items/'+item.id+'/history/',async row=>{item=await C.request('/api/content/items/'+item.id+'/restore/',{method:'POST',data:{lock_version:item.lock_version,source_revision:row.id}});dirty=false;location.reload();});}catch(e){C.showError(e);}};
   $('#grant-section').hidden=!item||!user.capabilities.can_manage_team;
   bind($('#grant-form'),async f=>{if(!item)throw {status:400,data:{detail:'先保存内容。'}};item=await C.request('/api/content/items/'+item.id+'/grants/',{method:'POST',data:{lock_version:item.lock_version,user_id:Number(formValue(f,'user_id')),revoke:f.elements.revoke.checked,can_edit:true}});markSaved('协作权限已更新。');});
  }
  async function resume(){
-  let current=null,asset=null;
+  let current=null,asset=null,resumePage=1,submissionPage=1;
   const form=$('#resume-form'),customer=user.role==='CUSTOMER'&&!user.is_superuser,previewBox=$('#resume-preview');
   $('#resume-primary').hidden=!customer;
   $('#resume-file').before(N('p','支持 PDF、DOCX，单个文件不超过 20 MiB（20,971,520 字节）；PDF 限 1–100 页，不支持加密文件。',{class:'v10-caption'}));
@@ -219,10 +224,10 @@
   function status(text,error=false){$('#resume-status').textContent=text;$('#resume-status').dataset.kind=error?'error':'info';C.status(text,error);}
   async function loadSubmissions(){
    if(!customer)return;
-   const rows=await C.request('/api/members/me/resume-submissions/');submissions.replaceChildren(N('h3','我的投递记录'));
+   const rows=await C.request('/api/members/me/resume-submissions/?page='+submissionPage+'&page_size=5');submissions.replaceChildren(N('h3','我的投递记录'));
    for(const row of rows.results){const article=N('article');article.append(N('p',row.title+' · '+(row.state==='SUBMITTED'?'已投递':'已撤回')));
     if(row.state==='SUBMITTED')article.append(C.button('撤回投递',async()=>{if(!confirm('撤回后老师将不能继续查看本次投递，是否继续？'))return;await C.request('/api/members/me/resume-submissions/'+row.id+'/withdraw/',{method:'POST',data:{}});await loadSubmissions();status('已撤回投递，老师无法继续访问本次资料。');}));submissions.append(article);
-   }
+   }pager(submissions,rows,submissionPage,next=>{submissionPage=next;return loadSubmissions();});
   }
   async function preview(r){
    if(profileDirty){status('请先保存个人资料，再预览投递；未保存输入已保留。',true);return;}
@@ -235,16 +240,17 @@
    preview.append(N('p','简历：'+r.title+'。确认后，团队老师和Root可查看以上已保存资料及本次文件。'));
    preview.append(C.button('确认共享并投递',async()=>{
     if(profileDirty){status('请先保存个人资料并重新预览，再确认投递。',true);return;}
-    await C.request('/api/members/me/resume-submissions/',{method:'POST',data:{resume_id:r.id,consent:true}});previewBox.replaceChildren();status('已投递，团队老师可在站内通知查看。');await loadSubmissions();
+    await C.request('/api/members/me/resume-submissions/',{method:'POST',data:{resume_id:r.id,consent:true}});previewBox.replaceChildren();status('已投递，团队老师可在站内通知查看。');submissionPage=1;await loadSubmissions();
    }),C.button('取消',()=>previewBox.replaceChildren()));previewBox.append(preview);status('简历已保存，请核对共享资料后确认投递。');preview.scrollIntoView({behavior:'smooth',block:'center'});
   }
   function reset(){current=null;asset=null;form.reset();previewBox.replaceChildren();$('#resume-file-status').textContent='请上传文件后保存，上传成功不代表已投递。';dirty=profileDirty;status('正在新建简历。');}
   async function load(){
-   const data=await C.request('/api/members/me/resumes/'),box=$('#resume-list');box.replaceChildren();
+   const data=await C.request('/api/members/me/resumes/?page='+resumePage+'&page_size=5'),box=$('#resume-list');box.replaceChildren();
    for(const r of data.results){const article=N('article');article.append(N('h3',r.title));
     article.append(C.button('编辑简历',()=>{current=r;asset=r.asset;for(const key of ['title','introduction'])form.elements[key].value=r[key]||'';$('#resume-file-status').textContent=r.asset?'已保存简历文件，可上传替换。':'未设置简历文件。';dirty=profileDirty;previewBox.replaceChildren();form.scrollIntoView({behavior:'smooth',block:'start'});}));
     if(r.download_url)article.append(link('下载简历文件',r.download_url));if(customer)article.append(C.button('预览并投递简历',()=>preview(r)));box.append(article);
    }
+   pager(box,data,resumePage,next=>{resumePage=next;return load();});
    if(!data.count)box.append(N('p','尚无已保存简历；上传后可在下方直接保存并预览投递。',{class:'v10-caption'}));
   }
   $('#resume-new').onclick=reset;
@@ -255,19 +261,22 @@
    if(submitting&&profileDirty){status('请先保存个人资料，再预览投递；未保存输入已保留。',true);return;}
    if(submitting&&!asset){status('请先上传有效简历文件，再保存并预览投递。',true);return;}
    const payload={title:formValue(form,'title'),introduction:formValue(form,'introduction'),asset};if(current)payload.lock_version=current.lock_version;
-   try{current=await C.request('/api/members/me/resumes/'+(current?current.id+'/':''),{method:current?'PATCH':'POST',data:payload});dirty=profileDirty;status('简历已保存，尚未投递。');await load();if(submitting)await preview(current);}
+   try{current=await C.request('/api/members/me/resumes/'+(current?current.id+'/':''),{method:current?'PATCH':'POST',data:payload});dirty=profileDirty;status('简历已保存，尚未投递。');resumePage=1;await load();if(submitting)await preview(current);}
    catch(e){C.showError(e);status($('#business-status').textContent,true);}
   });await load();await loadSubmissions();
  }
  async function management(){
   if(!user.capabilities.can_manage_team){$('#business-content').hidden=true;C.status('仅 Teacher / Root 可以管理团队业务资料。',true);return;}
   $('#business-content').prepend(link('编辑联系信息','/content-editor.html?kind=LAB_PAGE&page_key=contact'));
-  let directoryTicket=0;
-  async function directory(q=''){
-   const ticket=++directoryTicket;const data=await C.request('/api/members/directory/?page_size=100&q='+encodeURIComponent(q));if(ticket!==directoryTicket)return;$('#directory-list').replaceChildren();for(const p of data.results){const article=N('article');article.append(N('h3',p.display_name||'姓名待完善'),N('p',p.identity),link('编辑业务资料 →','/profile.html?member='+encodeURIComponent(p.profile_id)));$('#directory-list').append(article);}
-   if(!data.count)$('#directory-list').append(N('p','暂无团队成员，身份由 Root 授予。'));
+  let directoryTicket=0,directoryPage=1,directoryQuery='';
+  async function directory(){
+   const ticket=++directoryTicket,data=await C.request('/api/members/directory/?page_size=5&page='+directoryPage+'&q='+encodeURIComponent(directoryQuery));if(ticket!==directoryTicket)return;
+   const box=$('#directory-list');box.replaceChildren();for(const p of data.results){const article=N('article',undefined,{class:'directory-member'}),photo=N('div',undefined,{class:'directory-photo'}),fallback=N('span',(p.display_name||'?').slice(0,1),{'aria-hidden':'true'});photo.append(fallback);
+    if(p.avatar_url&&/^\/api\/assets\/[a-f0-9-]+\/download\/$/.test(p.avatar_url)){const img=N('img',undefined,{src:p.avatar_url,alt:(p.display_name||'成员')+'的头像',loading:'lazy'});img.onload=()=>fallback.hidden=true;img.onerror=()=>{img.remove();fallback.hidden=false;};photo.prepend(img);}
+    const info=N('div');info.append(N('h3',p.display_name||'姓名待完善'),N('p',p.identity),link('编辑业务资料 →','/profile.html?member='+encodeURIComponent(p.profile_id)));article.append(photo,info);box.append(article);
+   }if(!data.count)box.append(N('p','暂无匹配的团队成员。'));pager(box,data,directoryPage,next=>{directoryPage=next;return directory();});
   }
-  bind($('#directory-filter'),async f=>directory(formValue(f,'q')));await directory();
+  bind($('#directory-filter'),async f=>{directoryQuery=formValue(f,'q');directoryPage=1;await directory();});await directory();
   if(!user.capabilities.can_manage_accounts)return;
   $('#root-accounts').hidden=false;let page=1,accountQuery='',accountTicket=0,searchTimer,searchComposing=false;
   const search=N('form',undefined,{class:'account-search',role:'search'}),searchInput=field(search,'account_q','搜索账号 / 姓名','search');searchInput.maxLength=100;searchInput.placeholder='输入用户名或姓名';search.append(N('button','搜索',{type:'submit'}));$('#account-list').before(search);

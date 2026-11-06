@@ -132,3 +132,20 @@ class V14Contracts(TestCase):
         me=self.client_for(self.student).get('/api/auth/me/').data
         self.assertIn('avatar_url',me)
         self.assertIsNone(me['avatar_url'])
+
+    def test_display_lists_default_to_five_and_directory_avatar(self):
+        from apps.accounts.models import User
+        for i in range(7):
+            u=User.objects.create_user(username='paged-member-'+str(i),role='STUDENT')
+            self.profile(u,'分页成员'+str(i))
+        from apps.members.models import Resume
+        for i in range(7):
+            self.profile(self.root,'分页Root')
+            Resume.objects.create(owner=self.root,title='分页简历'+str(i))
+        c=self.client_for(self.root)
+        for path in ('/api/admin/users/','/api/members/directory/','/api/public/members/','/api/members/me/history/','/api/members/me/resumes/'):
+            r=c.get(path);self.assertEqual(r.status_code,200,r.data)
+            self.assertEqual(len(r.data['results']),5,path);self.assertTrue(r.data['next'])
+            next_page=c.get(path,{'page':2});self.assertEqual(next_page.status_code,200,next_page.data)
+            self.assertFalse({x.get('id',x.get('user_id')) for x in r.data['results']}&{x.get('id',x.get('user_id')) for x in next_page.data['results']})
+        self.assertIn('avatar_url',c.get('/api/members/directory/').data['results'][0])

@@ -98,7 +98,7 @@ class Directory(TeamView):
         qs=services.directory();q=request.query_params.get('q','').strip()
         if len(q)>100:raise ValidationError('Search too long.')
         if q:qs=qs.filter(Q(published_revision__display_name__icontains=q)|Q(draft_revision__display_name__icontains=q))
-        return paged(request,qs,lambda p:{'user_id':p.user_id,'profile_id':str(p.pk),'display_name':services.name_for(p),'identity':'Teacher' if p.user.role=='TEACHER' else 'Student','selectable':bool(services.name_for(p))})
+        return paged(request,qs,lambda p:{'user_id':p.user_id,'profile_id':str(p.pk),'display_name':services.name_for(p),'identity':'Teacher' if p.user.role=='TEACHER' else 'Student','selectable':bool(services.name_for(p)),'avatar_url':services.avatar_for(p)})
 
 
 class Profile(BusinessAPIView):
@@ -210,7 +210,7 @@ class Home(PublicView):
                 if public['cover']:
                     slides.append({'id':public['id'],'title':public['title'],'image':public['cover'],'url':'/content.html?id='+public['id']})
                 if len(slides)>=5:break
-            result={'slides':slides,'schema_version':'v10.1','as_of':timezone.now(),'stats':{'members':people.count(),'papers':qs.filter(kind='PAPER').count(),'projects':qs.filter(kind='PROJECT').count(),'competitions':qs.filter(kind='AWARD',published_revision__award__category='COMPETITION').count()},'research_areas':list(MemberResearchArea.objects.filter(revision_id__in=people.values('published_revision_id')).values_list('area__name',flat=True).distinct()[:8]),'news':cards('NEWS'),'papers':cards('PAPER'),'projects':cards('PROJECT'),'competitions':cards('AWARD','COMPETITION'),'members':[member_data(p) for p in people[:6]],'resources':cards('BLOG','RESOURCE')}
+            result={'slides':slides,'schema_version':'v10.1','as_of':timezone.now(),'stats':{'members':people.count(),'papers':qs.filter(kind='PAPER').count(),'projects':qs.filter(kind='PROJECT').count(),'competitions':qs.filter(kind='AWARD',published_revision__award__category='COMPETITION').count()},'research_areas':list(MemberResearchArea.objects.filter(revision_id__in=people.values('published_revision_id')).values_list('area__name',flat=True).distinct()[:8]),'news':cards('NEWS'),'papers':cards('PAPER'),'projects':cards('PROJECT'),'competitions':cards('AWARD','COMPETITION'),'members':[member_data(p) for p in people[:5]],'resources':cards('BLOG','RESOURCE')}
             return Response(result)
 
 
