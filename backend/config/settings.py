@@ -94,3 +94,9 @@ def positive_int(name, default):
 AUTH_LOGIN_WINDOW_SECONDS = positive_int("AUTH_LOGIN_WINDOW_SECONDS", 900)
 AUTH_LOGIN_ACCOUNT_IP_LIMIT = positive_int("AUTH_LOGIN_ACCOUNT_IP_LIMIT", 10)
 AUTH_LOGIN_IP_LIMIT = positive_int("AUTH_LOGIN_IP_LIMIT", 60)
+
+# Private assets never live under the Nginx frontend root.
+PRIVATE_MEDIA_ROOT = Path(env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "private_media")))
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 12 * 1024 * 1024
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 64

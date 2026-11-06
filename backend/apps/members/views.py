@@ -1,3 +1,5 @@
+from django.db import transaction
+from apps.accounts.services import locked_users
 from rest_framework.response import Response
 from apps.accounts.views import AccountAPIView,validated
 from apps.accounts.serializers import StrictSerializer
@@ -12,12 +14,17 @@ class OwnDraftView(AccountAPIView):
     def get(self,request):
         profile=own_profile(request.user)
         return Response({'draft':draft_data(profile,profile.draft_revision) if profile else None})
+    @transaction.atomic
     def post(self,request):
         validated(StrictSerializer,request)
-        profile,revision,created=services.initialize_draft(request.user)
+        actor,_=locked_users(request)
+        profile,revision,created=services.initialize_draft(actor)
         return Response(draft_data(profile,revision),status=201 if created else 200)
+    @transaction.atomic
     def patch(self,request):
-        profile,revision=services.update_draft(request.user,validated(DraftInput,request))
+        data=validated(DraftInput,request)
+        actor,_=locked_users(request)
+        profile,revision=services.update_draft(actor,data)
         return Response(draft_data(profile,revision))
 
 

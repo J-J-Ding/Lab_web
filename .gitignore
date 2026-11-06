@@ -26,3 +26,6 @@ data/media/*
 .worktrees/
 .browser-artifacts/
 .playwright/
+
+backend/private_media/*
+!backend/private_media/.gitkeep

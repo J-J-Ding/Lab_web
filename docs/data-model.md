@@ -62,3 +62,9 @@ BusinessAuditLog只记录actor及快照ID、目标UUID、版本、动作、结�
 assets/members/content/workflow各有initial迁移，content与members另有图约束SQL迁移。成员图约束依赖content图约束中的共享不可变函数；逆迁移按Django依赖顺序先解除成员触发器。生产回退默认保留新表，绝不为了退应用逆迁移删除成员/成果。
 
 V5继续建立编辑授权、追加确认事件、审核决策和身份申请流程；V6公开API/旧资料迁移与受控文件；V7 AI只能生成候选。V4不提前实现它们。
+
+## V5 增量（2026-11-06）
+
+新增 8 张业务表：ContentEditGrant、RevisionEditEvent、RevisionSubmission、ReviewDecision、ContributionConfirmation、CorrectionRequest、MemberPublicationConsent、ContentModerationEvent。记录协作权、实际编辑、提交、审批、署名确认、纠错、公开授权和管理理由；核心历史追加不可改。原 V4 27 张业务表扩展为 35 张，不改变自定义 User 和四种业务 role。
+
+MemberProfile 增加 privacy_version；MemberRevision 增加 base_published_revision；MembershipApplication 增加 statement、review_note、lock_version；Contributor 增加可空 created_by。9 个新增迁移位于 content/members/workflow，包含 V4 编辑历史与成员草稿发布基线回填，不改原快照字段或伪造批准。ROOT/ADMIN 私密成员审批按目标账号保护；实际编辑者元数据不被审核动作覆盖。私有文件使用新增 private_media 卷，不存数据库文件或公网媒体目录。详见 [工作流](workflow.md) 和 [V5 验收](V5-验收报告.md)。

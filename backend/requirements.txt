@@ -8,3 +8,7 @@ django-environ==0.14.0
 asgiref==3.13.0
 sqlparse==0.6.1
 typing_extensions==4.16.0
+
+# V5 bounded image/PDF validation (no remote file services).
+Pillow==13.0.0
+pypdf==6.21.4

@@ -15,13 +15,13 @@ class VersionConflict(APIException):
 
 
 def clone_revision(profile, actor):
-    original=profile.published_revision
+    original=profile.revisions.filter(state__in=["PUBLISHED","REJECTED","WITHDRAWN"]).order_by("-number").first()
     fields=('member_kind','public_member_status','display_name','slug','bio','public_contact_email','public_contact_enabled','avatar_asset_id')
     data={f:getattr(original,f) for f in fields} if original else {}
     if not original:
         data['display_name']=' '.join(v for v in (actor.first_name,actor.last_name) if v)
     number=(profile.revisions.aggregate(n=Max('number'))['n'] or 0)+1
-    rev=MemberRevision.objects.create(profile=profile,number=number,edited_by=actor,**data)
+    rev=MemberRevision.objects.create(profile=profile,number=number,edited_by=actor,base_published_revision=profile.published_revision,**data)
     if original:
         for entry in original.education.all():
             values={f:getattr(entry,f) for f in ('school','major','degree','start_date','end_date','is_public','position')}
@@ -53,6 +53,8 @@ def initialize_draft(actor):
             raise VersionConflict('An existing revision is already under review.')
         return profile,profile.draft_revision,False
     rev=clone_revision(profile,actor)
+    from apps.workflow.models import RevisionEditEvent
+    RevisionEditEvent.objects.get_or_create(member_revision=rev,editor_snapshot=actor.pk,defaults={"editor":actor})
     record(actor,profile,'member.draft.create',('draft_revision',),rev)
     return profile,rev,True
 
@@ -75,6 +77,9 @@ def update_draft(actor,data):
         asset=None
         if data['avatar_asset']:
             asset=AssetFile.objects.filter(pk=data['avatar_asset'],owner=actor,scan_status='CLEAN',mime_type__in=['image/jpeg','image/png','image/webp']).first()
+            if asset is not None and asset.expires_at is not None:
+                from django.utils import timezone
+                if asset.expires_at <= timezone.now(): asset=None
             if asset is None:
                 raise ValidationError({'avatar_asset':'Asset unavailable.'})
         values['avatar_asset']=asset
@@ -97,6 +102,8 @@ def update_draft(actor,data):
     profile.lock_version+=1
     profile.updated_by=actor
     profile.save(update_fields=['lock_version','updated_by','updated_at'])
+    from apps.workflow.models import RevisionEditEvent
+    RevisionEditEvent.objects.get_or_create(member_revision=rev,editor_snapshot=actor.pk,defaults={"editor":actor})
     record(actor,profile,'member.draft.update',set(data)-{'lock_version'},rev)
     return profile,rev
 

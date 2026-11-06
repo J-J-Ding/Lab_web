@@ -1,11 +1,13 @@
 import uuid
 from django.db import models
+from django.conf import settings
 from django.db.models import Q
 from .base import ContentRevision
 
 
 class Contributor(models.Model):
     id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    created_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.SET_NULL,related_name="+")
     display_name=models.CharField(max_length=150)
     member_profile=models.OneToOneField('members.MemberProfile',null=True,blank=True,on_delete=models.PROTECT,related_name='contributor')
     external_affiliation=models.CharField(max_length=300,blank=True)

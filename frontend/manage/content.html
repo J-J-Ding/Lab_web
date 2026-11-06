@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>全部内容管理 - 智能系统实验室</title>
+<link rel="stylesheet" href="../css/style.css?v=5-20261106">
+<link rel="stylesheet" href="../css/workspace.css?v=5-20261106">
+<script defer src="../js/auth.js?v=5-20261106">
+</script>
+<script defer src="../js/navbar-loader.js?v=5-20261106">
+</script>
+<script defer src="../js/content-api.js?v=5-20261106">
+</script>
+<script defer src="../js/workspace.js?v=5-20261106">
+</script>
+</head>
+<body data-workspace-page="content" data-management="true">
+<div id="navbar-container">
+</div>
+<main class="work-main">
+<h1>全部内容管理</h1>
+<nav class="work-nav" aria-label="协同平台">
+<a href="../profile.html">个人中心</a>
+<a href="../workspace.html">我的工作区</a>
+<a href="../member-application.html">成员资料与身份申请</a>
+<a href="../manage/index.html" data-manager-only hidden>团队管理</a>
+</nav>
+<p id="business-status" class="work-message" role="status" aria-live="polite">正在验证登录状态…</p>
+<div id="business-content" hidden>
+<section class="work-card">
+<a class="work-button" href="../content-editor.html">新建内容</a>
+<form id="list-filter">
+<label for="scope">查看范围</label>
+<select id="scope" name="scope">
+<option value="">全部可管理内容</option>
+<option value="mine">我的投稿</option>
+</select>
+<button>查询</button>
+</form>
+<div id="content-list">
+</div>
+<div id="content-pages">
+</div>
+</section>
+</div>
+</main>
+</body>
+</html>

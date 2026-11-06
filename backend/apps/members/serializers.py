@@ -68,6 +68,9 @@ def draft_data(profile,revision):
     result['research_areas']=[link.area.name for link in revision.research_links.select_related('area')]
     alumni=AlumniDestination.objects.filter(revision=revision).values('graduation_year','degree','destination_type','organization','is_public').first()
     result['alumni']=alumni
+    consent=getattr(revision,'publication_consent',None)
+    result['publication_consent']=({f:getattr(consent,f) for f in ('public_visible','contact_visible','education_visible','alumni_visible')} if consent else None)
+    result['consent_current']=not consent or consent.privacy_version==profile.privacy_version
     return result
 
 

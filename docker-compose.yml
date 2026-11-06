@@ -37,6 +37,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_HOST: ${POSTGRES_HOST:-db}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+    volumes:
+      - private_media:/app/private_media
     ports:
       - "127.0.0.1:8000:8000"
     networks:
@@ -55,6 +57,7 @@ services:
 
 volumes:
   postgres_data:
+  private_media:
 
 networks:
   host_access:

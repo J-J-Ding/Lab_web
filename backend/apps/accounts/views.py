@@ -18,7 +18,7 @@ from .throttling import consume_account, consume_ip
 
 
 def csrf_failure(request, reason=''):
-    return JsonResponse({'detail': 'CSRF verification failed.'}, status=403)
+    return JsonResponse({'code': 'csrf_failed', 'detail': 'CSRF verification failed.', 'fields': {}}, status=403)
 
 
 def validated(serializer_class, request):

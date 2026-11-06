@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>用户与角色管理 - 智能系统实验室</title>
+<link rel="stylesheet" href="../css/style.css?v=5-20261106">
+<link rel="stylesheet" href="../css/workspace.css?v=5-20261106">
+<script defer src="../js/auth.js?v=5-20261106">
+</script>
+<script defer src="../js/navbar-loader.js?v=5-20261106">
+</script>
+<script defer src="../js/content-api.js?v=5-20261106">
+</script>
+<script defer src="../js/management.js?v=5-20261106">
+</script>
+</head>
+<body data-workspace-page="users" data-management="true">
+<div id="navbar-container">
+</div>
+<main class="work-main">
+<h1>用户与角色管理</h1>
+<nav class="work-nav" aria-label="协同平台">
+<a href="../profile.html">个人中心</a>
+<a href="../workspace.html">我的工作区</a>
+<a href="../member-application.html">成员资料与身份申请</a>
+<a href="../manage/index.html" data-manager-only hidden>团队管理</a>
+</nav>
+<p id="business-status" class="work-message" role="status" aria-live="polite">正在验证登录状态…</p>
+<div id="business-content" hidden>
+<section class="work-card">
+<h2>可管理用户</h2>
+<div id="users-list">
+</div>
+<div id="users-pages">
+</div>
+</section>
+<section class="work-card">
+<h2 id="user-form-title">创建用户</h2>
+<form id="user-form">
+<label for="user-name">用户名</label>
+<input id="user-name" name="username" required maxlength="150" autocomplete="off">
+<label for="user-first">名字</label>
+<input id="user-first" name="first_name" maxlength="150">
+<label for="user-last">姓氏</label>
+<input id="user-last" name="last_name" maxlength="150">
+<label for="user-email">账号邮箱</label>
+<input id="user-email" name="email" type="email">
+<label for="user-role">业务角色</label>
+<select id="user-role" name="role">
+<option>CUSTOMER</option>
+<option>STUDENT</option>
+<option>TEACHER</option>
+</select>
+<label>
+<input id="user-active" name="is_active" type="checkbox" checked>账号启用</label>
+<label for="user-password">初始密码（仅新建时填写）</label>
+<input id="user-password" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+<button>保存用户</button>
+<button id="user-create-mode" type="button" class="secondary">切换为新建</button>
+</form>
+</section>
+<section class="work-card">
+<h2>重置密码</h2>
+<p class="work-note">选中用户后可设置新密码，目标旧会话会全部失效。密码不会从服务器读取或回填。</p>
+<form id="reset-password-form">
+<label for="reset-user">目标账号 ID</label>
+<input id="reset-user" name="user_id" type="number" required min="1">
+<label for="reset-password">新密码</label>
+<input id="reset-password" name="new_password" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
+<button>重置用户密码</button>
+</form>
+</section>
+</div>
+</main>
+</body>
+</html>

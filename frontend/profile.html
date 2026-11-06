@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>个人中心 - 智能系统实验室</title>
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=5-20261106">
   <link rel="stylesheet" href="css/auth.css?v=3">
-  <script defer src="js/auth.js?v=3"></script>
-  <script defer src="js/navbar-loader.js"></script>
+  <link rel="stylesheet" href="css/workspace.css?v=5-20261106">
+  <script defer src="js/auth.js?v=5-20261106"></script>
+  <script defer src="js/navbar-loader.js?v=5-20261106"></script>
 </head>
 <body data-auth-page="profile">
   <div id="navbar-container"></div>
@@ -45,6 +46,7 @@
         </form>
         <p id="password-status" class="auth-message" role="status" aria-live="polite"></p>
       </section>
+      <section class="auth-card auth-tools"><h2>成员协同</h2><a href="workspace.html">我的工作区</a><a href="member-application.html">成员资料与身份申请</a><a href="manage/index.html" data-auth-manager hidden>团队管理</a></section>
     </div>
   </main>
   <noscript><p class="auth-main">账号功能需要启用 JavaScript，官网栏目仍可通过浏览器访问。</p></noscript>

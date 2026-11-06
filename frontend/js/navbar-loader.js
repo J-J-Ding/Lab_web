@@ -60,6 +60,8 @@ function calculateNavbarPath(pathSegments) {
 
     if (dataIndex === -1) {
         // 根目录页面，如: /index.html 或 /Lab_test/index.html
+        const managementIndex = pathSegments.indexOf('manage');
+        if (managementIndex !== -1) return '../'.repeat(pathSegments.length - 1 - managementIndex) + 'data/navbar-unified.html';
         return 'data/navbar-unified.html';
     }
 
@@ -123,6 +125,8 @@ function calculateRelativePath(targetPath, pathSegments, dataIndex) {
     // 如果没有 data 目录（根目录页面）
     if (dataIndex === -1) {
         // 目标已经在根目录下，直接返回
+        const managementIndex = pathSegments.indexOf("manage");
+        if (managementIndex !== -1) return "../".repeat(pathSegments.length - 1 - managementIndex) + targetPath;
         return targetPath;
     }
 
@@ -250,7 +254,7 @@ function loadAuthAssets(pathSegments) {
     authAssetsPromise = new Promise((resolve, reject) => {
         if (window.LabAuth) { resolve(); return; }
         const script = document.createElement('script');
-        script.src = resolveAsset('js/auth.js?v=3');
+        script.src = resolveAsset('js/auth.js?v=5-20261106');
         script.onload = resolve;
         script.onerror = reject;
         document.head.appendChild(script);

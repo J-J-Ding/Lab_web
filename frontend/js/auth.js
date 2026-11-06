@@ -91,6 +91,8 @@
   function publish(status, user = null) {
     state = { status, user };
     renderNavigation();
+    document.querySelectorAll('[data-auth-manager]').forEach(el => { el.hidden = !(status === 'authenticated' && (user.is_superuser || ['ADMIN','TEACHER'].includes(user.role))); });
+    document.dispatchEvent(new CustomEvent('lab-auth-state', {detail: {status, user}}));
     if (pageType() !== 'profile' || suspended) return;
     if (status === 'anonymous') {
       hideProfile(true);
@@ -295,7 +297,7 @@
     hideProfile(true);
     refreshUser(true);
   };
-  window.LabAuth = Object.freeze({ initNavigation });
+  window.LabAuth = Object.freeze({ initNavigation, ensureCsrf, csrfToken: cookie, refreshUser });
   window.addEventListener('pagehide', () => { suspended = true; invalidateUser(); clearPasswords(); hideProfile(true); });
   window.addEventListener('pageshow', event => { suspended = false; if (event.persisted) { invalidateUser(); revalidateProfile(); } });
   window.addEventListener('focus', revalidateProfile);

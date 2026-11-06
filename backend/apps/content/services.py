@@ -78,6 +78,8 @@ def create_content(actor, kind, title, detail, summary=''):
         ContentIdentifier.objects.create(item=item,scheme=identifier[0],value=identifier[1])
     item.working_revision=revision
     item.save(update_fields=['working_revision','updated_at'])
+    from apps.workflow.models import RevisionEditEvent
+    RevisionEditEvent.objects.get_or_create(content_revision=revision,editor_snapshot=actor.pk,defaults={"editor":actor})
     record(actor,item,'content.draft.create',('kind','title'),revision)
     return item
 
@@ -103,6 +105,10 @@ def add_contribution(actor, revision_id, contributor_id, role, position, is_corr
     link=RevisionContribution.objects.create(revision=revision,contributor=contributor,
         contribution_role=role,position=position,is_corresponding=is_corresponding,
         approved_display_name=contributor.display_name,approved_affiliation=contributor.external_affiliation)
+    from apps.workflow.models import RevisionEditEvent
+    RevisionEditEvent.objects.get_or_create(content_revision=revision,editor_snapshot=actor.pk,defaults={"editor":actor})
+    revision.edited_by=actor;revision.save(update_fields=['edited_by'])
+    item.last_edited_by=actor;item.lock_version+=1;item.save(update_fields=['last_edited_by','lock_version','updated_at'])
     record(actor,item,'content.contributor.add',('contributions',),revision)
     return link
 

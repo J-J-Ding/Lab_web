@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的工作区 - 智能系统实验室</title>
+<link rel="stylesheet" href="css/style.css?v=5-20261106">
+<link rel="stylesheet" href="css/workspace.css?v=5-20261106">
+<script defer src="js/auth.js?v=5-20261106">
+</script>
+<script defer src="js/navbar-loader.js?v=5-20261106">
+</script>
+<script defer src="js/content-api.js?v=5-20261106">
+</script>
+<script defer src="js/workspace.js?v=5-20261106">
+</script>
+</head>
+<body data-workspace-page="workspace" data-management="false">
+<div id="navbar-container">
+</div>
+<main class="work-main">
+<h1>我的工作区</h1>
+<nav class="work-nav" aria-label="协同平台">
+<a href="profile.html">个人中心</a>
+<a href="workspace.html">我的工作区</a>
+<a href="member-application.html">成员资料与身份申请</a>
+<a href="manage/index.html" data-manager-only hidden>团队管理</a>
+</nav>
+<p id="business-status" class="work-message" role="status" aria-live="polite">正在验证登录状态…</p>
+<div id="business-content" hidden>
+<p class="work-note">投稿不会直接公开。审核通过后，成果由同一条记录统一展示。</p>
+<a class="work-button" data-create-content href="content-editor.html">新建内容</a>
+<section class="work-card">
+<h2>我的投稿与协作</h2>
+<form id="list-filter">
+<label for="scope">查看范围</label>
+<select id="scope" name="scope">
+<option value="mine">我的投稿</option>
+<option value="shared">协作内容</option>
+</select>
+<button>查询</button>
+</form>
+<div id="content-list" data-private>
+</div>
+<div id="content-pages">
+</div>
+</section>
+<section class="work-card">
+<h2>我参与的已发布成果</h2>
+<div id="participations" data-private>
+</div>
+</section>
+<section class="work-card">
+<h2>待确认的署名</h2>
+<p class="work-note">确认参与关系不等于获得编辑权限。公开后的署名问题请提交纠错意见。</p>
+<div id="confirmations" data-private>
+</div>
+</section>
+</div>
+</main>
+</body>
+</html>

@@ -49,3 +49,7 @@ curl --fail-with-body -b "$LAB_AUTH_TMP/cookies" 'http://127.0.0.1:8000/api/cont
 ```
 
 以上为部署V4后的示例；本次不会自动更新生产容器，当前运行V2后端尚无这些接口。不要将真实Session、密码或请求私人数据提交Git。
+
+## V5 扩展
+
+身份申请、认领、公开资料审批、隐私收紧与受控文件上传详见 [协同 API](content-api.md)。本人 draft 响应增加只读 publication_consent、consent_current；公开授权与 privacy_version 绑定，收紧后旧授权不能恢复公开。本人写入在账号锁内重查 Session、角色和禁用状态；不要依赖前端页面判断权限。V4/V5 代码验收与线上部署是独立步骤，见 [部署手册](v5-deployment.md)。

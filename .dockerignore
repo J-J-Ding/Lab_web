@@ -15,3 +15,6 @@
 **/*.db
 **/*.dump
 **/*.sql
+
+backend/private_media/*
+!backend/private_media/.gitkeep
