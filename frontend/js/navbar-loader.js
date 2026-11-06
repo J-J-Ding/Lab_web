@@ -22,7 +22,7 @@
    }
    target.addEventListener('keydown',e=>{if(e.key==='Escape'){close();toggle.setAttribute('aria-expanded','false');menu.classList.remove('is-open');}});
    for(const link of target.querySelectorAll('a'))if((()=>{const url=new URL(link.href),current=new URL(location.href);return url.pathname===current.pathname&&['category','member_kind','tab'].every(key=>(url.searchParams.get(key)||'')===(current.searchParams.get(key)||''));})())link.setAttribute('aria-current','page');
-   if(!window.LabAuth)await script('js/auth.js?v=14-20261107-04');
+   if(!window.LabAuth)await script('js/auth.js?v=14-security-20261107');
    LabAuth.initNavigation(target);await script('js/search.js?v=14-20261107-04');
   }catch(_){target.replaceChildren();const a=document.createElement('a');a.href=new URL('index.html',root);a.textContent='智能系统实验室 · 返回首页';target.append(a);}
  }

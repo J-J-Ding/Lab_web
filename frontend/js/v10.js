@@ -3,6 +3,7 @@
  'use strict';
  const C=window.LabContent,$=s=>document.querySelector(s),mode=document.body.dataset.v10Page;
  const N=(tag,text,attrs={})=>C.node(tag,text,attrs);
+ if(mode==='profile'){const redirectSecurity=()=>{if(location.hash==='#security')location.replace('/account-security.html');};addEventListener('hashchange',redirectSecurity);if(location.hash==='#security'){redirectSecurity();return;}}
  let updateProfileNav=()=>{};
  let dirty=false,profileDirty=false,user,fieldSerial=0,fillProfileCandidate=null;
  const labels={PATENT:'专利',PAPER:'发表论文',PROJECT:'科研项目',AWARD:'竞赛与荣誉',NEWS:'团队新闻',ACTIVITY:'团队活动',BLOG:'文章与资源',PUBLICATION:'出版成果',LAB_PAGE:'团队介绍'};
@@ -131,7 +132,7 @@
    data=await C.request(endpoint,{method:'PATCH',data:payload});render();await LabAuth.refreshUser(true);profileDirty=false;markSaved();$('#identity-summary').textContent=(data.display_name||'姓名待完善')+' · '+user.identity;
   });
   $('#profile-history').onclick=async()=>{try{await pagedHistory($('#history-list'),ownURL('history'),async row=>{data=await C.request(ownURL('restore'),{method:'POST',data:{lock_version:data.lock_version,source_revision:row.id}});avatar=data.avatar_asset;render();});}catch(e){C.showError(e);}};
-  const editingOther=new URLSearchParams(location.search).has('member');$('#security').hidden=editingOther;$('#resume-section').hidden=editingOther;if(!editingOther){await resume();if(['TEACHER','STUDENT'].includes(user.role)&&!user.is_superuser)await teamCV();}
+  const editingOther=new URLSearchParams(location.search).has('member');$('#resume-section').hidden=editingOther;if(!editingOther){await resume();if(['TEACHER','STUDENT'].includes(user.role)&&!user.is_superuser)await teamCV();}
   setupProfileNav();
  }
  async function teamCV(){
@@ -301,11 +302,11 @@
   bind($('#root-create-form'),async f=>{await C.request('/api/admin/users/',{method:'POST',data:{username:formValue(f,'username'),password:formValue(f,'password'),role:formValue(f,'role')}});f.reset();markSaved('账号已创建。');await accounts();});await accounts();
  }
  async function start(){
-  user=await C.boot();if(!user)return;
+  user=await C.boot(false,mode==='security');if(!user)return;
   document.querySelectorAll('[data-team-only]').forEach(el=>el.hidden=!user.capabilities.can_edit_content);
   document.querySelectorAll('[data-manager-only]').forEach(el=>el.hidden=!user.capabilities.can_manage_team);
   try{
-   await ({profile,workspace,editor,resume,management}[mode])();
+   await ({profile,workspace,editor,resume,management,security:async()=>{$('#security-user').textContent='当前账号：'+user.username+' · '+user.identity;}}[mode])();
    const params=new URLSearchParams(location.search),job=params.get('ai_job');
    if(job&&['profile','editor'].includes(mode)){
     const candidate=await C.request('/api/ai/imports/'+encodeURIComponent(job)+'/');

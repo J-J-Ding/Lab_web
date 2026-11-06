@@ -278,7 +278,7 @@
     const returnTo=new URLSearchParams(location.search).get('return_to');
     if(returnTo&&returnTo.startsWith('/')&&!returnTo.startsWith('//')){
       const target=new URL(returnTo,location.origin);
-      if(target.origin===location.origin&&['/profile.html','/contact.html'].includes(target.pathname))document.querySelectorAll('a[href]').forEach(a=>{const url=new URL(a.href);if(url.origin===location.origin&&['/register.html','/login.html'].includes(url.pathname)){url.searchParams.set('return_to',target.pathname+target.search+target.hash);a.href=url.href;}});
+      if(target.origin===location.origin&&['/profile.html','/contact.html','/account-security.html'].includes(target.pathname))document.querySelectorAll('a[href]').forEach(a=>{const url=new URL(a.href);if(url.origin===location.origin&&['/register.html','/login.html'].includes(url.pathname)){url.searchParams.set('return_to',target.pathname+target.search+target.hash);a.href=url.href;}});
     }
     bindForm('register-form', 'register-status', async form => {
       if (form.elements.password.value !== form.elements.confirm_password.value) { message('register-status', '两次输入的密码不一致。', 'error'); return; }
@@ -294,7 +294,7 @@
       const result = await refreshUser(true);
       if (result.status !== 'authenticated') throw new ApiError(503);
       const target=new URLSearchParams(location.search).get('return_to');let destination=pageURL('profile.html');
-      if(target&&target.startsWith('/')&&!target.startsWith('//')){const url=new URL(target,location.origin);if(url.origin===location.origin&&['/profile.html','/contact.html'].includes(url.pathname))destination=url.href;}
+      if(target&&target.startsWith('/')&&!target.startsWith('//')){const url=new URL(target,location.origin);if(url.origin===location.origin&&['/profile.html','/contact.html','/account-security.html'].includes(url.pathname))destination=url.href;}
       location.assign(destination);
     });
     bindForm('profile-form', 'profile-status', async form => {

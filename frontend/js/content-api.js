@@ -173,12 +173,12 @@
     return el;
   }
   const manager = u => !!u && (u.is_superuser || ['ADMIN','TEACHER'].includes(u.role));
-  async function boot(management = false) {
+  async function boot(management = false, authOnly = false) {
     try {
       await LabAuth.ensureCsrf();
       const result = await LabAuth.refreshUser(true);
       if (result.status !== 'authenticated') {
-        if (result.status === 'anonymous') {if(location.pathname.endsWith('/ai-import.html'))status('请登录后使用AI辅助填写，可先阅读流程说明。',true);else location.replace(new URL('login.html',root));}
+        if (result.status === 'anonymous') {if(location.pathname.endsWith('/ai-import.html'))status('请登录后使用AI辅助填写，可先阅读流程说明。',true);else {const login=new URL('login.html',root);if(authOnly)login.searchParams.set('return_to','/account-security.html');location.replace(login);}}
         else status('账号服务暂不可用，请刷新重试。',true);
         return null;
       }
@@ -188,7 +188,7 @@
         if(path==='/resume.html')a.remove();
         if(['/workspace.html','/statistics.html','/manage/statistics.html'].includes(path)&&!user.capabilities.can_edit_content)a.hidden=true;
       });
-      try { capabilities=await request("/api/content/capabilities/"); } catch(error) { if(error.status===404){status("协同功能尚未部署，请稍后重试。",true);return null;}throw error; }
+      try { capabilities=authOnly?user.capabilities:await request("/api/content/capabilities/"); } catch(error) { if(error.status===404){status("协同功能尚未部署，请稍后重试。",true);return null;}throw error; }
       if (management && !manager(user)) {
         status('无管理权限。',true);
         return null;
