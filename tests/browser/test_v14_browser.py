@@ -58,3 +58,44 @@ result={'pdf':base64.b64encode(V14Contracts().pdf()).decode()}
    first=page.locator('.slide-caption h1').inner_text();page.get_by_role('button',name='下一张',exact=True).click();expect(page.locator('.slide-caption h1')).not_to_have_text(first)
    EVIDENCE.mkdir(parents=True,exist_ok=True);page.screenshot(path=str(EVIDENCE/'v14-home-desktop.png'));page.set_viewport_size({'width':390,'height':844});self.assertTrue(page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'));page.screenshot(path=str(EVIDENCE/'v14-home-mobile.png'))
   finally:context.close()
+ def test_root_search_table_account_header_and_avatar(self):
+  import base64
+  name='rootui_'+secrets.token_hex(4);target='targetui_'+secrets.token_hex(4);password='Test123456'
+  self.env.seed(name,password,'TEACHER',True);self.env.seed(target,password,'STUDENT',False)
+  fixture=self.env.orm("""
+from PIL import Image
+from io import BytesIO
+import base64
+b=BytesIO();Image.new('RGB',(40,60),(50,120,180)).save(b,format='PNG')
+result={'png':base64.b64encode(b.getvalue()).decode()}
+""")
+  context=self.browser.new_context(viewport={'width':1440,'height':1000});page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+  try:
+   self.login(page,name,password);expect(page.locator('[data-account-identity]')).to_contain_text(name);expect(page.locator('.account-avatar-fallback')).to_be_visible()
+   self.fill_required(page);page.locator('[name=avatar_file]').set_input_files({'name':'avatar.png','mimeType':'image/png','buffer':base64.b64decode(fixture['png'])});page.get_by_role('button',name='上传头像',exact=True).click();expect(page.locator('.v10-file-status').first).to_contain_text('已上传');page.get_by_role('button',name='保存资料',exact=True).click();expect(page.locator('#business-status')).to_contain_text('已保存');expect(page.locator('.account-avatar')).to_be_visible();expect(page.locator('.account-avatar-fallback')).to_be_hidden()
+   page.goto(self.env.url+'/manage/index.html');search=page.locator('[name=account_q]');expect(search).to_be_visible();search.fill(target);row=page.locator('.account-table tbody tr').filter(has_text=target);expect(row).to_have_count(1);expect(page.locator('.account-table th')).to_have_count(4);row.locator('[name=role]').select_option('TEACHER');row.get_by_role('button',name='保存身份与状态',exact=True).click();expect(page.locator('#business-status')).to_contain_text('已更新');expect(row.locator('[name=role]')).to_have_value('TEACHER')
+   row.locator('[name=new_password]').fill('ChangedPass123');row.get_by_role('button',name='重置密码',exact=True).click();expect(page.locator('#business-status')).to_contain_text('密码已重置');expect(row.locator('[name=new_password]')).to_have_value('')
+   search.fill('没有此账号');expect(page.locator('.account-table tbody')).to_contain_text('没有匹配的账号');search.fill(name);expect(page.locator('.account-table tbody')).to_contain_text(name)
+   EVIDENCE.mkdir(parents=True,exist_ok=True);page.screenshot(path=str(EVIDENCE/'root-account-table.png'),full_page=True)
+   page.set_viewport_size({'width':390,'height':844});self.assertTrue(page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'));self.assertEqual(errors,[])
+  finally:context.close()
+
+ def test_all_home_cover_images_contain_and_stats_button_compact(self):
+  import base64
+  fixture=self.env.orm("""
+from PIL import Image,ImageDraw
+from io import BytesIO
+import base64
+im=Image.new('RGB',(200,600),'white');d=ImageDraw.Draw(im);d.rectangle((0,0,199,599),outline='blue',width=10);d.text((20,10),'TOP',fill='black');d.text((20,570),'BOTTOM',fill='black');b=BytesIO();im.save(b,format='PNG')
+result={'png':base64.b64encode(b.getvalue()).decode()}
+""")
+  context=self.browser.new_context(viewport={'width':1440,'height':1000});page=context.new_page()
+  try:
+   data=page.request.get(self.env.url+'/api/site/home/').json();asset='/api/site/assets/11111111-1111-1111-1111-111111111111/'
+   for key in ('papers','projects','news','competitions','resources'):data[key]=[{'id':'11111111-1111-1111-1111-111111111111','title':'完整封面验收','summary':'图片上下边缘应完整显示','cover':{'url':asset}}]
+   page.route('**/api/site/home/',lambda route:route.fulfill(json=data));page.route('**'+asset,lambda route:route.fulfill(content_type='image/png',body=base64.b64decode(fixture['png'])))
+   page.goto(self.env.url+'/index.html');images=page.locator('.home-card img');expect(images).to_have_count(5)
+   for image in images.all():expect(image).to_have_css('object-fit','contain')
+   page.locator('#home-papers').scroll_into_view_if_needed();page.screenshot(path=str(EVIDENCE/'home-complete-covers.png'))
+   page.goto(self.env.url+'/statistics.html');button=page.get_by_role('button',name='更新统计',exact=True);expect(button).to_be_visible();self.assertLessEqual(button.bounding_box()['height'],48);self.assertGreaterEqual(button.bounding_box()['height'],40)
+  finally:context.close()

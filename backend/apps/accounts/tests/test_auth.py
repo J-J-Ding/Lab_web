@@ -46,7 +46,7 @@ class AuthenticationTests(AccountFixtures):
         client = login_as(self.customer)
         response = client.get('/api/auth/me/')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(set(response.json()), {'id', 'username', 'first_name', 'last_name', 'email', 'role', 'is_active', 'is_superuser', 'date_joined'})
+        self.assertEqual(set(response.json()), {'id', 'username', 'first_name', 'last_name', 'email', 'role', 'is_active', 'is_superuser', 'date_joined', 'identity', 'display_name', 'capabilities', 'avatar_url'})
         self.assertEqual(response.json()['id'], self.customer.pk)
         self.assertTrue(client.cookies['sessionid']['httponly'])
         self.assertEqual(client.cookies['sessionid']['samesite'], 'Lax')

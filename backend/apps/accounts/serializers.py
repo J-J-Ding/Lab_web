@@ -34,6 +34,14 @@ class UserSerializer(serializers.ModelSerializer):
     identity = serializers.SerializerMethodField()
     display_name = serializers.SerializerMethodField()
     capabilities = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+
+    def get_avatar_url(self,user):
+        profile=getattr(user,"member_profile",None)
+        revision=(profile.published_revision or profile.draft_revision) if profile else None
+        asset=revision.avatar_asset if revision and revision.avatar_asset_id else None
+        if not asset or asset.purpose!="avatar" or asset.scan_status!="CLEAN" or asset.deletion_requested_at:return None
+        return f"/api/assets/{asset.pk}/download/"
 
     def get_identity(self, user):
         return 'Root' if user.is_superuser else {'ADMIN':'Teacher','TEACHER':'Teacher','STUDENT':'Student','CUSTOMER':'Customer'}[user.role]
@@ -49,7 +57,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'role', 'is_active', 'is_superuser', 'date_joined', 'identity', 'display_name', 'capabilities')
+        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'role', 'is_active', 'is_superuser', 'date_joined', 'identity', 'display_name', 'capabilities', 'avatar_url')
         read_only_fields = fields
 
 

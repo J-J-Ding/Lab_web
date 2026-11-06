@@ -119,3 +119,16 @@ class V14Contracts(TestCase):
             with self.assertRaises(ValidationError) as error:upload(None,file,'resume')
         self.assertIn('20MiB',str(error.exception))
         file.read.assert_not_called()
+
+    def test_root_account_search_and_authenticated_avatar(self):
+        self.profile(self.student,'可搜索姓名')
+        c=self.client_for(self.root)
+        for q in ('student-test','可搜索姓名'):
+            r=c.get('/api/admin/users/',{'q':q})
+            self.assertEqual(r.status_code,200,r.data)
+            self.assertEqual([x['username'] for x in r.data['results']],['student-test'])
+        self.assertEqual(c.get('/api/admin/users/',{'q':'不会存在的账号'}).data['count'],0)
+        self.assertEqual(self.client_for(self.student).get('/api/admin/users/',{'q':'root'}).status_code,403)
+        me=self.client_for(self.student).get('/api/auth/me/').data
+        self.assertIn('avatar_url',me)
+        self.assertIsNone(me['avatar_url'])

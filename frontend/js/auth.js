@@ -83,6 +83,15 @@
     document.querySelectorAll('[data-auth-nav]').forEach(nav => {
       nav.querySelector('[data-auth-anonymous]').hidden = !['anonymous', 'unavailable'].includes(state.status);
       nav.querySelector('[data-auth-member]').hidden = state.status !== 'authenticated';
+      const member=nav.querySelector('[data-auth-member]');
+      member.querySelector('[data-account-identity]')?.remove();
+      if(state.status==='authenticated'){
+        const account=document.createElement('a');account.href='/profile.html';account.dataset.accountIdentity='';account.className='account-identity';account.title='当前账号：'+state.user.username+' · '+state.user.identity;
+        const fallback=document.createElement('span');fallback.className='account-avatar-fallback';fallback.textContent=(state.user.display_name||state.user.username).slice(0,1).toUpperCase();fallback.setAttribute('aria-hidden','true');account.append(fallback);
+        const url=state.user.avatar_url;
+        if(url&&/^\/api\/assets\/[a-f0-9-]+\/download\/$/.test(url)){const img=document.createElement('img');img.src=url;img.alt='';img.className='account-avatar';img.onload=()=>fallback.hidden=true;img.onerror=()=>{img.remove();fallback.hidden=false;};account.prepend(img);}
+        const name=document.createElement('span');name.textContent=state.user.username;name.className='account-name';account.append(name);member.prepend(account);
+      }
       const status = nav.querySelector('[data-auth-loading]');
       status.hidden = !['loading', 'unavailable'].includes(state.status);
       status.textContent = state.status === 'unavailable' ? '账号服务暂不可用' : '账号加载中…';

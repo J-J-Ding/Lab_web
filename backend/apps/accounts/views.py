@@ -127,7 +127,13 @@ class UsersView(AccountAPIView):
 
     def get(self, request):
         paginator = UserPagination()
-        page = paginator.paginate_queryset(services.visible_users(request.user), request)
+        from django.db.models import Q
+        users=services.visible_users(request.user)
+        q=request.query_params.get('q','').strip()
+        if len(q)>100:raise ValidationError({'q':'搜索内容不得超过100字。'})
+        if q:users=users.filter(Q(username__icontains=q)|Q(first_name__icontains=q)|Q(last_name__icontains=q)|Q(member_profile__published_revision__display_name__icontains=q)|Q(member_profile__published_revision__isnull=True,member_profile__draft_revision__display_name__icontains=q)).distinct()
+        users=users.select_related('member_profile__published_revision__avatar_asset','member_profile__draft_revision__avatar_asset')
+        page = paginator.paginate_queryset(users, request)
         return paginator.get_paginated_response(UserSerializer(page, many=True).data)
 
     def post(self, request):

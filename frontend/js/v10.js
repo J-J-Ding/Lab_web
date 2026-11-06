@@ -123,7 +123,7 @@
     if(!Object.values(values).some(Boolean))continue;
     payload.education.push({...values,start_date:values.start_date||null,end_date:values.end_date||null,is_public:false,position:index+1});
    }
-   data=await C.request(endpoint,{method:'PATCH',data:payload});render();profileDirty=false;markSaved();$('#identity-summary').textContent=(data.display_name||'姓名待完善')+' · '+user.identity;
+   data=await C.request(endpoint,{method:'PATCH',data:payload});render();await LabAuth.refreshUser(true);profileDirty=false;markSaved();$('#identity-summary').textContent=(data.display_name||'姓名待完善')+' · '+user.identity;
   });
   $('#profile-history').onclick=async()=>{try{const rows=await C.request(ownURL('history'));renderHistory($('#history-list'),rows.results,async row=>{data=await C.request(ownURL('restore'),{method:'POST',data:{lock_version:data.lock_version,source_revision:row.id}});avatar=data.avatar_asset;render();});}catch(e){C.showError(e);}};
   const editingOther=new URLSearchParams(location.search).has('member');$('#security').hidden=editingOther;$('#resume-section').hidden=editingOther;if(!editingOther){await resume();if(['TEACHER','STUDENT'].includes(user.role)&&!user.is_superuser)await teamCV();}
@@ -269,13 +269,26 @@
   }
   bind($('#directory-filter'),async f=>directory(formValue(f,'q')));await directory();
   if(!user.capabilities.can_manage_accounts)return;
-  $('#root-accounts').hidden=false;let page=1;
-  async function accounts(){const data=await C.request('/api/admin/users/?page='+page),box=$('#account-list');box.replaceChildren();for(const account of data.results){
-   const article=N('article'),form=N('form',undefined,{class:'v10-form'});article.append(N('h3',account.display_name||'姓名待完善'),N('p','登录名：'+account.username+' · '+account.identity));
-   field(form,'role','业务身份','select',account.role,false,[['CUSTOMER','Customer'],['STUDENT','Student'],['TEACHER','Teacher']]);check(form,'is_active','账号可登录',account.is_active);form.append(N('button','保存身份与状态',{type:'submit'}));
-   bind(form,async f=>{await C.request('/api/admin/users/'+account.id+'/',{method:'PATCH',data:{role:formValue(f,'role'),is_active:f.elements.is_active.checked}});markSaved('账号状态已更新。');await accounts();});
-   const reset=N('form',undefined,{class:'v10-form'});field(reset,'new_password','重置密码','password','',true);reset.append(N('button','为此账号重置密码',{type:'submit',class:'secondary'}));bind(reset,async f=>{await C.request('/api/admin/users/'+account.id+'/reset-password/',{method:'POST',data:{new_password:formValue(f,'new_password')}});f.reset();markSaved('目标账号密码已重置。');});article.append(form,reset);box.append(article);
-  }$('#account-pages').replaceChildren();for(const [text,exists,delta] of [['上一页',data.previous,-1],['下一页',data.next,1]]){const b=C.button(text,async()=>{page+=delta;await accounts();});b.disabled=!exists;$('#account-pages').append(b);}}
+  $('#root-accounts').hidden=false;let page=1,accountQuery='',accountTicket=0,searchTimer,searchComposing=false;
+  const search=N('form',undefined,{class:'account-search',role:'search'}),searchInput=field(search,'account_q','搜索账号 / 姓名','search');searchInput.maxLength=100;searchInput.placeholder='输入用户名或姓名';search.append(N('button','搜索',{type:'submit'}));$('#account-list').before(search);
+  function searchAccounts(){clearTimeout(searchTimer);accountQuery=searchInput.value.trim();page=1;accounts().catch(C.showError);}
+  search.onsubmit=e=>{e.preventDefault();searchAccounts();};searchInput.oncompositionstart=()=>searchComposing=true;searchInput.oncompositionend=()=>{searchComposing=false;searchAccounts();};searchInput.oninput=()=>{if(!searchComposing){clearTimeout(searchTimer);accountTicket++;searchTimer=setTimeout(searchAccounts,300);}};
+  async function accounts(){
+   const ticket=++accountTicket,data=await C.request('/api/admin/users/?page='+page+'&q='+encodeURIComponent(accountQuery)),box=$('#account-list');if(ticket!==accountTicket)return;
+   box.replaceChildren(N('p','共 '+data.count+' 个账号',{class:'v10-caption',role:'status'}));
+   const scroll=N('div',undefined,{class:'account-table-scroll'}),table=N('table',undefined,{class:'account-table'}),head=N('thead'),headRow=N('tr'),body=N('tbody');
+   for(const title of ['用户名','姓名','账号身份与状态','重置密码'])headRow.append(N('th',title,{scope:'col'}));head.append(headRow);table.append(head,body);scroll.append(table);box.append(scroll);
+   for(const account of data.results){
+    const row=N('tr'),username=N('td',account.username),name=N('td',account.display_name||'姓名待完善'),identity=N('td'),password=N('td'),form=N('form',undefined,{class:'v10-form account-role-form'});
+    if(account.is_superuser)form.append(N('strong','Root',{class:'account-root-badge'}));
+    field(form,'role','业务身份','select',account.role,false,[['CUSTOMER','Customer'],['STUDENT','Student'],['TEACHER','Teacher']]);check(form,'is_active','账号可登录',account.is_active);form.append(N('button','保存身份与状态',{type:'submit'}));
+    bind(form,async f=>{await C.request('/api/admin/users/'+account.id+'/',{method:'PATCH',data:{role:formValue(f,'role'),is_active:f.elements.is_active.checked}});markSaved('账号状态已更新。');await accounts();});identity.append(form);
+    const reset=N('form',undefined,{class:'v10-form account-password-form'}),input=field(reset,'new_password','新密码','password','',true);input.autocomplete='new-password';reset.append(N('button','重置密码',{type:'submit',class:'secondary'}));
+    bind(reset,async f=>{await C.request('/api/admin/users/'+account.id+'/reset-password/',{method:'POST',data:{new_password:formValue(f,'new_password')}});f.reset();markSaved('目标账号密码已重置。');});password.append(reset);row.append(username,name,identity,password);body.append(row);
+   }
+   if(!data.count){const row=N('tr');row.append(N('td','没有匹配的账号',{colspan:'4'}));body.append(row);}
+   $('#account-pages').replaceChildren();for(const [text,exists,delta] of [['上一页',data.previous,-1],['下一页',data.next,1]]){const button=C.button(text,async()=>{page+=delta;await accounts();});button.disabled=!exists;$('#account-pages').append(button);}
+  }
   bind($('#root-create-form'),async f=>{await C.request('/api/admin/users/',{method:'POST',data:{username:formValue(f,'username'),password:formValue(f,'password'),role:formValue(f,'role')}});f.reset();markSaved('账号已创建。');await accounts();});await accounts();
  }
  async function start(){
