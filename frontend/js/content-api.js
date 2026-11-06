@@ -29,6 +29,7 @@
     const data = error.data?.fields || error.data || {
     }
     ;
+    if(JSON.stringify(data).includes('Unknown or read-only fields are not accepted.'))return '资料字段与服务版本不匹配，或包含不允许修改的字段。请刷新后重试；输入已保留。';
     const entries = Object.entries(data).filter(([k]) => !['code', 'fields'].includes(k));
     return entries.map(([k, v]) => `${k === 'detail' ? '' : k + '：'}${typeof v === 'string' ? v : JSON.stringify(v)}`).join('；') || '请核对输入资料。';
   }

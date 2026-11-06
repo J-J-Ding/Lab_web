@@ -3,7 +3,7 @@
  'use strict';
  const C=window.LabContent,$=s=>document.querySelector(s),mode=document.body.dataset.v10Page;
  const N=(tag,text,attrs={})=>C.node(tag,text,attrs);
- let dirty=false,user,fieldSerial=0,fillProfileCandidate=null;
+ let dirty=false,profileDirty=false,user,fieldSerial=0,fillProfileCandidate=null;
  const labels={PATENT:'专利',PAPER:'发表论文',PROJECT:'科研项目',AWARD:'竞赛与荣誉',NEWS:'团队新闻',ACTIVITY:'团队活动',BLOG:'文章与资源',PUBLICATION:'出版成果',LAB_PAGE:'团队介绍'};
  const schemas={
   PATENT:[["patent_number","专利号"],["application_date","申请日期","date"],["grant_date","授权日期","date"],["status","专利状态","select",[["APPLIED","申请中"],["GRANTED","已授权"],["EXPIRED","已失效"]]],["abstract","专利摘要","textarea"]],
@@ -53,7 +53,7 @@
  }
  async function profile(){
   const endpoint=ownURL('profile');let data=await C.request(endpoint),avatar=data.avatar_asset||null;
-  const f=$('#business-profile-form'),box=$('#profile-fields');
+  const f=$('#business-profile-form'),box=$('#profile-fields');f.addEventListener('input',()=>profileDirty=true);
   $('#identity-summary').textContent=(data.display_name||'请完善你的姓名')+' · '+user.identity;
   function render(){
    box.replaceChildren();
@@ -67,12 +67,12 @@
     const cv=data.cv_private||{};field(box,'cv_skills','技能简介（私有）','textarea',cv.skills);field(box,'cv_political_status','政治面貌（私有）','text',cv.political_status);field(box,'cv_education_note','院系 / 教育补充说明（私有）','textarea',cv.education_note);
     for(const [key,label] of [['internships','实习经历'],['practice','实践经历']]){
      const section=N('section',undefined,{id:'cv-'+key});section.append(N('h3',label+'（私有，选填）'));const rows=N('div');section.append(rows);
-     function add(entry={}){const row=N('fieldset');for(const [name,title] of [['organization','单位 / 组织'],['role','岗位 / 职务'],['period','起止时间'],['description','工作内容及成果']])field(row,name,title,name==='description'?'textarea':'text',entry[name]);row.append(C.button('移除此条',()=>{row.remove();dirty=true;}));rows.append(row);}
-     for(const entry of cv[key]||[])add(entry);section.append(C.button('添加'+label,()=>{add();dirty=true;}));box.append(section);
+     function add(entry={}){const row=N('fieldset');for(const [name,title] of [['organization','单位 / 组织'],['role','岗位 / 职务'],['period','起止时间'],['description','工作内容及成果']])field(row,name,title,name==='description'?'textarea':'text',entry[name]);row.append(C.button('移除此条',()=>{row.remove();dirty=true;profileDirty=true;}));rows.append(row);}
+     for(const entry of cv[key]||[])add(entry);section.append(C.button('添加'+label,()=>{add();dirty=true;profileDirty=true;}));box.append(section);
     }
    }
    const file=field(box,'avatar_file','头像','file');file.accept='.png,.jpg,.jpeg,.webp';
-   const status=N('p',avatar?'已保存头像，可上传替换。':'未设置头像',{class:'v10-file-status',role:'status'});box.append(C.button('上传头像',async()=>{const a=await upload(file,'avatar',status);avatar=a.id;}),status);
+   const status=N('p',avatar?'已保存头像，可上传替换。':'未设置头像',{class:'v10-file-status',role:'status'});box.append(C.button('上传头像',async()=>{const a=await upload(file,'avatar',status);avatar=a.id;profileDirty=true;}),status);
    const privacy=$('#privacy-fields');privacy.replaceChildren();
    for(const [key,label] of Object.entries({public_visible:'在官网展示个人主页与姓名',contact_visible:'公开已启用的联系邮箱',education_visible:'公开标记为公开的教育经历',alumni_visible:'公开已授权的毕业去向'}))check(privacy,key,label,data[key]);
    if(user.role==='CUSTOMER'&&!user.is_superuser&&!new URLSearchParams(location.search).has('member')){privacy.hidden=true;$('#privacy-note').textContent='Customer 资料和简历默认私有，不会在官网展示。Teacher / Student 身份由 Root 授予。';}
@@ -90,7 +90,7 @@
   function educationRow(row={}){
    const wrap=N('fieldset');wrap.append(N('legend','教育经历'));
    for(const [key,label,type] of [['school','学校','text'],['major','专业','text'],['degree','学历/学位','text'],['start_date','开始日期','date'],['end_date','结束日期','date']])field(wrap,key,label,type,row[key]);
-   check(wrap,'is_public','允许公开这条经历',row.is_public);wrap.append(C.button('移除这条经历',()=>{wrap.remove();dirty=true;}));$('#education-rows').append(wrap);
+   check(wrap,'is_public','允许公开这条经历',row.is_public);wrap.append(C.button('移除这条经历',()=>{wrap.remove();dirty=true;profileDirty=true;}));$('#education-rows').append(wrap);
   }
   function renderAlumni(alumni){
    let box=$('#alumni-fields');if(!box){box=N('fieldset',undefined,{id:'alumni-fields'});$('#education').after(box);}box.replaceChildren(N('h2','毕业去向'));
@@ -101,7 +101,7 @@
    if(selected.includes('alumni'))renderAlumni(fields.alumni);
   };
   const sections=[...document.querySelectorAll('.profile-section')];const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting)document.querySelectorAll('.v10-sidebar a').forEach(a=>a.setAttribute('aria-current',String(a.hash==='#'+entry.target.id)));},{rootMargin:'-10% 0px -65% 0px'});sections.forEach(s=>observer.observe(s));
-  $('#add-education').onclick=()=>{educationRow();dirty=true;};render();
+  $('#add-education').onclick=()=>{educationRow();dirty=true;profileDirty=true;};render();
   bind(f,async()=>{
    const payload={lock_version:data.lock_version,avatar_asset:avatar,education:[],research_areas:formValue(f,'research_areas').split(/[,，]/).map(v=>v.trim()).filter(Boolean)};
    for(const key of ['display_name','bio','public_member_status','public_contact_email','phone','internal_contact'])if(f.elements[key])payload[key]=formValue(f,key);
@@ -114,7 +114,7 @@
     if(!Object.values(values).some(Boolean))continue;
     payload.education.push({...values,start_date:values.start_date||null,end_date:values.end_date||null,is_public:row.querySelector('[name=is_public]').checked,position:index+1});
    }
-   data=await C.request(endpoint,{method:'PATCH',data:payload});render();markSaved();$('#identity-summary').textContent=(data.display_name||'姓名待完善')+' · '+user.identity;
+   data=await C.request(endpoint,{method:'PATCH',data:payload});render();profileDirty=false;markSaved();$('#identity-summary').textContent=(data.display_name||'姓名待完善')+' · '+user.identity;
   });
   $('#profile-history').onclick=async()=>{try{const rows=await C.request(ownURL('history'));renderHistory($('#history-list'),rows.results,async row=>{data=await C.request(ownURL('restore'),{method:'POST',data:{lock_version:data.lock_version,source_revision:row.id}});avatar=data.avatar_asset;render();});}catch(e){C.showError(e);}};
   const editingOther=new URLSearchParams(location.search).has('member');$('#security').hidden=editingOther;$('#resume-section').hidden=editingOther;if(!editingOther){await resume();if(['TEACHER','STUDENT'].includes(user.role)&&!user.is_superuser)await teamCV();}
@@ -187,19 +187,53 @@
   bind($('#grant-form'),async f=>{if(!item)throw {status:400,data:{detail:'先保存内容。'}};item=await C.request('/api/content/items/'+item.id+'/grants/',{method:'POST',data:{lock_version:item.lock_version,user_id:Number(formValue(f,'user_id')),revoke:f.elements.revoke.checked,can_edit:true}});markSaved('协作权限已更新。');});
  }
  async function resume(){
-  let current=null,asset=null;const form=$('#resume-form');const customer=user.role==='CUSTOMER'&&!user.is_superuser;
-  const submissions=N('div',undefined,{id:'resume-submissions',class:'v10-list'});form.after(submissions);if(customer)form.before(N('p','投递后，团队老师和Root可以查看本次简历和随投递提交的个人资料。请先保存资料并核对共享预览。',{id:'resume-submit-note'}));
-  async function loadSubmissions(){if(!customer)return;const rows=await C.request('/api/members/me/resume-submissions/');submissions.replaceChildren(N('h3','我的投递记录'));for(const row of rows.results){const article=N('article');article.append(N('p',row.title+' · '+(row.state==='SUBMITTED'?'已投递':'已撤回')));if(row.state==='SUBMITTED')article.append(C.button('撤回投递',async()=>{if(!confirm('撤回后老师将不能继续查看本次投递，是否继续？'))return;await C.request('/api/members/me/resume-submissions/'+row.id+'/withdraw/',{method:'POST',data:{}});await loadSubmissions();}));submissions.append(article);}}
-  function reset(){current=null;asset=null;form.reset();$('#resume-file-status').textContent='未选择简历文件。';dirty=false;}
-  async function load(){const data=await C.request('/api/members/me/resumes/'),box=$('#resume-list');box.replaceChildren();for(const r of data.results){const article=N('article');article.append(N('h3',r.title));if(r.intention)article.append(N('p',r.intention));article.append(C.button('编辑简历',()=>{current=r;asset=r.asset;for(const key of ['title','intention','introduction'])form.elements[key].value=r[key]||'';$('#resume-file-status').textContent=r.asset?'已保存简历文件，可上传替换。':'未设置简历文件。';dirty=false;form.scrollIntoView({behavior:'smooth',block:'start'});}));if(r.download_url)article.append(link(' 下载简历文件',r.download_url));if(customer)article.append(C.button('预览并投递简历',async()=>{
-    const saved=await C.request('/api/members/me/profile/');const preview=N('section',undefined,{class:'work-card'});preview.append(N('h3','本次共享资料预览'));
-    for(const [key,label] of Object.entries({display_name:'姓名',bio:'个人介绍',phone:'私人联系电话',internal_contact:'私人联系信息',education:'教育经历',research_areas:'研究方向',cv_private:'私有简历资料'})){const value=saved[key];if(value&&(!Array.isArray(value)||value.length))preview.append(N('p',label+'：'+displayValue(key,value)));}
-    if(saved.public_member_status==='ALUMNI'&&saved.alumni)preview.append(N('p','毕业去向：'+displayValue('alumni',saved.alumni)));
-    preview.append(N('p','简历：'+r.title+'。确认后，团队老师和Root可查看以上已保存资料及本次文件。未保存输入不包含在此次投递中。'));
-    preview.append(C.button('确认共享并投递',async()=>{await C.request('/api/members/me/resume-submissions/',{method:'POST',data:{resume_id:r.id,consent:true}});preview.remove();markSaved('已投递，老师端可查看站内通知。');await loadSubmissions();}),C.button('取消',()=>preview.remove()));article.append(preview);
-   }));box.append(article);}if(!data.count)box.append(N('p','还没有简历，可以在下方新建。'));}
-  $('#resume-new').onclick=reset;$('#upload-resume').onclick=async()=>{try{asset=(await upload($('#resume-file'),'resume',$('#resume-file-status'))).id;}catch(e){C.showError(e);}};
-  bind(form,async()=>{const payload={title:formValue(form,'title'),intention:formValue(form,'intention'),introduction:formValue(form,'introduction'),asset};if(current)payload.lock_version=current.lock_version;current=await C.request('/api/members/me/resumes/'+(current?current.id+'/':''),{method:current?'PATCH':'POST',data:payload});markSaved('简历已私密保存。');await load();});await load();await loadSubmissions();
+  let current=null,asset=null;
+  const form=$('#resume-form'),customer=user.role==='CUSTOMER'&&!user.is_superuser,previewBox=$('#resume-preview');
+  $('#resume-primary').hidden=!customer;
+  const submissions=N('div',undefined,{id:'resume-submissions',class:'v10-list'});previewBox.after(submissions);
+  if(customer)form.before(N('p','投递后，团队老师和Root可以查看本次简历和随投递提交的个人资料。请先保存资料并核对共享预览。',{id:'resume-submit-note',class:'v10-caption'}));
+  function status(text,error=false){$('#resume-status').textContent=text;$('#resume-status').dataset.kind=error?'error':'info';C.status(text,error);}
+  async function loadSubmissions(){
+   if(!customer)return;
+   const rows=await C.request('/api/members/me/resume-submissions/');submissions.replaceChildren(N('h3','我的投递记录'));
+   for(const row of rows.results){const article=N('article');article.append(N('p',row.title+' · '+(row.state==='SUBMITTED'?'已投递':'已撤回')));
+    if(row.state==='SUBMITTED')article.append(C.button('撤回投递',async()=>{if(!confirm('撤回后老师将不能继续查看本次投递，是否继续？'))return;await C.request('/api/members/me/resume-submissions/'+row.id+'/withdraw/',{method:'POST',data:{}});await loadSubmissions();status('已撤回投递，老师无法继续访问本次资料。');}));submissions.append(article);
+   }
+  }
+  async function preview(r){
+   if(profileDirty){status('请先保存个人资料，再预览投递；未保存输入已保留。',true);return;}
+   if(!r.asset){status('请先上传有效简历文件并保存，再进行投递。',true);return;}
+   const saved=await C.request('/api/members/me/profile/');
+   if(!saved.display_name?.trim()){status('请先保存个人资料中的姓名，再进行投递。',true);return;}
+   previewBox.replaceChildren();const preview=N('section',undefined,{class:'work-card'});preview.append(N('h3','本次共享资料预览'));
+   for(const [key,label] of Object.entries({display_name:'姓名',bio:'个人介绍',phone:'私人联系电话',internal_contact:'私人联系信息',education:'教育经历',research_areas:'研究方向',cv_private:'私有简历资料'})){const value=saved[key];if(value&&(!Array.isArray(value)||value.length))preview.append(N('p',label+'：'+displayValue(key,value)));}
+   if(saved.public_member_status==='ALUMNI'&&saved.alumni)preview.append(N('p','毕业去向：'+displayValue('alumni',saved.alumni)));
+   preview.append(N('p','简历：'+r.title+'。确认后，团队老师和Root可查看以上已保存资料及本次文件。'));
+   preview.append(C.button('确认共享并投递',async()=>{
+    if(profileDirty){status('请先保存个人资料并重新预览，再确认投递。',true);return;}
+    await C.request('/api/members/me/resume-submissions/',{method:'POST',data:{resume_id:r.id,consent:true}});previewBox.replaceChildren();status('已投递，团队老师可在站内通知查看。');await loadSubmissions();
+   }),C.button('取消',()=>previewBox.replaceChildren()));previewBox.append(preview);status('简历已保存，请核对共享资料后确认投递。');preview.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  function reset(){current=null;asset=null;form.reset();previewBox.replaceChildren();$('#resume-file-status').textContent='请上传文件后保存，上传成功不代表已投递。';dirty=profileDirty;status('正在新建简历。');}
+  async function load(){
+   const data=await C.request('/api/members/me/resumes/'),box=$('#resume-list');box.replaceChildren();
+   for(const r of data.results){const article=N('article');article.append(N('h3',r.title));if(r.intention)article.append(N('p',r.intention));
+    article.append(C.button('编辑简历',()=>{current=r;asset=r.asset;for(const key of ['title','intention','introduction'])form.elements[key].value=r[key]||'';$('#resume-file-status').textContent=r.asset?'已保存简历文件，可上传替换。':'未设置简历文件。';dirty=profileDirty;previewBox.replaceChildren();form.scrollIntoView({behavior:'smooth',block:'start'});}));
+    if(r.download_url)article.append(link('下载简历文件',r.download_url));if(customer)article.append(C.button('预览并投递简历',()=>preview(r)));box.append(article);
+   }
+   if(!data.count)box.append(N('p','尚无已保存简历；上传后可在下方直接保存并预览投递。',{class:'v10-caption'}));
+  }
+  $('#resume-new').onclick=reset;
+  $('#upload-resume').onclick=async()=>{try{asset=(await upload($('#resume-file'),'resume',$('#resume-file-status'))).id;previewBox.replaceChildren();status('文件已上传，尚未投递。');}catch(e){C.showError(e);status($('#business-status').textContent,true);}};
+  form.addEventListener('input',()=>previewBox.replaceChildren());
+  bind(form,async(_,submitter)=>{
+   const submitting=submitter?.id==='resume-primary';
+   if(submitting&&profileDirty){status('请先保存个人资料，再预览投递；未保存输入已保留。',true);return;}
+   if(submitting&&!asset){status('请先上传有效简历文件，再保存并预览投递。',true);return;}
+   const payload={title:formValue(form,'title'),intention:formValue(form,'intention'),introduction:formValue(form,'introduction'),asset};if(current)payload.lock_version=current.lock_version;
+   try{current=await C.request('/api/members/me/resumes/'+(current?current.id+'/':''),{method:current?'PATCH':'POST',data:payload});dirty=profileDirty;status('简历已私密保存，尚未投递。');await load();if(submitting)await preview(current);}
+   catch(e){C.showError(e);status($('#business-status').textContent,true);}
+  });await load();await loadSubmissions();
  }
  async function management(){
   if(!user.capabilities.can_manage_team){$('#business-content').hidden=true;C.status('仅 Teacher / Root 可以管理团队业务资料。',true);return;}
