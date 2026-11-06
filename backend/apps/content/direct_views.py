@@ -30,6 +30,7 @@ class SaveInput(StrictSerializer):
     lock_version=StrictInteger(min_value=0,required=False)
     authors=serializers.ListField(child=StrictInteger(min_value=1),max_length=100,required=False)
     authors_ordered=StrictBoolean(default=False)
+    cover_asset=serializers.UUIDField(allow_null=True,required=False)
     assets=serializers.ListField(child=serializers.UUIDField(),max_length=30,required=False)
     project_links=serializers.ListField(child=serializers.UUIDField(),max_length=30,required=False)
     visibility_scope=serializers.ChoiceField(choices=['PUBLIC','TEAM'],required=False)
@@ -43,13 +44,18 @@ def validated(cls,request):
 def item_data(item,actor):
     r=item.published_revision or (item.working_revision if services.editable(actor,item) else None)
     rev=revision_data(r)
+    if rev is not None:
+        from .public_serializers import cover_for_revision
+        cover=cover_for_revision(r)
+        rev['asset_details']=[{'id':str(link.asset_id),'name':link.asset.original_filename,'mime_type':link.asset.mime_type,'download_url':f'/api/assets/{link.asset_id}/download/'} for link in r.assets.select_related('asset').order_by('position')]
+    else:cover=None
     authors=[]
     if r:
         for c in r.contributions.select_related('contributor__member_profile__user','contributor__member_profile__published_revision','contributor__member_profile__draft_revision').all():
             profile=c.contributor.member_profile
             if profile and profile.user_id and profile.user.is_active and profile.user.role in ('TEACHER','STUDENT'):
                 authors.append({'user_id':profile.user_id,'display_name':services.name_for(profile),'position':c.position})
-    return {'id':str(item.pk),'kind':item.kind,'created_by':item.created_by_id,'lock_version':item.lock_version,'visibility_scope':item.visibility_scope,'featured':item.featured,'visible':item.visibility_gate,'archived':bool(item.archived_at),'can_edit':services.editable(actor,item),'revision':rev,'authors':authors,'legacy_working_revision':revision_data(item.working_revision) if services.editable(actor,item) else None}
+    return {'id':str(item.pk),'kind':item.kind,'created_by':item.created_by_id,'lock_version':item.lock_version,'visibility_scope':item.visibility_scope,'featured':item.featured,'cover_asset':str(cover.pk) if cover else None,'visible':item.visibility_gate,'archived':bool(item.archived_at),'can_edit':services.editable(actor,item),'revision':rev,'authors':authors,'legacy_working_revision':revision_data(item.working_revision) if services.editable(actor,item) else None}
 
 
 class TeamView(BusinessAPIView):
@@ -191,6 +197,12 @@ class Home(PublicView):
             def cards(kind,category=None):
                 selected=content_queryset().filter(kind=kind)
                 if category:selected=selected.filter(**{f'published_revision__{kind.lower()}__category':category})
-                return [{k:v for k,v in content_data(i).items() if k in ('id','kind','title','summary','date','assets')} for i in selected.order_by('-featured','-public_sort_date','id')[:4]]
-            result={'schema_version':'v10.1','as_of':timezone.now(),'stats':{'members':people.count(),'papers':qs.filter(kind='PAPER').count(),'projects':qs.filter(kind='PROJECT').count(),'competitions':qs.filter(kind='AWARD',published_revision__award__category='COMPETITION').count()},'research_areas':list(MemberResearchArea.objects.filter(revision_id__in=people.values('published_revision_id')).values_list('area__name',flat=True).distinct()[:8]),'news':cards('NEWS'),'papers':cards('PAPER'),'projects':cards('PROJECT'),'competitions':cards('AWARD','COMPETITION'),'members':[member_data(p) for p in people[:6]],'resources':cards('BLOG','RESOURCE')}
+                return [{k:v for k,v in content_data(i).items() if k in ('id','kind','title','summary','date','assets','cover')} for i in selected.order_by('-featured','-public_sort_date','id')[:4]]
+            slides=[]
+            for row in content_queryset().filter(kind__in=['ACTIVITY','NEWS']).order_by('-featured','-public_sort_date','id')[:12]:
+                public=content_data(row)
+                if public['cover']:
+                    slides.append({'id':public['id'],'title':public['title'],'image':public['cover'],'url':'/content.html?id='+public['id']})
+                if len(slides)>=5:break
+            result={'slides':slides,'schema_version':'v10.1','as_of':timezone.now(),'stats':{'members':people.count(),'papers':qs.filter(kind='PAPER').count(),'projects':qs.filter(kind='PROJECT').count(),'competitions':qs.filter(kind='AWARD',published_revision__award__category='COMPETITION').count()},'research_areas':list(MemberResearchArea.objects.filter(revision_id__in=people.values('published_revision_id')).values_list('area__name',flat=True).distinct()[:8]),'news':cards('NEWS'),'papers':cards('PAPER'),'projects':cards('PROJECT'),'competitions':cards('AWARD','COMPETITION'),'members':[member_data(p) for p in people[:6]],'resources':cards('BLOG','RESOURCE')}
             return Response(result)

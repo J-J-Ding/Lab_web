@@ -1,23 +1,13 @@
-/* Navbar search queries only approved API data; never scrapes/caches old HTML. */
-(function(){
-  'use strict';
-  const input=document.getElementById('globalSearch');if(!input)return;
-  const results=document.createElement('div');results.className='search-results';results.setAttribute('role','status');results.style.cssText='position:absolute;background:white;color:#24354b;max-width:90vw;max-height:60vh;overflow:auto;z-index:1000;padding:12px;box-shadow:0 4px 16px #0002';results.hidden=true;input.parentNode.append(results);
-  let timer,version=0;
-  input.addEventListener('input',()=>{
-    clearTimeout(timer);const current=++version;results.replaceChildren();results.hidden=true;
-    const q=input.value.trim();if(q.length<2)return;
-    timer=setTimeout(async()=>{
-      try{
-        const r=await fetch('/api/public/content/?q='+encodeURIComponent(q)+'&page_size=10',{cache:'no-store',credentials:'omit'});
-        if(!r.ok)throw new Error();const data=await r.json();if(current!==version)return;
-        results.replaceChildren();results.hidden=false;
-        for(const row of data.results){const line=document.createElement('p'),a=document.createElement('a');a.textContent=row.title;a.href='/content.html?id='+encodeURIComponent(row.id);line.append(a);results.append(line);}
-        if(!data.count)results.textContent='暂无匹配的公开内容';
-      }catch(_){if(current===version){results.textContent='公开搜索暂不可用';results.hidden=false;}}
-    },250);
-  });
-  if(input.value.trim())input.dispatchEvent(new Event('input'));
-  input.addEventListener('keydown',e=>{if(e.key==='Escape'){version++;results.hidden=true;}});
-  addEventListener('pagehide',()=>{version++;results.replaceChildren();});
+(() => {
+ 'use strict';const input=document.getElementById('globalSearch'),form=document.getElementById('global-search-form');if(!input||!form)return;
+ const results=document.createElement('div');results.className='search-results';results.setAttribute('role','status');results.hidden=true;form.append(results);
+ let timer,ticket=0;const node=(tag,text)=>{const e=document.createElement(tag);e.textContent=text;return e;};
+ async function search(){const q=input.value.trim(),version=++ticket;results.replaceChildren();if(!q){results.hidden=true;return;}results.hidden=false;results.textContent='正在搜索…';
+  try{const query=new URLSearchParams({q,page_size:'8'}),responses=await Promise.all(['/api/public/content/','/api/public/members/'].map(path=>fetch(path+'?'+query,{credentials:'omit',cache:'no-store'})));if(responses.some(r=>!r.ok))throw Error();const [content,members]=await Promise.all(responses.map(r=>r.json()));if(ticket!==version)return;results.replaceChildren();
+   for(const [label,data,isMember] of [['科研与动态',content,false],['团队成员',members,true]]){if(!data.count)continue;results.append(node('strong',label+' · '+data.count));for(const row of data.results){const a=node('a',row.title||row.display_name);a.href=isMember?'/member.html?slug='+encodeURIComponent(row.slug):'/content.html?id='+row.id;results.append(a);}}
+   if(!content.count&&!members.count)results.append(node('p','没有找到匹配的公开内容或成员。'));
+  }catch(_){if(ticket===version)results.textContent='搜索暂不可用，请稍后重试。';}
+ }
+ input.addEventListener('input',()=>{clearTimeout(timer);ticket++;timer=setTimeout(search,250);if(!input.value.trim()){results.hidden=true;results.replaceChildren();}});
+ form.addEventListener('submit',e=>{e.preventDefault();clearTimeout(timer);search();});input.addEventListener('keydown',e=>{if(e.key==='Escape'){ticket++;results.hidden=true;}});document.addEventListener('click',e=>{if(!form.contains(e.target))results.hidden=true;});
 })();

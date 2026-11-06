@@ -36,7 +36,7 @@ def params(request,allowed):
     for key in p:
         if len(p[key])>(1000 if key=='path' else 100):raise ValidationError({key:'Parameter too long.'})
         if len(p.getlist(key))!=1:raise ValidationError('Duplicate query parameter.')
-    if 'q' in p and not 2<=len(p['q'].strip())<=100:raise ValidationError({'q':'Use 2–100 characters.'})
+    if 'q' in p and not 1<=len(p['q'].strip())<=100:raise ValidationError({'q':'Use 1–100 characters.'})
     for key in ('page','page_size'):
         if key in p and (not re.fullmatch(r'[0-9]+',p[key]) or not 1<=int(p[key])<=1000000):raise ValidationError({key:'Positive integer required.'})
     if 'year' in p and (not re.fullmatch(r'[0-9]+',p['year']) or not 1900<=int(p['year'])<=2200):raise ValidationError({'year':'Invalid year.'})
@@ -95,9 +95,10 @@ class Outputs(PublicView):
         return paged(request,content_filter(qs,params(request,{'kind','year'})),content_data)
 class Graduates(PublicView):
     def get(self,request):
-        p=params(request,{'year','degree'});qs=member_queryset().filter(alumni_visible=True,published_revision__public_member_status='ALUMNI',published_revision__alumni__is_public=True)
-        if 'year' in p:qs=qs.filter(published_revision__alumni__graduation_year=int(p['year']))
-        if 'degree' in p:qs=qs.filter(published_revision__alumni__degree=p['degree'])
+        p=params(request,{'year','degree','q'});qs=member_queryset().filter(published_revision__public_member_status='ALUMNI')
+        if 'year' in p:qs=qs.filter(alumni_visible=True,published_revision__alumni__is_public=True,published_revision__alumni__graduation_year=int(p['year']))
+        if 'q' in p:qs=qs.filter(Q(published_revision__display_name__icontains=p['q'])|Q(published_revision__bio__icontains=p['q']))
+        if 'degree' in p:qs=qs.filter(alumni_visible=True,published_revision__alumni__is_public=True,published_revision__alumni__degree=p['degree'])
         return paged(request,qs,member_data)
 class FixedPage(PublicView):
     def get(self,request,key):

@@ -3,8 +3,15 @@ from .models import DETAIL_MODELS
 
 
 def asset_data(asset):
-    if asset.scan_status!='CLEAN' or asset.visibility!='PUBLIC' or (asset.expires_at and asset.expires_at<=timezone.now()):return None
+    if asset.scan_status!='CLEAN' or asset.deletion_requested_at or asset.visibility!='PUBLIC' or (asset.expires_at and asset.expires_at<=timezone.now()):return None
     return {'id':str(asset.pk),'mime_type':asset.mime_type,'size':asset.size,'url':f'/api/public/assets/{asset.pk}/'}
+
+
+def cover_for_revision(revision):
+    if not revision:return None
+    links=sorted(revision.assets.all(),key=lambda link:(link.position,str(link.pk)))
+    eligible=[link for link in links if link.asset.mime_type.startswith('image/') and link.asset.scan_status=='CLEAN' and not link.asset.deletion_requested_at and (not link.asset.expires_at or link.asset.expires_at>timezone.now())]
+    return next((link.asset for link in eligible if link.purpose=='cover'),next((link.asset for link in eligible if link.purpose=='image'),None))
 
 
 def member_data(profile):
@@ -35,7 +42,8 @@ def content_data(item):
         name=p.published_revision.display_name if public else ('团队成员' if p and p.user_id else c.approved_display_name)
         people.append({'name':name,'affiliation':c.approved_affiliation,'position':c.position,
             'role':c.contribution_role,'is_corresponding':c.is_corresponding,'member_slug':p.published_revision.slug if public else None})
-    return {'id':str(item.pk),'kind':item.kind,'revision':str(r.pk),'title':r.title,'summary':r.summary,
+    cover=cover_for_revision(r)
+    return {'cover':asset_data(cover) if cover else None,'id':str(item.pk),'kind':item.kind,'revision':str(r.pk),'title':r.title,'summary':r.summary,
         'date':item.public_date,'detail':data,'contributions':people,
         'projects':[{'id':str(l.target_project_id),'title':l.target_project.published_revision.title} for l in r.project_links.all()],
         'assets':[d for link in r.assets.all() if (d:=asset_data(link.asset))]}

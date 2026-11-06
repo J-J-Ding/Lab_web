@@ -118,9 +118,16 @@ def save(request, data, pk=None, source_id=None):
             RevisionContribution.objects.create(revision=revision,**{f:getattr(link,f) for f in ('contributor_id','contribution_role','position','is_corresponding','approved_display_name','approved_affiliation')})
     previous=list(source.assets.values_list('asset_id',flat=True)) if source else []
     ids=data.get('assets',previous);assets=asset_check(actor,ids,previous)
+    from .public_serializers import cover_for_revision
+    previous_cover=cover_for_revision(source) if source else None
+    cover=data.get('cover_asset',previous_cover.pk if previous_cover else None)
+    if cover is not None and (cover not in assets or not assets[cover].mime_type.startswith('image/')):
+        raise ValidationError({'cover_asset':'Select an uploaded image attached to this record.'})
+    # New records without an explicit selection use their first image; explicit null clears it.
+    if not source and 'cover_asset' not in data:cover=next((aid for aid in ids if assets[aid].mime_type.startswith('image/')),None)
     for position,aid in enumerate(ids,1):
         asset=assets[aid];asset.visibility='PUBLIC' if data.get('visibility_scope',item.visibility_scope)=='PUBLIC' else 'PRIVATE';asset.expires_at=None;asset.save(update_fields=['visibility','expires_at'])
-        RevisionAsset.objects.create(revision=revision,asset=asset,purpose=asset.purpose,position=position)
+        RevisionAsset.objects.create(revision=revision,asset=asset,purpose='cover' if aid==cover else 'gallery' if asset.mime_type.startswith('image/') else asset.purpose,position=position)
     projects=data.get('project_links',list(source.project_links.values_list('target_project_id',flat=True)) if source else [])
     if len(projects)!=len(set(projects)) or ContentItem.objects.filter(pk__in=projects,kind='PROJECT').exclude(pk=item.pk).count()!=len(projects):raise ValidationError({'project_links':'Select existing projects.'})
     for project in projects:ContentProjectLink.objects.create(source_revision=revision,target_project_id=project)

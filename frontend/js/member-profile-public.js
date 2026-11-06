@@ -14,7 +14,7 @@
     const show=async()=>{
       const rows=await P.get('/api/public/members/'+encodeURIComponent(slug)+`/achievements/?page=${page}`);if(!current())return;
       outputs.replaceChildren(P.node('h2','参与成果'));
-      for(const row of rows.results){const line=P.node('p');line.append(P.link(row.title,'/content.html?id='+row.id));outputs.append(line);}
+      const grid=P.node('div',undefined,'public-card-grid');for(const row of rows.results)grid.append(window.renderPublicCard(row));outputs.append(grid);
       if(!rows.count)outputs.append(P.node('p','暂无公开成果'));
       for(const [text,ok,delta] of [['上一页',rows.previous,-1],['下一页',rows.next,1]]){const b=P.node('button',text);b.disabled=!ok;b.onclick=()=>{page+=delta;show().catch(e=>{outputs.textContent=e.message;});};outputs.append(b);}
     };await show();P.ready();

@@ -17,6 +17,7 @@ from .permissions import require_management
 
 
 class ProfileInput(DraftInput):
+    public_member_status=serializers.ChoiceField(choices=['ACTIVE','ALUMNI','LEFT'],required=False)
     public_visible=StrictBoolean(required=False)
     contact_visible=StrictBoolean(required=False)
     education_visible=StrictBoolean(required=False)
@@ -100,7 +101,7 @@ def save_profile(request,data,pk=None,source_id=None):
         if image.owner_id!=actor.pk and image.pk!=previous:raise PermissionDenied()
         if image.expires_at and image.expires_at<=timezone.now():raise ValidationError({'avatar_asset':'Image expired; upload again.'})
         image.expires_at=None;image.visibility='PUBLIC' if profile.public_visible else 'PRIVATE';image.save(update_fields=['visibility','expires_at'])
-    revision=MemberRevision.objects.create(profile=profile,number=(profile.revisions.aggregate(n=Max('number'))['n'] or 0)+1,base_published_revision=profile.published_revision,member_kind=owner.role if owner.role in ('TEACHER','STUDENT','CUSTOMER') else 'TEACHER',public_member_status=source.public_member_status if source else 'ACTIVE',edited_by=actor,**values)
+    revision=MemberRevision.objects.create(profile=profile,number=(profile.revisions.aggregate(n=Max('number'))['n'] or 0)+1,base_published_revision=profile.published_revision,member_kind=owner.role if owner.role in ('TEACHER','STUDENT','CUSTOMER') else 'TEACHER',public_member_status=data.get('public_member_status',source.public_member_status if source else 'ACTIVE'),edited_by=actor,**values)
     education=data.get('education',list(source.education.values('school','major','degree','start_date','end_date','is_public','position')) if source else [])
     if not private_allowed:
         old_public={e['school'] for e in (list(source.education.filter(is_public=True).values('school')) if source else [])}

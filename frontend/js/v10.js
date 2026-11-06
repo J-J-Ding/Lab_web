@@ -48,8 +48,8 @@
   $('#identity-summary').textContent=(data.display_name||'请完善你的姓名')+' · '+user.identity;
   function render(){
    box.replaceChildren();
-   field(box,'display_name','姓名','text',data.display_name);field(box,'bio','个人简介','textarea',data.bio);
-   field(box,'research_areas','研究方向（用逗号分隔）','text',(data.research_areas||[]).join('，'));
+   field(box,'display_name','姓名','text',data.display_name);field(box,'public_member_status','成员状态','select',data.public_member_status||'ACTIVE',false,[['ACTIVE','在读/在岗'],['ALUMNI','已毕业'],['LEFT','已离开']]);field(box,'bio','个人简介','textarea',data.bio);
+   $('#research-fields').replaceChildren();field($('#research-fields'),'research_areas','研究方向（用逗号分隔）','text',(data.research_areas||[]).join('，'));
    field(box,'public_contact_email','公开联系邮箱','email',data.public_contact_email);
    check(box,'public_contact_enabled','允许展示上述公开联系邮箱',data.public_contact_enabled);
    if('phone' in data)field(box,'phone','私人联系电话（不公开）','tel',data.phone);
@@ -70,17 +70,18 @@
    check(wrap,'is_public','允许公开这条经历',row.is_public);wrap.append(C.button('移除这条经历',()=>{wrap.remove();dirty=true;}));$('#education-rows').append(wrap);
   }
   function renderAlumni(alumni){
-   let box=$('#alumni-fields');if(!box){box=N('fieldset',undefined,{id:'alumni-fields'});$('#education').after(box);}box.replaceChildren(N('legend','毕业去向 · 选填'));
+   let box=$('#alumni-fields');if(!box){box=N('fieldset',undefined,{id:'alumni-fields'});$('#education').after(box);}box.replaceChildren(N('h2','毕业去向'));
    field(box,'graduation_year','毕业年份','number',alumni?.graduation_year);field(box,'alumni_degree','学历/学位','text',alumni?.degree);field(box,'destination_type','去向类型','select',alumni?.destination_type||'OTHER',false,[['OTHER','其他'],['WORK','工作'],['STUDY','继续深造']]);field(box,'organization','去向单位','text',alumni?.organization);check(box,'alumni_is_public','允许公开这条毕业信息',alumni?.is_public);
   }
   fillProfileCandidate=(fields,selected)=>{
    if(selected.includes('education')&&Array.isArray(fields.education)){$('#education-rows').replaceChildren();for(const row of fields.education)educationRow(row);}
    if(selected.includes('alumni'))renderAlumni(fields.alumni);
   };
+  const sections=[...document.querySelectorAll('.profile-section')];const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting)document.querySelectorAll('.v10-sidebar a').forEach(a=>a.setAttribute('aria-current',String(a.hash==='#'+entry.target.id)));},{rootMargin:'-10% 0px -65% 0px'});sections.forEach(s=>observer.observe(s));
   $('#add-education').onclick=()=>{educationRow();dirty=true;};render();
   bind(f,async()=>{
    const payload={lock_version:data.lock_version,avatar_asset:avatar,education:[],research_areas:formValue(f,'research_areas').split(/[,，]/).map(v=>v.trim()).filter(Boolean)};
-   for(const key of ['display_name','bio','public_contact_email','phone','internal_contact'])if(f.elements[key])payload[key]=formValue(f,key);
+   for(const key of ['display_name','bio','public_member_status','public_contact_email','phone','internal_contact'])if(f.elements[key])payload[key]=formValue(f,key);
    const year=formValue(f,'graduation_year');payload.alumni=year?{graduation_year:Number(year),degree:formValue(f,'alumni_degree'),destination_type:formValue(f,'destination_type'),organization:formValue(f,'organization'),is_public:f.elements.alumni_is_public.checked}:null;
    payload.public_contact_enabled=f.elements.public_contact_enabled.checked;
    for(const key of ['public_visible','contact_visible','education_visible','alumni_visible'])if(!$('#privacy-fields').hidden)payload[key]=f.elements[key].checked;
@@ -97,23 +98,23 @@
  }
  async function workspace(){
   if(!user.capabilities.can_edit_content){C.status('Customer 可在个人资料和简历页填写信息，团队内容由 Teacher / Student 编辑。');$('#business-content').hidden=true;return;}
-  const form=$('#workspace-filter');form.elements.mine.checked=new URLSearchParams(location.search).get('mine')==='1';let page=1;
+  const form=$('#workspace-filter');form.classList.add('list-toolbar');const reset=N('button','重置',{type:'reset'});form.append(reset);const initial=new URLSearchParams(location.search);form.elements.mine.checked=initial.get('mine')==='1';form.elements.kind.value=initial.get('kind')||'';form.elements.q.value=initial.get('q')||'';let page=Math.max(1,Number(initial.get('page'))||1);let loadTicket=0;
   async function load(){
-   const query=new URLSearchParams({page});for(const key of ['kind','q'])if(formValue(form,key))query.set(key,formValue(form,key));if(form.elements.mine.checked)query.set('mine','1');
-   const data=await C.request('/api/content/items/?'+query),box=$('#workspace-list');box.replaceChildren();
-   for(const row of data.results){const article=N('article'),r=row.revision;article.append(N('h3',r?.title||'历史工作稿'),N('p',labels[row.kind]+' · '+(row.visibility_scope==='TEAM'?'团队可见':'公开网站')+(row.visible?'':' · 已撤下')));if(row.can_edit)article.append(link('编辑内容 →','/content-editor.html?id='+encodeURIComponent(row.id)));else if(row.visibility_scope==='PUBLIC'&&row.visible)article.append(link('查看公开详情 →','/content.html?id='+encodeURIComponent(row.id)));else article.append(C.button('查看团队内容',()=>{const details=N('div');if(r?.summary)details.append(N('p',r.summary));for(const [key,value] of Object.entries(r?.detail||{}))if(value!==null&&value!==''&&value!==undefined)details.append(N('p',(schemas[row.kind]?.find(f=>f[0]===key)?.[1]||key)+'：'+value));article.append(details);}));box.append(article);}
+   const ticket=++loadTicket;const query=new URLSearchParams({page});for(const key of ['kind','q'])if(formValue(form,key))query.set(key,formValue(form,key));if(form.elements.mine.checked)query.set('mine','1');
+   history.replaceState({},'',location.pathname+'?'+query);const data=await C.request('/api/content/items/?'+query);if(ticket!==loadTicket)return;const box=$('#workspace-list');box.replaceChildren();
+   for(const row of data.results){const article=N('article'),r=row.revision;if(row.cover_asset){const img=N('img',undefined,{src:'/api/assets/'+row.cover_asset+'/download/',alt:'内容封面',class:'record-thumbnail',loading:'lazy'});article.append(img);}article.append(N('h3',r?.title||'历史工作稿'));if(r?.summary)article.append(N('p',r.summary));article.append(N('p',labels[row.kind]+' · '+(row.visibility_scope==='TEAM'?'团队可见':'公开网站')+(row.visible?'':' · 已撤下')));if(row.can_edit)article.append(link('编辑内容 →','/content-editor.html?id='+encodeURIComponent(row.id)));else if(row.visibility_scope==='PUBLIC'&&row.visible)article.append(link('查看公开详情 →','/content.html?id='+encodeURIComponent(row.id)));else article.append(C.button('查看团队内容',()=>{const details=N('div');if(r?.summary)details.append(N('p',r.summary));for(const [key,value] of Object.entries(r?.detail||{}))if(value!==null&&value!==''&&value!==undefined)details.append(N('p',(schemas[row.kind]?.find(f=>f[0]===key)?.[1]||key)+'：'+value));article.append(details);}));box.append(article);}
    if(!data.count)box.append(N('p','暂无符合条件的内容。','empty-note'));
    $('#workspace-pages').replaceChildren();for(const [text,exists,delta] of [['上一页',data.previous,-1],['下一页',data.next,1]]){const b=C.button(text,async()=>{page+=delta;await load();});b.disabled=!exists;$('#workspace-pages').append(b);}
    C.status('共 '+data.count+' 条内容');
   }
-  bind(form,async()=>{page=1;await load();});await load();
+  form.onreset=()=>{setTimeout(()=>{page=1;load().catch(C.showError);},0);};bind(form,async()=>{page=1;await load();});await load();
  }
  async function editor(){
   if(!user.capabilities.can_edit_content){$('#business-content').hidden=true;C.status('仅 Teacher / Student 可以编辑团队内容。',true);return;}
-  const params=new URLSearchParams(location.search),id=params.get('id'),form=$('#direct-content-form');let item=id?await C.request('/api/content/items/'+encodeURIComponent(id)+'/'):null,authors=[],ordered=false,attachments=[],directory=[];
+  const params=new URLSearchParams(location.search),id=params.get('id'),form=$('#direct-content-form');let item=id?await C.request('/api/content/items/'+encodeURIComponent(id)+'/'):null,authors=[],ordered=false,attachments=[],directory=[],cover=null;
   if(item&&!item.can_edit){$('#business-content').hidden=true;C.status('你可以查看该内容，但没有编辑授权。',true);return;}
   const source=item?.revision;
-  if(item){form.elements.kind.value=item.kind;form.elements.kind.disabled=true;form.elements.title.value=source?.title||'';form.elements.summary.value=source?.summary||'';form.elements.visibility_scope.value=item.visibility_scope;form.elements.featured.checked=item.featured;authors=[...item.authors];attachments=(source?.assets||[]).map(id=>({id,name:'已保存附件'}));$('#content-history').hidden=false;}
+  if(item){form.elements.kind.value=item.kind;form.elements.kind.disabled=true;form.elements.title.value=source?.title||'';form.elements.summary.value=source?.summary||'';form.elements.visibility_scope.value=item.visibility_scope;form.elements.featured.checked=item.featured;authors=[...item.authors];attachments=(source?.assets||[]).map(id=>source.asset_details?.find(a=>a.id===id)||({id,name:'已保存附件'}));cover=item.cover_asset||null;$('#content-history').hidden=false;}
   else if(params.get('kind')&&schemas[params.get('kind')])form.elements.kind.value=params.get('kind');
   function details(values={}){const box=$('#detail-fields');box.replaceChildren();for(const [key,label,type='text',options] of schemas[form.elements.kind.value]){let value=values[key];if(type==='datetime-local'&&value){const d=new Date(value);value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}field(box,'detail_'+key,label,type,value,false,options);}$('#author-fieldset').hidden=form.elements.kind.value==='LAB_PAGE';}
   details(source?.detail);form.elements.kind.onchange=()=>{details();authors=[];renderAuthors();dirty=true;};
@@ -122,12 +123,17 @@
   function renderAuthors(){const box=$('#author-selected');box.replaceChildren();for(const [index,p] of authors.entries()){const row=N('div',undefined,{class:'member-chip'});row.append(N('strong',p.display_name));for(const [text,delta] of [['上移',-1],['下移',1]]){const b=C.button(text,()=>{const next=index+delta;[authors[index],authors[next]]=[authors[next],authors[index]];ordered=true;dirty=true;renderAuthors();});b.disabled=index+delta<0||index+delta>=authors.length;row.append(b);}row.append(C.button('移除',()=>{authors=authors.filter(a=>a.user_id!==p.user_id);dirty=true;renderAuthors();}));box.append(row);}}
   $('#add-author').onclick=()=>{const id=Number($('#author-choice').value),person=directory.find(p=>p.user_id===id);if(person?.selectable&&!authors.some(a=>a.user_id===id)){authors.push(person);dirty=true;renderAuthors();}};renderAuthors();
   if((source?.contributions||[]).length>authors.length)$('#legacy-author-note').textContent='包含历史署名，系统将保留其历史信息；新增关联只接受注册团队成员。';
-  function renderAttachments(){const box=$('#attachment-list');box.replaceChildren();for(const a of attachments){const row=N('div',undefined,{class:'member-chip'});row.append(N('strong',a.name),C.button('移除',()=>{attachments=attachments.filter(v=>v!==a);dirty=true;renderAttachments();}));box.append(row);}}
+  const coverBox=N('section',undefined,{class:'cover-uploader'}),preview=N('div'),coverControls=N('div');
+  coverControls.append(N('h2','封面图'),N('p','选填 · 用于列表、首页和详情展示',{class:'v10-caption'}));
+  const coverInput=N('input',undefined,{type:'file',id:'cover-file',accept:'.png,.jpg,.jpeg,.webp','aria-label':'选择封面图片'}),coverStatus=N('p',undefined,{class:'v10-file-status',role:'status'});
+  function showCover(){preview.replaceChildren();if(cover){const img=N('img',undefined,{src:'/api/assets/'+cover+'/download/',alt:'当前封面预览'});preview.append(img);}else preview.append(N('div','未设置封面',{class:'cover-placeholder'}));}
+  coverControls.append(coverInput,C.button('上传封面',async()=>{const asset=await upload(coverInput,'image',coverStatus);attachments.push(asset);cover=asset.id;showCover();renderAttachments();}),C.button('移除封面',()=>{cover=null;dirty=true;showCover();}),coverStatus);coverBox.append(preview,coverControls);$('#detail-fields').after(coverBox);showCover();
+  function renderAttachments(){const box=$('#attachment-list');box.replaceChildren();for(const a of attachments){const row=N('div',undefined,{class:'member-chip'});row.append(N('strong',a.name),C.button('移除',()=>{attachments=attachments.filter(v=>v!==a);if(cover===a.id){cover=null;showCover();}dirty=true;renderAttachments();}));box.append(row);}}
   $('#upload-content').onclick=async()=>{try{const input=$('#content-file'),purpose=input.files[0]?.type.startsWith('image/')?'image':'attachment';const asset=await upload(input,purpose,$('#content-file-status'));attachments.push(asset);renderAttachments();}catch(e){C.showError(e);}};renderAttachments();
   const projects=await C.request('/api/content/items/?kind=PROJECT&page_size=100');for(const p of projects.results){if(p.id===id)continue;const option=N('option',p.revision?.title||'项目',{value:p.id});option.selected=(source?.project_links||[]).includes(p.id);$('#project-choice').append(option);}
   bind(form,async()=>{
    const detail={};for(const [key,,type='text'] of schemas[form.elements.kind.value]){const value=formValue(form,'detail_'+key);detail[key]=type==='date'||type==='datetime-local'||type==='number'?(value?(type==='datetime-local'?new Date(value).toISOString():type==='number'?value:value):null):value;}
-   const payload={title:formValue(form,'title'),summary:formValue(form,'summary'),detail,visibility_scope:formValue(form,'visibility_scope'),authors:authors.map(p=>p.user_id),authors_ordered:ordered,assets:attachments.map(a=>a.id),project_links:[...$('#project-choice').selectedOptions].map(o=>o.value)};
+   const payload={title:formValue(form,'title'),summary:formValue(form,'summary'),detail,visibility_scope:formValue(form,'visibility_scope'),authors:authors.map(p=>p.user_id),authors_ordered:ordered,assets:attachments.map(a=>a.id),cover_asset:cover,project_links:[...$('#project-choice').selectedOptions].map(o=>o.value)};
    if(user.capabilities.can_manage_team)payload.featured=form.elements.featured.checked;
    if(item)payload.lock_version=item.lock_version;else payload.kind=form.elements.kind.value;
    item=await C.request(item?'/api/content/items/'+item.id+'/':'/api/content/items/',{method:item?'PATCH':'POST',data:payload});markSaved();
@@ -146,8 +152,9 @@
  }
  async function management(){
   if(!user.capabilities.can_manage_team){$('#business-content').hidden=true;C.status('仅 Teacher / Root 可以管理团队业务资料。',true);return;}
+  let directoryTicket=0;
   async function directory(q=''){
-   const data=await C.request('/api/members/directory/?page_size=100&q='+encodeURIComponent(q));$('#directory-list').replaceChildren();for(const p of data.results){const article=N('article');article.append(N('h3',p.display_name||'姓名待完善'),N('p',p.identity),link('编辑业务资料 →','/profile.html?member='+encodeURIComponent(p.profile_id)));$('#directory-list').append(article);}
+   const ticket=++directoryTicket;const data=await C.request('/api/members/directory/?page_size=100&q='+encodeURIComponent(q));if(ticket!==directoryTicket)return;$('#directory-list').replaceChildren();for(const p of data.results){const article=N('article');article.append(N('h3',p.display_name||'姓名待完善'),N('p',p.identity),link('编辑业务资料 →','/profile.html?member='+encodeURIComponent(p.profile_id)));$('#directory-list').append(article);}
    if(!data.count)$('#directory-list').append(N('p','暂无团队成员，身份由 Root 授予。'));
   }
   bind($('#directory-filter'),async f=>directory(formValue(f,'q')));await directory();

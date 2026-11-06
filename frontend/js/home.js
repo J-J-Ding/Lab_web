@@ -7,7 +7,7 @@
   if(!rows.length){box.append(node('p','暂无公开内容','empty-note'));return;}
   for(const row of rows){
    const article=node('article',undefined,'home-card'),a=node('a');a.href=member?'/member.html?slug='+encodeURIComponent(row.slug):'/content.html?id='+encodeURIComponent(row.id);
-   const image=member?row.avatar:(row.assets||[]).find(a=>a.mime_type.startsWith('image/'));
+   const image=member?row.avatar:row.cover;
    if(image?.url?.startsWith('/api/public/assets/')){const img=node('img');img.src=image.url;img.alt='';img.loading='lazy';a.append(img);}
    a.append(node('span',label,'kind-tag'),node('h3',member?row.display_name:row.title));article.append(a);
    const text=member?row.bio:row.summary;if(text)article.append(node('p',text.slice(0,100)+(text.length>100?'…':'')));
@@ -18,6 +18,7 @@
   $('home-status').textContent='正在读取团队公开数据…';$('home-retry').hidden=true;
   try{
    const response=await fetch('/api/public/home/',{credentials:'omit',cache:'no-store',headers:{Accept:'application/json'}});if(!response.ok)throw Error();const data=await response.json();
+   window.mountTeamCarousel?.($('home-visual'),data.slides);
    for(const [key,label] of Object.entries({news:'团队新闻',papers:'发表论文',projects:'科研项目',competitions:'竞赛成果',resources:'学习资料'}))cards('home-'+key,data[key],label);
    cards('home-members',data.members,'团队成员',true);
    $('home-research').replaceChildren(...data.research_areas.map(text=>node('span',text)));

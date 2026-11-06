@@ -39,7 +39,7 @@
       document.getElementById('public-retry').hidden=false;
     }
   }
-  function ready(count) {status.textContent=count===0?'暂无已发布资料':count===undefined?'已加载公开资料':`共 ${count} 项公开资料`;}
+  function ready(count) {status.textContent=count===0?'共 0 项符合条件的公开资料':count===undefined?'已加载公开资料':`共 ${count} 项公开资料`;}
   window.LabPublic={get,node,link,run,ready,labels,status,content};
   addEventListener('pagehide',()=>{generation++;content.replaceChildren();});
   addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
