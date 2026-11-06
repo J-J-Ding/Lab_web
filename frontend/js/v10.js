@@ -214,6 +214,7 @@
   $('#content-history').onclick=async()=>{try{await pagedHistory($('#history-list'),'/api/content/items/'+item.id+'/history/',async row=>{item=await C.request('/api/content/items/'+item.id+'/restore/',{method:'POST',data:{lock_version:item.lock_version,source_revision:row.id}});dirty=false;location.reload();});}catch(e){C.showError(e);}};
   $('#grant-section').hidden=!item||!user.capabilities.can_manage_team;
   bind($('#grant-form'),async f=>{if(!item)throw {status:400,data:{detail:'先保存内容。'}};item=await C.request('/api/content/items/'+item.id+'/grants/',{method:'POST',data:{lock_version:item.lock_version,user_id:Number(formValue(f,'user_id')),revoke:f.elements.revoke.checked,can_edit:true}});markSaved('协作权限已更新。');});
+  form.dataset.ready='true';
  }
  async function resume(){
   let current=null,asset=null,resumePage=1,submissionPage=1;
@@ -246,13 +247,13 @@
   }
   function reset(){current=null;asset=null;form.reset();previewBox.replaceChildren();$('#resume-file-status').textContent='请上传文件后保存，上传成功不代表已投递。';dirty=profileDirty;status('正在新建简历。');}
   async function load(){
-   const data=await C.request('/api/members/me/resumes/?page='+resumePage+'&page_size=5'),box=$('#resume-list');box.replaceChildren();
+   let data;try{data=await C.request('/api/members/me/resumes/?page='+resumePage+'&page_size=5');}catch(e){if(e.status===404&&resumePage>1){resumePage--;return load();}throw e;}const box=$('#resume-list');box.replaceChildren();
    for(const r of data.results){const article=N('article');article.append(N('h3',r.title));
     article.append(C.button('编辑简历',()=>{current=r;asset=r.asset;for(const key of ['title','introduction'])form.elements[key].value=r[key]||'';$('#resume-file-status').textContent=r.asset?'已保存简历文件，可上传替换。':'未设置简历文件。';dirty=profileDirty;previewBox.replaceChildren();form.scrollIntoView({behavior:'smooth',block:'start'});}));
-    if(r.download_url)article.append(link('下载简历文件',r.download_url));if(customer)article.append(C.button('预览并投递简历',()=>preview(r)));box.append(article);
+    if(r.download_url)article.append(link('下载简历文件',r.download_url));if(customer)article.append(C.button('预览并投递简历',()=>preview(r)));const remove=C.button('删除简历',async()=>{if(!confirm('确定删除“'+r.title+'”？相关投递将撤回，不再被其他简历使用的文件将删除，此操作无法恢复。'))return;await C.request('/api/members/me/resumes/'+r.id+'/delete/',{method:'POST',data:{lock_version:r.lock_version}});if(current?.id===r.id)reset();previewBox.replaceChildren();await load();await loadSubmissions();status('简历已删除，相关投递已撤回。');});remove.classList.add('delete-resume');article.append(remove);box.append(article);
    }
    pager(box,data,resumePage,next=>{resumePage=next;return load();});
-   if(!data.count)box.append(N('p','尚无已保存简历；上传后可在下方直接保存并预览投递。',{class:'v10-caption'}));
+   if(!data.count)box.append(N('p','尚无已保存简历；请先在上方上传并保存。',{class:'v10-caption'}));
   }
   $('#resume-new').onclick=reset;
   $('#upload-resume').onclick=async()=>{const button=$('#upload-resume');button.disabled=true;try{asset=(await upload($('#resume-file'),'resume',$('#resume-file-status'))).id;previewBox.replaceChildren();status('文件已上传，尚未投递。');}catch(e){C.showError(e);status($('#business-status').textContent,true);}finally{button.disabled=false;}};
@@ -292,7 +293,7 @@
     const row=N('tr'),username=N('td',account.username),name=N('td',account.display_name||'姓名待完善'),identity=N('td'),password=N('td'),form=N('form',undefined,{class:'v10-form account-role-form'});
     if(account.is_superuser)form.append(N('strong','Root',{class:'account-root-badge'}));
     field(form,'role','业务身份','select',account.role,false,[['CUSTOMER','Customer'],['STUDENT','Student'],['TEACHER','Teacher']]);check(form,'is_active','账号可登录',account.is_active);form.append(N('button','保存身份与状态',{type:'submit'}));
-    bind(form,async f=>{await C.request('/api/admin/users/'+account.id+'/',{method:'PATCH',data:{role:formValue(f,'role'),is_active:f.elements.is_active.checked}});markSaved('账号状态已更新。');await accounts();});identity.append(form);
+    bind(form,async f=>{await C.request('/api/admin/users/'+account.id+'/',{method:'PATCH',data:{role:formValue(f,'role'),is_active:f.elements.is_active.checked}});await accounts();markSaved('账号状态已更新。');});identity.append(form);
     const reset=N('form',undefined,{class:'v10-form account-password-form'}),input=field(reset,'new_password','新密码','password','',true);input.autocomplete='new-password';reset.append(N('button','重置密码',{type:'submit',class:'secondary'}));
     bind(reset,async f=>{await C.request('/api/admin/users/'+account.id+'/reset-password/',{method:'POST',data:{new_password:formValue(f,'new_password')}});f.reset();markSaved('目标账号密码已重置。');});password.append(reset);row.append(username,name,identity,password);body.append(row);
    }

@@ -149,3 +149,45 @@ class V14Contracts(TestCase):
             next_page=c.get(path,{'page':2});self.assertEqual(next_page.status_code,200,next_page.data)
             self.assertFalse({x.get('id',x.get('user_id')) for x in r.data['results']}&{x.get('id',x.get('user_id')) for x in next_page.data['results']})
         self.assertIn('avatar_url',c.get('/api/members/directory/').data['results'][0])
+
+    def test_delete_resume_removes_bytes_withdraws_and_revokes_all_downloads(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.assets.models import AssetFile
+        from apps.members.models import Resume,ResumeSubmission
+        c=self.client_for(self.customer);self.profile(self.customer,'删除简历验收')
+        with TemporaryDirectory() as media,override_settings(PRIVATE_MEDIA_ROOT=media):
+            asset=c.post('/api/assets/',{'purpose':'resume','file':SimpleUploadedFile('删除简历.pdf',self.pdf(),content_type='application/pdf')},format='multipart').data
+            resume=c.post('/api/members/me/resumes/',{'title':'准备删除','asset':asset['id']},format='json').data
+            submitted=c.post('/api/members/me/resume-submissions/',{'resume_id':resume['id'],'consent':True},format='json').data
+            path=Path(media)/AssetFile.objects.get(pk=asset['id']).storage_key;self.assertTrue(path.exists())
+            url='/api/members/me/resumes/'+resume['id']+'/delete/'
+            self.assertEqual(self.client_for(self.other).post(url,{'lock_version':resume['lock_version']},format='json').status_code,404)
+            self.assertEqual(c.post(url,{'lock_version':resume['lock_version']+1},format='json').status_code,409)
+            with self.captureOnCommitCallbacks(execute=True):r=c.post(url,{'lock_version':resume['lock_version']},format='json')
+            self.assertEqual(r.status_code,200,r.data);self.assertFalse(path.exists())
+            self.assertEqual(c.get('/api/members/me/resumes/').data['count'],0)
+            self.assertEqual(c.get('/api/members/me/resumes/'+resume['id']+'/').status_code,404)
+            self.assertEqual(c.patch('/api/members/me/resumes/'+resume['id']+'/',{'lock_version':resume['lock_version'],'title':'不能恢复'},format='json').status_code,404)
+            self.assertEqual(c.post('/api/members/me/resume-submissions/',{'resume_id':resume['id'],'consent':True},format='json').status_code,404)
+            self.assertEqual(ResumeSubmission.objects.get(pk=submitted['id']).state,'WITHDRAWN')
+            for actor in (self.customer,self.teacher,self.root):
+                client=self.client_for(actor)
+                self.assertEqual(client.get(asset['download_url']).status_code,404)
+                self.assertEqual(client.get(submitted['download_url']).status_code,403 if actor==self.customer else 404)
+            self.assertIsNotNone(Resume.objects.get(pk=resume['id']).deleted_at)
+
+    def test_delete_shared_resume_preserves_other_copy_until_last_deleted(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.assets.models import AssetFile
+        c=self.client_for(self.customer);self.profile(self.customer,'共用文件验收')
+        with TemporaryDirectory() as media,override_settings(PRIVATE_MEDIA_ROOT=media):
+            asset=c.post('/api/assets/',{'purpose':'resume','file':SimpleUploadedFile('共享文件.pdf',self.pdf(),content_type='application/pdf')},format='multipart').data
+            copies=[c.post('/api/members/me/resumes/',{'title':'简历'+str(i),'asset':asset['id']},format='json').data for i in range(2)]
+            submissions=[c.post('/api/members/me/resume-submissions/',{'resume_id':row['id'],'consent':True},format='json').data for row in copies]
+            path=Path(media)/AssetFile.objects.get(pk=asset['id']).storage_key
+            for i,row in enumerate(copies):
+                with self.captureOnCommitCallbacks(execute=True):r=c.post('/api/members/me/resumes/'+row['id']+'/delete/',{'lock_version':row['lock_version']},format='json')
+                self.assertEqual(r.status_code,200,r.data);self.assertEqual(path.exists(),i==0)
+                self.assertEqual(self.client_for(self.root).get(submissions[i]['download_url']).status_code,404)
+                response=c.get(asset['download_url']);self.assertEqual(response.status_code,200 if i==0 else 404)
+                if response.status_code==200:b''.join(response.streaming_content)

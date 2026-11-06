@@ -129,7 +129,7 @@ class Resumes(BusinessAPIView):
     def get(self,request,pk=None,owner_id=None):
         if owner_id and not request.user.is_superuser:raise PermissionDenied()
         owner=get_object_or_404(User,pk=owner_id) if owner_id else request.user
-        qs=Resume.objects.filter(owner=owner).order_by('-updated_at')
+        qs=Resume.objects.filter(owner=owner,deleted_at__isnull=True).order_by('-updated_at','pk')
         if pk:return Response(profiles.resume_data(get_object_or_404(qs,pk=pk)))
         if request.user.is_superuser and owner_id:
             with transaction.atomic():
@@ -227,3 +227,15 @@ class Delete(TeamView):
 
 class Undelete(Delete):
     deleted=False
+
+
+class ResumeDeleteInput(StrictSerializer):
+    lock_version=StrictInteger(min_value=0)
+
+
+class ResumeDelete(BusinessAPIView):
+    http_method_names=['post']
+    def post(self,request,pk):
+        from apps.members.resume_deletion import delete_resume
+        data=validated(ResumeDeleteInput,request)
+        return Response(delete_resume(request,pk,data['lock_version']))

@@ -19,3 +19,8 @@ V5 独立审批发布内容时，事务内复核所引用资产，才将图片/�
 `POST /api/assets/{id}/delete/` 仅 owner 可请求删除，记录时间与审计，不立即破坏引用。历史、当前、草稿、成员/申请中的任何引用均阻止物理清理。`python manage.py cleanup_private_assets` 默认 dry-run，`--apply` 才处理过期私有孤立文件；V6 未启用自动定时删除。已公开资产和历史引用保留，不承诺一键物理删除。导入单条记录失败会回滚数据库并清除本条新写入字节。
 
 Nginx 默认请求上限可能低于附件大小。正式部署经批准后，在原 `/api/` location 设置 `client_max_body_size 21m;`，保留现有反代及静态配置，先 nginx -t 再 reload。不得给 legacy_samples/originals 或 private_media 配置 alias。
+
+
+### 简历删除（V14追加）
+
+`POST /api/members/me/resumes/{id}/delete/`携带`lock_version`，仅当前账号可删除自己的简历。删除标记使列表、编辑、重新投递和收件箱访问立即不可用，并撤回有效投递。事务提交后删除不再被其他有效简历/业务引用的当前及投递文件；被其他简历共用时保留到最后一个引用删除。不可变投递元数据与审计保留，已删除简历不提供恢复。文件删除失败可用`cleanup_private_assets --apply`重试；资产一旦标记删除，受控下载即拒绝，不以是否仍留存字节为依据。此特例不改变其他业务历史附件的引用保留规则。

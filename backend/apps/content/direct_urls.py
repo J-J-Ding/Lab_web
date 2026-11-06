@@ -25,6 +25,7 @@ urlpatterns=[
  path('members/<uuid:pk>/profile/',v.Profile.as_view()),
  path('members/me/history/',v.ProfileHistory.as_view()),path('members/me/restore/',v.ProfileHistory.as_view()),
  path('members/<uuid:pk>/history/',v.ProfileHistory.as_view()),path('members/<uuid:pk>/restore/',v.ProfileHistory.as_view()),
+ path('members/me/resumes/<uuid:pk>/delete/',v.ResumeDelete.as_view()),
  path('members/me/resumes/',v.Resumes.as_view()),path('members/me/resumes/<uuid:pk>/',v.Resumes.as_view()),
  path('admin/members/<int:owner_id>/resumes/',v.Resumes.as_view()),
  re_path(r'^ai/imports/[^/]+/apply/$',v.Gone.as_view()),

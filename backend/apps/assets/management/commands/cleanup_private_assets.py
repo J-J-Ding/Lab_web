@@ -11,6 +11,12 @@ class Command(BaseCommand):
     def add_arguments(self,parser):parser.add_argument('--apply',action='store_true')
     def handle(self,*args,**options):
         root=Path(settings.PRIVATE_MEDIA_ROOT).resolve();count=0
+        from apps.members.resume_deletion import has_retained_reference,purge_resume_file
+        pending=AssetFile.objects.filter(purpose='resume',deletion_requested_at__isnull=False,scan_status='CLEAN')
+        for asset in pending.iterator():
+            if has_retained_reference(asset):continue
+            count+=1
+            if options['apply']:purge_resume_file(asset.pk)
         for pk in AssetFile.objects.filter(visibility='PRIVATE',expires_at__lte=timezone.now(),scan_status='CLEAN').values_list('pk',flat=True).iterator():
             with transaction.atomic():
                 asset=AssetFile.objects.select_for_update().get(pk=pk)

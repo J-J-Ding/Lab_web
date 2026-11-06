@@ -201,7 +201,7 @@ def resume_data(resume):
 def save_resume(request,data,pk=None,owner=None):
     actor,_=locked_users(request)
     if owner:raise PermissionDenied('Use the owner’s authenticated profile to upload resumes.')
-    resume=get_object_or_404(Resume.objects.select_for_update(),pk=pk) if pk else Resume(owner=owner or actor)
+    resume=get_object_or_404(Resume.objects.select_for_update(),pk=pk,deleted_at__isnull=True) if pk else Resume(owner=owner or actor)
     if resume.owner_id!=actor.pk and not actor.is_superuser:raise NotFound()
     if pk and data.get('lock_version')!=resume.lock_version:raise VersionConflict()
     if 'asset' in data:

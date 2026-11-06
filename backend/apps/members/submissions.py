@@ -51,14 +51,14 @@ class Submissions(BusinessAPIView):
     def get(self,request):
         customer(request.user)
         from apps.content.public_views import paged
-        return paged(request,ResumeSubmission.objects.filter(owner=request.user).order_by('-created_at'),lambda row:data(row))
+        return paged(request,ResumeSubmission.objects.filter(owner=request.user,resume__deleted_at__isnull=True).order_by('-created_at'),lambda row:data(row))
 
     @transaction.atomic
     def post(self,request):
         actor,_=locked_users(request);customer(actor)
         s=SubmitInput(data=request.data);s.is_valid(raise_exception=True)
         if not s.validated_data['consent']:raise ValidationError({'consent':'Confirm sharing this application with teachers.'})
-        resume=get_object_or_404(Resume.objects.select_for_update(),pk=s.validated_data['resume_id'],owner=actor)
+        resume=get_object_or_404(Resume.objects.select_for_update(),pk=s.validated_data['resume_id'],owner=actor,deleted_at__isnull=True)
         existing=ResumeSubmission.objects.filter(owner=actor,resume=resume,state='SUBMITTED').first()
         if existing:return Response(data(existing),status=200)
         if not resume.asset_id:raise ValidationError({'resume_id':'Upload and save a resume file first.'})
@@ -92,7 +92,7 @@ class Inbox(BusinessAPIView):
     def get(self,request,pk=None):
         receiver(request.user)
         if request.path.startswith('/api/admin/') and not request.user.is_superuser:raise PermissionDenied()
-        rows=ResumeSubmission.objects.all()
+        rows=ResumeSubmission.objects.filter(resume__deleted_at__isnull=True)
         if not request.user.is_superuser:rows=rows.filter(state='SUBMITTED')
         if pk:
             row=get_object_or_404(rows,pk=pk)
@@ -107,7 +107,7 @@ class SubmissionDownload(BusinessAPIView):
     @transaction.atomic
     def get(self,request,pk):
         actor,_=locked_users(request);receiver(actor)
-        rows=ResumeSubmission.objects.select_for_update()
+        rows=ResumeSubmission.objects.select_for_update(of=('self',)).filter(resume__deleted_at__isnull=True)
         if not actor.is_superuser:rows=rows.filter(state='SUBMITTED')
         row=get_object_or_404(rows,pk=pk)
         # Authorization belongs to the submission, never the general asset download route.
@@ -122,7 +122,7 @@ class Notifications(BusinessAPIView):
     def get(self,request):
         receiver(request.user)
         from apps.content.public_views import paged
-        rows=SubmissionNotification.objects.filter(recipient=request.user).select_related('submission').order_by('-created_at')
+        rows=SubmissionNotification.objects.filter(recipient=request.user,submission__resume__deleted_at__isnull=True).select_related('submission').order_by('-created_at')
         response=paged(request,rows,lambda n:{'id':str(n.pk),'read_at':n.read_at,'created_at':n.created_at,'withdrawn':n.submission.state=='WITHDRAWN','display_name':n.submission.profile_snapshot.get('display_name','访客') if n.submission.state=='SUBMITTED' or request.user.is_superuser else '', 'url':f'/submission.html?id={n.submission_id}&notice={n.pk}' if n.submission.state=='SUBMITTED' or request.user.is_superuser else None})
         response.data['unread_count']=rows.filter(read_at__isnull=True).count()
         return response

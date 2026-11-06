@@ -133,6 +133,7 @@ class MemberRevisionAsset(models.Model):
 
 
 class Resume(models.Model):
+    deleted_at=models.DateTimeField(null=True,blank=True,db_index=True)
     id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
     owner=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,related_name='resumes')
     title=models.CharField(max_length=200,default='我的简历')

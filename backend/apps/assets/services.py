@@ -57,7 +57,7 @@ def upload(request,file,purpose):
 
 
 def permitted_asset(actor,pk):
-    asset=AssetFile.objects.filter(pk=pk,scan_status='CLEAN').first()
+    asset=AssetFile.objects.filter(pk=pk,scan_status='CLEAN',deletion_requested_at__isnull=True).first()
     if not asset or (asset.expires_at and asset.expires_at<=timezone.now()):raise NotFound()
     if asset.owner_id!=actor.pk and asset.purpose=='resume' and not actor.is_superuser:raise NotFound()
     if asset.owner_id!=actor.pk and not actor.is_superuser:

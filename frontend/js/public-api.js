@@ -25,7 +25,7 @@
   }
   async function run(action) {
     const version=++generation;
-    content.replaceChildren(); status.textContent='正在加载公开资料…';
+    content.replaceChildren(); status.hidden=false;status.textContent='正在加载公开资料…';
     document.getElementById('public-retry').hidden=true;
     try {
       await action(() => version === generation);
@@ -35,7 +35,7 @@
       document.getElementById('public-retry').hidden=false;
     }
   }
-  function ready(count) {status.textContent=count===0?'共 0 项符合条件的资料':count===undefined?'已加载资料':`共 ${count} 项资料`;}
+  function ready(count) {status.hidden=count===undefined;status.textContent=count===undefined?'':count===0?'共 0 项符合条件的资料':`共 ${count} 项资料`;}
   document.addEventListener('site-access-changed',()=>{generation++;content?.replaceChildren();document.getElementById('public-retry')?.click();});
   window.LabPublic={get,node,link,run,ready,labels,status,content};
   addEventListener('pagehide',()=>{generation++;content.replaceChildren();});
