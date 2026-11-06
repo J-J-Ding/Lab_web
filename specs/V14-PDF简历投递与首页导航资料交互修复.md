@@ -1,6 +1,6 @@
 # V14 PDF简历投递与首页导航资料交互修复
 
-状态：用户于2026-11-07批准全部修订，实施中。分支arc-update，基线0c5e0b1。直接在当前/opt/Lab_web实施，不创建副本或worktree。保留用户Dockerfile、README、原始Word、artifacts及现有未提交改动，不合并main。
+状态：用户于2026-11-07批准全部修订；已实施、通过关键回归并更新运行前后端，实际结果见docs/V14-实施与验证记录.md。分支arc-update，基线0c5e0b1。直接在当前/opt/Lab_web实施，不创建副本或worktree。保留用户Dockerfile、README、原始Word、artifacts及现有未提交改动，不合并main。
 
 ## 1. 已核查现状
 
