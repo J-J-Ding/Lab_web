@@ -11,13 +11,13 @@ from apps.members import services as member_services
 from apps.members.services import VersionConflict
 from apps.content.models import Contributor
 from apps.assets.models import AssetFile
-from .permissions import actor_for
+from .permissions import actor_for,can_self_review
 from .models import RevisionSubmission,RevisionEditEvent,ReviewDecision,MemberPublicationConsent
 from .audit import record
 
 
 def protect_target(actor,target):
-    if target is None or not can_manage(actor,target):raise NotFound()
+    if target is None or not (can_manage(actor,target) or (actor.pk==target.pk and can_self_review(actor))):raise NotFound()
 
 
 @transaction.atomic
@@ -45,7 +45,7 @@ def decide_application(request,application_id,data):
     protect_target(actor,target)
     if not target.is_active:raise VersionConflict("The applicant account is disabled.")
     application=get_object_or_404(MembershipApplication.objects.select_for_update(),pk=application_id)
-    if actor.pk==target.pk:raise PermissionDenied('You cannot review your own application.')
+    if actor.pk==target.pk and not can_self_review(actor):raise PermissionDenied('Self review is not permitted for this account.')
     if application.state!='SUBMITTED' or application.lock_version!=data['lock_version']:raise VersionConflict()
     if data['decision']=='APPROVE':
         own=MemberProfile.objects.filter(user=target).first()
@@ -144,7 +144,7 @@ def decide_profile(request,revision_id,data):
     revision=MemberRevision.objects.select_for_update().get(pk=revision_id)
     if profile.lock_version!=data['lock_version'] or revision.state!='SUBMITTED' or profile.draft_revision_id!=revision.pk:raise VersionConflict()
     submission=get_object_or_404(RevisionSubmission,member_revision=revision)
-    if submission.submitter_snapshot==actor.pk or revision.edit_events.filter(editor_snapshot=actor.pk).exists():raise PermissionDenied('Reviewing your own changes is not allowed.')
+    if not can_self_review(actor) and (submission.submitter_snapshot==actor.pk or revision.edit_events.filter(editor_snapshot=actor.pk).exists()):raise PermissionDenied('Self review is not permitted for this account.')
     if revision.base_published_revision_id!=profile.published_revision_id:raise VersionConflict('Published profile baseline changed.')
     if data['decision']=='APPROVE':
         consent=revision.publication_consent

@@ -199,7 +199,8 @@ def decide(request,revision_id,data):
     check_version(item,data['lock_version'])
     if item.archived_at or revision.state!='SUBMITTED' or item.working_revision_id!=revision.pk:raise VersionConflict('This revision is no longer pending or the item is archived.')
     sub=get_object_or_404(RevisionSubmission,content_revision=revision)
-    if sub.submitter_snapshot==actor.pk or revision.edit_events.filter(editor_snapshot=actor.pk).exists():raise PermissionDenied('Reviewing your own changes is not allowed.')
+    from .permissions import can_self_review
+    if not can_self_review(actor) and (sub.submitter_snapshot==actor.pk or revision.edit_events.filter(editor_snapshot=actor.pk).exists()):raise PermissionDenied('Self review is not permitted for this account.')
     if revision.base_published_revision_id!=item.published_revision_id:raise VersionConflict('Published baseline changed; merge and resubmit.')
     if data['decision']=='APPROVE':
         validate_ready(item,revision)

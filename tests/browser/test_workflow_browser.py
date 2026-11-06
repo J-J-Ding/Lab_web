@@ -63,7 +63,7 @@ class WorkflowBrowserTests(unittest.TestCase):
         item_id=self.page.url.split('id=')[1]
         self.page.get_by_role('button',name='提交审核',exact=True).click()
         expect(self.page.locator('#item-state')).to_contain_text('SUBMITTED')
-        expect(self.page.get_by_role('button',name='审核通过',exact=True)).to_be_disabled()
+        expect(self.page.get_by_role('button',name='审核通过',exact=True)).to_be_enabled()
         peer_context=self.browser.new_context();self.addCleanup(peer_context.close)
         peer=peer_context.new_page();self.login(peer,root=True)
         peer.goto(self.env.url+'/manage/reviews.html')
@@ -181,3 +181,25 @@ class WorkflowBrowserTests(unittest.TestCase):
         expect(self.page.get_by_label('个人简介',exact=True)).to_have_value('Unsaved member bio')
         self.page.get_by_role('button',name='保存成员草稿',exact=True).click()
         expect(self.page.locator('#business-status')).to_contain_text('成员草稿已保存')
+
+    def test_root_admin_and_teacher_can_publish_own_submission(self):
+        for role,root in [('CUSTOMER',True),('ADMIN',False),('TEACHER',False)]:
+            with self.subTest(role='ROOT' if root else role):
+                username=self.login(role=role,root=root)
+                title='Self review '+secrets.token_hex(5)
+                self.page.goto(self.env.url+'/content-editor.html')
+                self.page.get_by_label('标题',exact=True).fill(title)
+                self.page.get_by_label('正文',exact=True).fill('Self-reviewed example body')
+                self.page.get_by_role('button',name='保存草稿',exact=True).click()
+                expect(self.page.locator('#business-status')).to_contain_text('草稿已保存')
+                item_id=self.page.url.split('id=')[1]
+                self.page.get_by_role('button',name='提交审核',exact=True).click()
+                expect(self.page.locator('#item-state')).to_contain_text('SUBMITTED')
+                approve=self.page.get_by_role('button',name='审核通过',exact=True)
+                expect(approve).to_be_enabled()
+                self.page.get_by_label('审核意见或核验理由',exact=True).fill('Explicit permitted self review')
+                approve.click();expect(self.page.locator('#item-state')).to_contain_text('PUBLISHED')
+                audit=self.env.orm("from apps.workflow.models import ReviewDecision; result={'reviewer':ReviewDecision.objects.get(content_revision__item_id=data['id']).reviewer.username}",{'id':item_id})
+                self.assertEqual(audit['reviewer'],username)
+                response=self.context.request.get(self.env.url+'/api/public/content/'+item_id+'/')
+                self.assertEqual(response.status,200);self.assertEqual(response.json()['title'],title)

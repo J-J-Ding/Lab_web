@@ -10,7 +10,7 @@ from apps.members.models import MemberProfile,MemberRevision,MembershipApplicati
 from apps.members.serializers import draft_data
 from apps.members import services as member_core
 from apps.content.models import ContentItem,ContentRevision,Contributor,RevisionContribution
-from .permissions import visible_items,can_edit,selectable_contributors,can_submit
+from .permissions import visible_items,can_edit,selectable_contributors,can_submit,can_self_review
 from .serializers import (ContentCreateInput,ContentUpdateInput,NewRevisionInput,VersionInput,DecisionInput,ReasonInput,ConfirmationInput,GrantInput,CorrectionInput,ContributorInput,item_data,revision_data)
 from .member_serializers import ApplicationInput,ApplicationDecisionInput,MemberSubmitInput,RestrictInput,CatalogInput,BindInput,application_data
 from . import content_services as content,member_services as members
@@ -53,7 +53,7 @@ class ItemView(AccountAPIView):
         item=get_object_or_404(visible_items(request.user),pk=pk)
         data=item_data(item);data['can_edit']=can_edit(request.user,item) and can_submit(request.user)
         r=item.working_revision
-        data['can_review']=bool(is_manager(request.user) and r and r.state=='SUBMITTED' and not item.archived_at and r.base_published_revision_id==item.published_revision_id and not r.edit_events.filter(editor_snapshot=request.user.pk).exists() and r.submission.submitter_snapshot!=request.user.pk)
+        data['can_review']=bool(is_manager(request.user) and r and r.state=='SUBMITTED' and not item.archived_at and r.base_published_revision_id==item.published_revision_id and (can_self_review(request.user) or (not r.edit_events.filter(editor_snapshot=request.user.pk).exists() and r.submission.submitter_snapshot!=request.user.pk)))
         data['grants']=[{'user_id':g.user_id,'can_edit':g.can_edit,'revoked':g.revoked_at is not None} for g in item.edit_grants.all()] if is_manager(request.user) or item.created_by_id==request.user.pk else []
         return Response(data)
 
@@ -156,7 +156,7 @@ class TasksView(AccountAPIView):
         def data(r):
             submission=RevisionSubmission.objects.filter(content_revision=r).first()
             self_authored=(submission and submission.submitter_snapshot==request.user.pk) or r.edit_events.filter(editor_snapshot=request.user.pk).exists()
-            return {'id':str(r.pk),'item_id':str(r.item_id),'kind':r.item.kind,'title':r.title,'lock_version':r.item.lock_version,'can_review':not bool(self_authored) and r.item.archived_at is None and r.base_published_revision_id==r.item.published_revision_id,'state':r.state}
+            return {'id':str(r.pk),'item_id':str(r.item_id),'kind':r.item.kind,'title':r.title,'lock_version':r.item.lock_version,'can_review':(can_self_review(request.user) or not bool(self_authored)) and r.item.archived_at is None and r.base_published_revision_id==r.item.published_revision_id,'state':r.state}
         return page(request,qs,data)
 
 
@@ -176,12 +176,12 @@ class ApplicationTasksView(AccountAPIView):
     http_method_names=['get']
     def get(self,request):
         qs=MembershipApplication.objects.filter(state='SUBMITTED').select_related('applicant').order_by('created_at','pk')
-        if not request.user.is_superuser:qs=qs.filter(applicant__is_superuser=False,applicant__role__in=['CUSTOMER','STUDENT','TEACHER'])
+        if not request.user.is_superuser:qs=qs.filter(Q(applicant=request.user)|Q(applicant__is_superuser=False,applicant__role__in=['CUSTOMER','STUDENT','TEACHER']))
         def details(a):
             own=MemberProfile.objects.filter(user=a.applicant).first()
             target=a.target_profile
             comparison={'applicant_draft':draft_data(own,own.draft_revision) if own else None,'target_draft':draft_data(target,target.draft_revision or target.published_revision) if target else None}
-            return {**application_data(a),'applicant_id':a.applicant_id,'applicant_username':a.applicant.username,'can_review':a.applicant_id!=request.user.pk,'claim_comparison':comparison}
+            return {**application_data(a),'applicant_id':a.applicant_id,'applicant_username':a.applicant.username,'can_review':can_self_review(request.user) or a.applicant_id!=request.user.pk,'claim_comparison':comparison}
         return page(request,qs,details)
 
 
@@ -210,11 +210,11 @@ class ProfileTasksView(AccountAPIView):
     http_method_names=['get']
     def get(self,request):
         qs=MemberRevision.objects.filter(state='SUBMITTED').select_related('profile').order_by('created_at','pk')
-        if not request.user.is_superuser:qs=qs.filter(profile__user__is_superuser=False,profile__user__role__in=['CUSTOMER','STUDENT','TEACHER'])
+        if not request.user.is_superuser:qs=qs.filter(Q(profile__user=request.user)|Q(profile__user__is_superuser=False,profile__user__role__in=['CUSTOMER','STUDENT','TEACHER']))
         def details(r):
             consent=r.publication_consent
             authored=r.edit_events.filter(editor_snapshot=request.user.pk).exists() or r.submission.submitter_snapshot==request.user.pk
-            reason='self_authored' if authored else 'consent_changed' if consent.privacy_version!=r.profile.privacy_version else 'baseline_changed' if r.base_published_revision_id!=r.profile.published_revision_id else ''
+            reason='self_authored' if authored and not can_self_review(request.user) else 'consent_changed' if consent.privacy_version!=r.profile.privacy_version else 'baseline_changed' if r.base_published_revision_id!=r.profile.published_revision_id else ''
             return {**draft_data(r.profile,r),'can_review':not bool(reason),'review_block_reason':reason,
                     'public_consent':{f:getattr(consent,f) for f in ('public_visible','contact_visible','education_visible','alumni_visible')},
                     'avatar_download_url':f'/api/assets/{r.avatar_asset_id}/download/' if r.avatar_asset_id else None}

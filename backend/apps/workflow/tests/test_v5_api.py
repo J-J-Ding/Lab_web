@@ -24,7 +24,7 @@ class WorkflowAPIContracts(AccountFixtures):
         self.assertEqual(self.customer.role,'STUDENT')
         self.assertEqual(MemberProfile.objects.get(user=self.customer).membership_status,'ACTIVE')
 
-    def test_author_cannot_review_own_content_even_as_root(self):
+    def test_self_review_role_matrix_and_audit(self):
         for user in (self.teacher,self.admin,self.root):
             c=login_as(user)
             response=write(c,'post','/api/content/items/',{'kind':'BLOG','title':'Original','detail':{'body':'Body'}})
@@ -33,7 +33,10 @@ class WorkflowAPIContracts(AccountFixtures):
             submitted=write(c,'post',f"/api/content/revisions/{item['working_revision']['id']}/submit/",{'lock_version':item['lock_version']})
             self.assertEqual(submitted.status_code,200)
             decision=write(c,'post',f"/api/review/revisions/{item['working_revision']['id']}/decision/",{'decision':'APPROVE','reason':'Self','lock_version':submitted.json()['lock_version']})
-            self.assertEqual(decision.status_code,403)
+            expected=200 if user.is_superuser or user.role in ('ADMIN','TEACHER') else 403
+            self.assertEqual(decision.status_code,expected,decision.content)
+            from apps.workflow.models import ReviewDecision
+            self.assertEqual(ReviewDecision.objects.filter(content_revision_id=item['working_revision']['id'],reviewer=user,decision='APPROVE').exists(),expected==200)
 
     def test_manager_task_list_and_user_data_remain_separate(self):
         self.assertEqual(self.client.get('/api/review/tasks/').status_code,403)

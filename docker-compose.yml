@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: lab-web-backend:v6-6d2975b
+    image: lab-web-backend:v6.1-20261106-170211
     build:
       context: .
       dockerfile: deploy/docker/backend.Dockerfile

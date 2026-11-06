@@ -146,7 +146,7 @@
     C.disabled($('#reject-content'),!item?.can_review);
     $('#grant-card').hidden=!item||!(C.manager(C.user)||item.created_by===C.user.id);
     $('#external-card').hidden=!editable;
-    $('#review-eligibility').textContent=item?.can_review?'请核对字段、来源和关联署名后审核。':'当前版本不可由你审核（可能是本人编辑、尚未提交或已处理）。';
+    $('#review-eligibility').textContent=item?.can_review?'请核对字段、来源和关联署名后审核。':'当前版本暂不可审核，请检查是否已提交、已处理、已归档或发布基线变化。';
     $('#content-form').querySelectorAll('input,textarea,select').forEach(input=>{
       input.disabled=!editable;
     }

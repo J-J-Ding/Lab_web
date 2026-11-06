@@ -63,3 +63,8 @@ def selectable_contributors(actor):
     return qs.filter(owned|public_member|Q(pk__in=public_ids)).annotate(
         safe_name=Case(When(owned,then=F('display_name')),When(public_member,then=F('member_profile__published_revision__display_name')),default=Subquery(signatures.values('approved_display_name')[:1]),output_field=CharField()),
         safe_affiliation=Case(When(owned,then=F('external_affiliation')),When(public_member,then=Value('')),default=Subquery(signatures.values('approved_affiliation')[:1]),output_field=CharField())).distinct()
+
+
+def can_self_review(user):
+    """ROOT and all active business managers may approve their own submissions."""
+    return is_manager(user)

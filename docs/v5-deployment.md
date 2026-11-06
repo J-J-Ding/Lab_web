@@ -93,6 +93,6 @@ sudo docker compose -f docker-compose.yml -f "$V5_BACKUP/release.yml" exec -T db
 sudo docker compose -f docker-compose.yml -f "$V5_BACKUP/release.yml" logs --tail 80 backend
 ```
 
-核对 health 同时报告数据库正常、容器 healthy、匿名受保护接口返回 403 而非 404、数据库无公网端口、后端仅监听宿主机 127.0.0.1:8000。仅用测试账号在回环或受控 HTTPS 验证 Session/CSRF、投稿审批、头像/证明下载权限、退出失效、旧公开版隔离和管理历史；没有 HTTPS 不用真实账号在公网 HTTP 登录。不要打印或共享 Cookie。无合格独立审核者时不能自审，ROOT/ADMIN 私密资料需要非本人 ROOT。
+核对 health 同时报告数据库正常、容器 healthy、匿名受保护接口返回 403 而非 404、数据库无公网端口、后端仅监听宿主机 127.0.0.1:8000。仅用测试账号在回环或受控 HTTPS 验证 Session/CSRF、投稿审批、头像/证明下载权限、退出失效、旧公开版隔离和管理历史；没有 HTTPS 不用真实账号在公网 HTTP 登录。不要打印或共享 Cookie。自审规则现以 V6.1 为准：ROOT、ADMIN、TEACHER 均可自审；ADMIN 仍不能接管其他 ADMIN/ROOT 私密资料。
 
 异常回退使用记录的旧镜像构建单独 rollback override，再以该 override `up -d --no-deps --no-build --wait backend`；恢复对应旧前端版本/入口前保留用户改动。保留新增数据库表、审计和媒体，不反向迁移、不 drop、不对生产 down --volumes。恢复数据库/媒体备份属于另行批准的数据恢复操作。Nginx 若有变更，恢复备份后先 nginx -t 再 reload。V6 再处理公共数据迁移，V7 AI 未启用。

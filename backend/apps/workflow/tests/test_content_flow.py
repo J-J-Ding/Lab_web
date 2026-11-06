@@ -40,15 +40,15 @@ class ContentFlowTests(AccountFixtures):
         self.assertEqual(published_content().get().published_revision.title,'Pending B')
         self.assertEqual(ContentItem.objects.count(),1)
 
-    def test_stale_edit_and_editor_self_review_denied(self):
+    def test_stale_edit_conflicts_and_manager_editor_can_self_review(self):
         item=self.create();pk=item['working_revision']['id']
-        r=write(self.reviewer,'patch',f'/api/content/revisions/{pk}/',{'lock_version':0,'title':'Root edited'})
+        admin=login_as(self.admin)
+        r=write(admin,'patch',f'/api/content/revisions/{pk}/',{'lock_version':0,'title':'Admin edited'})
         self.assertEqual(r.status_code,200,r.content)
         self.assertEqual(write(self.author,'patch',f'/api/content/revisions/{pk}/',{'lock_version':0,'title':'Stale'}).status_code,409)
         item=self.submit(r.json())
-        self.assertEqual(self.decide(item).status_code,403)
-        admin=login_as(self.admin)
         self.assertEqual(self.decide(item,client=admin).status_code,200)
+        self.assertEqual(self.decide(item).status_code,409)
 
     def test_collaboration_readonly_revoke_and_unknown_object(self):
         item=self.create();student=login_as(self.student)

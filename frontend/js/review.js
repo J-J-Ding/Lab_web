@@ -17,7 +17,7 @@
       row.append(C.node('a',task.title,{
         href:new URL(`content-editor.html?id=${task.item_id}`,C.root).href
       }
-      ),C.node('p',task.can_review?'可审核':'本人参与编辑，禁止自审',{
+      ),C.node('p',task.can_review?'可审核':'当前版本暂不可审核',{
         class:'work-note'
       }
       ));
@@ -65,7 +65,7 @@
         C.disabled(b,!profile.can_review);
         row.append(b);
       }
-      if(!profile.can_review)row.append(C.node('p',profile.review_block_reason==='self_authored'?'本人参与编辑，禁止自审。':'授权或基线已变更，请申请者撤回并重新提交。'));
+      if(!profile.can_review)row.append(C.node('p',profile.review_block_reason==='self_authored'?'当前版本暂不可审核。':'授权或基线已变更，请申请者撤回并重新提交。'));
       box.append(row);
     }
     pagination($('#profile-review-pages'),data,profiles);
