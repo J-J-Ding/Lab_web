@@ -29,9 +29,12 @@ INSTALLED_APPS = [
     "apps.members.apps.MembersConfig",
     "apps.content.apps.ContentConfig",
     "apps.workflow.apps.WorkflowConfig",
+    "apps.ai_assistant.apps.AIAssistantConfig",
+    "apps.analytics.apps.AnalyticsConfig",
 
 ]
 MIDDLEWARE = [
+    "apps.core.middleware.RequestContextMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -100,3 +103,38 @@ PRIVATE_MEDIA_ROOT = Path(env("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "priv
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 22 * 1024 * 1024
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 64
+
+# V7: opt-in, official-provider-only AI. Missing prices fail closed at job creation.
+AI_ENABLED = env.bool('AI_ENABLED', default=False)
+AI_PROVIDER = env('AI_PROVIDER', default='deepseek')
+DEEPSEEK_API_KEY = env('DEEPSEEK_API_KEY', default='')
+DEEPSEEK_BASE_URL = env('DEEPSEEK_BASE_URL', default='https://api.deepseek.com')
+DEEPSEEK_MODEL = env('DEEPSEEK_MODEL', default='deepseek-flash')
+AI_CONNECT_TIMEOUT_SECONDS = positive_int('AI_CONNECT_TIMEOUT_SECONDS', 5)
+AI_REQUEST_TIMEOUT_SECONDS = positive_int('AI_REQUEST_TIMEOUT_SECONDS', 60)
+AI_MAX_RETRIES = env.int('AI_MAX_RETRIES', default=2)
+AI_MAX_INPUT_TOKENS = positive_int('AI_MAX_INPUT_TOKENS', 24000)
+AI_MAX_OUTPUT_TOKENS = positive_int('AI_MAX_OUTPUT_TOKENS', 4000)
+AI_USER_DAILY_LIMIT = positive_int('AI_USER_DAILY_LIMIT', 10)
+AI_GLOBAL_DAILY_LIMIT = positive_int('AI_GLOBAL_DAILY_LIMIT', 100)
+AI_GLOBAL_DAILY_BUDGET_CNY = env('AI_GLOBAL_DAILY_BUDGET_CNY', default='10')
+AI_PRICE_INPUT_CNY_PER_MILLION = env('AI_PRICE_INPUT_CNY_PER_MILLION', default='')
+AI_PRICE_OUTPUT_CNY_PER_MILLION = env('AI_PRICE_OUTPUT_CNY_PER_MILLION', default='')
+AI_PRICE_EFFECTIVE_DATE = env('AI_PRICE_EFFECTIVE_DATE', default='')
+AI_SOURCE_RETENTION_DAYS = positive_int('AI_SOURCE_RETENTION_DAYS', 7)
+AI_CANDIDATE_RETENTION_DAYS = positive_int('AI_CANDIDATE_RETENTION_DAYS', 30)
+AI_LEASE_SECONDS = positive_int('AI_LEASE_SECONDS', 240)
+
+# V9: forwarded headers are ignored unless REMOTE_ADDR belongs to this explicit trust boundary.
+TRUSTED_PROXY_NETWORKS = env.list('TRUSTED_PROXY_NETWORKS', default=[])
+CSRF_TRUSTED_ORIGINS = env.list('DJANGO_CSRF_TRUSTED_ORIGINS', default=[])
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_SSL_REDIRECT = env.bool('DJANGO_SSL_REDIRECT', default=False)
+SECURE_HSTS_SECONDS = env.int('DJANGO_HSTS_SECONDS', default=0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO','https') if TRUSTED_PROXY_NETWORKS else None
+LOGGING = {'version':1,'disable_existing_loggers':False,'handlers':{'console':{'class':'logging.StreamHandler'}},'loggers':{'lab.requests':{'handlers':['console'],'level':'INFO','propagate':False}}}
+
+FILE_SCAN_REQUIRED = env.bool('FILE_SCAN_REQUIRED', default=False)
+CLAMAV_SOCKET = env('CLAMAV_SOCKET', default='')

@@ -74,3 +74,9 @@ MemberProfile 增加 privacy_version；MemberRevision 增加 base_published_revi
 新增 ImportBatch、ImportRecord、LegacyURLMap 三张表，记录清单哈希、管理者、逐条源哈希/载荷摘要/结果/目标，以及规范旧路径到内容或成员的唯一映射。跨来源别名碰撞拒绝，不按姓名认领；同批次幂等，源变更保留历史并建立候选稿。
 
 AssetFile 增加 purpose、deletion_requested_at，区分证明与可公开候选附件。三项迁移为 assets/0002、0003 与 content/0004。0003 回填已有头像用途，并只提升当前公开已批准的清洁头像可见性；证明不公开。既有 User/角色/审核历史不变。公共 API 使用集中 public_selectors 和显式投影，所有公开读取 no-store，未加入搜索集群、共享缓存或 AI 模块。
+
+## V7–V9 增量
+
+V7新增AIImportJob、AIConsent、AICandidate、AIUsageLedger、AIQuotaBucket五张表，ai_assistant/0001、0002记录租约、授权文本摘要、候选/应用指针、已发送标记、计费预留/实结/UNKNOWN及核账理由摘要；assets/0004只扩展ai_source用途，不修改已发布内容。候选最多10条逐条应用，原业务版本与公开指针仍由原服务控制。
+
+V8使用原成果/成员/审核表ORM聚合，不另建事实库。V9无业务模型变更，增加服务器运行角色分权；迁移服务保留服务器管理员身份，backend/worker运行角色无superuser/CREATEDB/CREATEROLE。旧User及角色枚举不变。

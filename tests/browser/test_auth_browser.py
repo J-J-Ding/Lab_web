@@ -3,7 +3,7 @@ import unittest
 import time
 
 from playwright.sync_api import sync_playwright, expect, Error as PlaywrightError
-from support import Environment, EVIDENCE
+from support import Environment, EVIDENCE,launch_browser
 
 
 class AuthBrowserTests(unittest.TestCase):
@@ -13,7 +13,7 @@ class AuthBrowserTests(unittest.TestCase):
         cls.addClassCleanup(cls.env.close)
         cls.playwright = sync_playwright().start()
         cls.addClassCleanup(cls.playwright.stop)
-        cls.browser = cls.playwright.chromium.launch(channel='chromium',headless=True,ignore_default_args=['--disable-back-forward-cache'])
+        cls.browser = launch_browser(cls.playwright, back_forward_cache=True)
         cls.addClassCleanup(cls.browser.close)
         EVIDENCE.mkdir(parents=True, exist_ok=True)
 
@@ -142,7 +142,7 @@ class AuthBrowserTests(unittest.TestCase):
         self.page.get_by_label('新密码', exact=True).fill(new_password)
         self.page.get_by_label('确认新密码', exact=True).fill(new_password)
         self.page.get_by_role('button', name='修改密码', exact=True).click()
-        expect(self.page.locator('#password-status')).to_contain_text('密码已修改')
+        expect(self.page.locator('#password-status')).to_contain_text('密码已修改',timeout=15000)
         expect(self.page.get_by_label('旧密码', exact=True)).to_have_value('')
         self.page.get_by_role('navigation').get_by_role('button',name='退出登录',exact=True).click()
         expect(self.page).to_have_url(self.env.url+'/login.html')

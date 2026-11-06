@@ -14,13 +14,14 @@ class ContentItem(models.Model):
     published_revision=models.OneToOneField('ContentRevision',null=True,blank=True,on_delete=models.PROTECT,related_name='+')
     working_revision=models.OneToOneField('ContentRevision',null=True,blank=True,on_delete=models.SET_NULL,related_name='+')
     visibility_gate=models.BooleanField(default=True)
+    public_sort_date=models.DateField(null=True,editable=False)
     archived_at=models.DateTimeField(null=True,blank=True)
     lock_version=models.PositiveBigIntegerField(default=0)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
     class Meta:
         constraints=[models.CheckConstraint(condition=Q(kind__in=ContentKind.values),name='content_kind_valid')]
-        indexes=[models.Index(fields=['kind','created_at'])]
+        indexes=[models.Index(fields=['kind','created_at']),models.Index(fields=['kind','-public_sort_date','id'],name='content_public_kind_date_idx'),models.Index(fields=['-public_sort_date','id'],name='content_public_date_idx')]
 
 
 class ContentRevision(models.Model):

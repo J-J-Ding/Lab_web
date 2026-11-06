@@ -25,3 +25,15 @@ class HealthView(APIView):
             {"status": "ok", "backend": "running", "database": "connected"},
             headers={"Cache-Control": "no-store"},
         )
+
+class ReadinessView(HealthView):
+    def get(self,request):
+        response=super().get(request)
+        if response.status_code!=200:return response
+        from django.conf import settings
+        import os
+        from pathlib import Path
+        root=Path(settings.PRIVATE_MEDIA_ROOT)
+        if not root.is_dir() or not os.access(root,os.R_OK|os.W_OK):
+            return Response({'status':'degraded','storage':'unavailable'},status=503,headers={'Cache-Control':'no-store'})
+        return Response({'status':'ready','database':'connected','storage':'available'},headers={'Cache-Control':'no-store'})

@@ -2,7 +2,7 @@
 import secrets
 import unittest
 from playwright.sync_api import sync_playwright,expect
-from support import Environment,EVIDENCE
+from support import Environment,EVIDENCE,launch_browser
 
 
 class WorkflowBrowserTests(unittest.TestCase):
@@ -11,7 +11,7 @@ class WorkflowBrowserTests(unittest.TestCase):
         cls.env=Environment().start()
         try:
             cls.playwright=sync_playwright().start()
-            cls.browser=cls.playwright.chromium.launch(channel='chromium',headless=True)
+            cls.browser=launch_browser(cls.playwright)
         except BaseException:
             cls.env.close();raise
     @classmethod

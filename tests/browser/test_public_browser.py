@@ -1,14 +1,14 @@
 """V6 public pages, actual Chromium + isolated PostgreSQL."""
 import unittest
 from playwright.sync_api import sync_playwright,expect
-from support import Environment,EVIDENCE
+from support import Environment,EVIDENCE,launch_browser
 
 class PublicBrowserTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.env=Environment().start()
         try:
-            cls.p=sync_playwright().start();cls.browser=cls.p.chromium.launch(channel='chromium',headless=True)
+            cls.p=sync_playwright().start();cls.browser=launch_browser(cls.p)
         except BaseException:cls.env.close();raise
     @classmethod
     def tearDownClass(cls):cls.browser.close();cls.p.stop();cls.env.close()

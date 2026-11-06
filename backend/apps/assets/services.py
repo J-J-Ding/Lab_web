@@ -21,6 +21,7 @@ def upload(request,file,purpose):
     allowed={'avatar':{'.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'},'proof':{'.pdf':'application/pdf'}}
     allowed['image']=allowed['avatar']
     allowed['attachment']={'.pdf':'application/pdf','.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}
+    allowed['ai_source']=allowed['attachment']
     ext=Path(file.name).suffix.lower()
     if ext not in allowed[purpose] or file.content_type!=allowed[purpose][ext]:raise ValidationError({'file':'Unsupported extension or MIME type.'})
     if file.size<=0 or file.size>limit:raise ValidationError({'file':'File exceeds the allowed size.'})
@@ -33,6 +34,8 @@ def upload(request,file,purpose):
     except (OSError,subprocess.TimeoutExpired):raise ValidationError({'file':'File validation failed or timed out.'}) from None
     if result.returncode or not result.stdout or len(result.stdout)>limit:raise ValidationError({'file':'Malformed, unsafe or oversized decoded file.'})
     cleaned=result.stdout
+    from .scanner import check_bytes
+    check_bytes(raw);check_bytes(cleaned)
     root=Path(settings.PRIVATE_MEDIA_ROOT).resolve();root.mkdir(mode=0o700,parents=True,exist_ok=True)
     output_ext='.png' if purpose in ('avatar','image') else ext
     output_mime='image/png' if purpose in ('avatar','image') else allowed[purpose][ext]
@@ -40,7 +43,7 @@ def upload(request,file,purpose):
     try:
         fd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
         with os.fdopen(fd,'wb') as handle:handle.write(cleaned)
-        asset=AssetFile.objects.create(owner=actor,purpose=purpose,storage_key=key,original_filename=Path(file.name).name[:255],mime_type=output_mime,size=len(cleaned),sha256=hashlib.sha256(cleaned).hexdigest(),visibility='PRIVATE',scan_status='CLEAN',expires_at=timezone.now()+timezone.timedelta(days=30))
+        asset=AssetFile.objects.create(owner=actor,purpose=purpose,storage_key=key,original_filename=Path(file.name).name[:255],mime_type=output_mime,size=len(cleaned),sha256=hashlib.sha256(cleaned).hexdigest(),visibility='PRIVATE',scan_status='CLEAN',expires_at=timezone.now()+timezone.timedelta(days=settings.AI_SOURCE_RETENTION_DAYS if purpose=='ai_source' else 30))
         record(actor,asset,'asset.upload',('file',))
     except BaseException:
         target.unlink(missing_ok=True)

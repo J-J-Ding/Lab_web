@@ -1,0 +1,8 @@
+[Unit]
+Description=Lab web daily backup schedule, Asia/Shanghai
+[Timer]
+OnCalendar=*-*-* 03:00:00 Asia/Shanghai
+Persistent=true
+RandomizedDelaySec=300
+[Install]
+WantedBy=timers.target

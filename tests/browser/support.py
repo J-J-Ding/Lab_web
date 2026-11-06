@@ -24,6 +24,20 @@ def run(args, *, data=None):
     return result.stdout.strip()
 
 
+
+def launch_browser(playwright, *, back_forward_cache=False):
+    """Choose a real engine; unsupported or unavailable engines fail, never skip."""
+    engine = os.environ.get('LAB_BROWSER_ENGINE', 'chromium')
+    if engine not in ('chromium', 'firefox', 'webkit'):
+        raise ValueError('Unsupported LAB_BROWSER_ENGINE')
+    options = {'headless': True}
+    if engine == 'chromium':
+        options['channel'] = 'chromium'
+        if back_forward_cache:
+            options['ignore_default_args'] = ['--disable-back-forward-cache']
+    return getattr(playwright, engine).launch(**options)
+
+
 def free_port():
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
@@ -31,7 +45,7 @@ def free_port():
 
 
 class Environment:
-    def __init__(self):
+    def __init__(self, ai_enabled=False):
         suffix = f'{os.getpid()}_{secrets.token_hex(3)}'
         self.database = f'test_lab_web_browser_{suffix}'
         self.container = f'lab-web-v3-api-{suffix}'
@@ -39,16 +53,21 @@ class Environment:
         self.created_database = False
         self.created_container = False
         self.server = None
+        self.ai_environment = []
+        if ai_enabled:
+            from datetime import datetime
+            from zoneinfo import ZoneInfo
+            for key,value in {'AI_ENABLED':'True','DEEPSEEK_API_KEY':'fake-test-key-not-for-network','AI_PRICE_INPUT_CNY_PER_MILLION':'2','AI_PRICE_OUTPUT_CNY_PER_MILLION':'8','AI_PRICE_EFFECTIVE_DATE':datetime.now(ZoneInfo('Asia/Shanghai')).date().isoformat()}.items():self.ai_environment += ['-e',key+'='+value]
 
     def start(self):
-        if not COMPOSE or '-p' not in COMPOSE or not COMPOSE[COMPOSE.index('-p') + 1].startswith(('lab-web-test-v4-', 'lab-web-test-v5-', 'lab-web-test-v6-')):
+        if not COMPOSE or '-p' not in COMPOSE or not COMPOSE[COMPOSE.index('-p') + 1].startswith(('lab-web-test-v4-', 'lab-web-test-v5-', 'lab-web-test-v6-', 'lab-web-test-v7-')):
             raise RuntimeError('Use tests/support/v4_environment.py browser: isolated Compose configuration is required.')
         assert self.database.startswith('test_lab_web_browser_') and self.port not in (80, 8000)
         try:
             run(COMPOSE + ['exec', '-T', 'db', 'sh', '-c', 'createdb -U "$POSTGRES_USER" "$1"', 'v3-test', self.database])
             self.created_database = True
             run(COMPOSE + ['run', '--rm', '--no-deps', '-e', f'POSTGRES_DB={self.database}', 'backend', 'python', 'manage.py', 'migrate', '--noinput'])
-            run(COMPOSE + ['run', '-d', '--rm', '--no-deps', '--name', self.container, '-e', f'POSTGRES_DB={self.database}', '-p', f'127.0.0.1:{self.port}:8000', 'backend'])
+            run(COMPOSE + ['run', '-d', '--rm', '--no-deps', '--name', self.container, '-e', f'POSTGRES_DB={self.database}', '-p', f'127.0.0.1:{self.port}:8000'] + self.ai_environment + ['backend'])
             self.created_container = True
             deadline = time.monotonic() + 40
             while True:
@@ -63,6 +82,8 @@ class Environment:
                         break
                 except (OSError, http.client.HTTPException):
                     pass
+                finally:
+                    if 'conn' in locals():conn.close()
                 if time.monotonic() >= deadline:
                     raise RuntimeError('Isolated backend did not become healthy')
                 time.sleep(0.2)

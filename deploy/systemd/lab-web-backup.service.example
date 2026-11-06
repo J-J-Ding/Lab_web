@@ -1,0 +1,7 @@
+[Unit]
+Description=Lab web consistent backup (review before installation)
+[Service]
+Type=oneshot
+User=ecs-user
+WorkingDirectory=/opt/Lab_web
+ExecStart=/bin/bash -c 'flock -n /opt/lab-web-backups/.backup.lock /opt/Lab_web/deploy/scripts/backup.sh --output /opt/lab-web-backups/daily-$(date -u +%%Y%%m%%dT%%H%%M%%SZ)'

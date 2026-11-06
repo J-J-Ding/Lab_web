@@ -8,7 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 STAGE = os.environ.get('LAB_TEST_STAGE', 'v4')
-assert STAGE in ('v4', 'v5', 'v6')
+assert STAGE in ('v4', 'v5', 'v6', 'v7')
 RUNTIME = ROOT / f'.browser-artifacts/{STAGE}-runtime'
 
 
@@ -25,13 +25,13 @@ def prepare():
         values = {'POSTGRES_DB': config['database'], 'POSTGRES_USER': 'lab_test',
                   'POSTGRES_PASSWORD': secrets.token_hex(24), 'DJANGO_SECRET_KEY': secrets.token_hex(32),
                   'DJANGO_ALLOWED_HOSTS': '127.0.0.1,localhost,testserver', 'POSTGRES_HOST': 'db',
-                  'DJANGO_COOKIE_SECURE': 'False'}
+                  'DJANGO_COOKIE_SECURE': 'False', 'AI_ENABLED':'False', 'DEEPSEEK_API_KEY':''}
         env = RUNTIME / 'test.env'
         env.write_text(''.join(f'{k}={v}\n' for k, v in values.items()))
         os.chmod(env, 0o600)
         (RUNTIME / 'override.yml').write_text(
             'services:\n  backend:\n    image: ' + config['image'] +
-            '\n    ports: !reset []\n    volumes:\n      - ' + str(ROOT / 'backend') + ':/app:ro\n')
+            '\n    ports: !reset []\n    volumes:\n      - ' + str(ROOT / 'backend') + ':/app:ro\n  worker:\n    image: ' + config['image'] + '\n    volumes:\n      - ' + str(ROOT / 'backend') + ':/app:ro\n  migrate:\n    image: ' + config['image'] + '\n    volumes:\n      - ' + str(ROOT / 'backend') + ':/app:ro\n')
     config = json.loads(state.read_text())
     assert config['project'].startswith(f'lab-web-test-{STAGE}-')
     assert config['database'].startswith(f'test_lab_web_{STAGE}_')
@@ -48,7 +48,7 @@ def compose():
 
 def guarded():
     prefix = compose()
-    raw = subprocess.check_output(prefix + ['config', '--format', 'json'], text=True)
+    raw = subprocess.check_output(prefix + ['--profile','ai','config', '--format', 'json'], text=True)
     config = json.loads(raw)
     backend, db = config['services']['backend'], config['services']['db']
     assert backend['image'].startswith(f'lab-web-backend:test-{STAGE}-')
@@ -58,6 +58,10 @@ def guarded():
     assert backend['environment']['POSTGRES_USER'] == 'lab_test'
     assert all(not v.get('external') for v in config['volumes'].values())
     assert all(v['name'].startswith(prepare()['project'] + '_') for v in config['volumes'].values())
+    if STAGE=='v7':
+        worker=config['services']['worker']
+        assert worker['image']==backend['image'] and not worker.get('ports')
+        assert backend['environment']['AI_ENABLED']=='False' and not backend['environment'].get('DEEPSEEK_API_KEY')
     return prefix
 
 
@@ -71,7 +75,7 @@ def main():
         print('Independent test database and image ready:', prepare()['project'])
     elif action == 'manage':
         options = ['run', '--rm', '--no-deps']
-        if STAGE=='v6':options += ['-v',str(ROOT/'legacy_samples')+':/legacy:ro','-e','LAB_LEGACY_ROOT=/legacy/originals']
+        if STAGE in ('v6','v7'):options += ['-v',str(ROOT/'legacy_samples')+':/legacy:ro','-e','LAB_LEGACY_ROOT=/legacy/originals']
         if args and args[0] == 'makemigrations' and '--check' not in args:
             options += ['--user', f'{os.getuid()}:{os.getgid()}', '-v', f'{ROOT / "backend"}:/w:rw', '--workdir', '/w']
         database = None
@@ -88,7 +92,7 @@ def main():
         database = 'test_lab_web_upgrade_' + secrets.token_hex(4)
         subprocess.run(prefix + ['exec', '-T', 'db', 'sh', '-c', 'createdb -U "$POSTGRES_USER" "$1"', 'test-upgrade', database], check=True)
         try:
-            script = (ROOT / ('tests/support/verify_v6_upgrade.py' if STAGE == 'v6' else 'tests/support/verify_v5_upgrade.py' if STAGE == 'v5' else 'tests/support/verify_upgrade.py')).read_text()
+            script = (ROOT / ('tests/support/verify_v7_upgrade.py' if STAGE == 'v7' else 'tests/support/verify_v6_upgrade.py' if STAGE == 'v6' else 'tests/support/verify_v5_upgrade.py' if STAGE == 'v5' else 'tests/support/verify_upgrade.py')).read_text()
             subprocess.run(prefix + ['run', '--rm', '--no-deps', '-T', '-e', f'POSTGRES_DB={database}', 'backend', 'python', '-c', script], check=True)
         finally:
             subprocess.run(prefix + ['exec', '-T', 'db', 'sh', '-c', 'dropdb -U "$POSTGRES_USER" "$1"', 'test-upgrade', database], check=True)

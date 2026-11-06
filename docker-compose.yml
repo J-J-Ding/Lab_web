@@ -17,14 +17,20 @@ services:
       timeout: 3s
       retries: 10
       start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
   backend:
-    image: lab-web-backend:v6.1-20261106-170211
+    image: lab-web-backend:v789-index-20261106
+    command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "30", "--access-logfile", "-", "--access-logformat", "request_id=%({x-request-id}o)s method=%(m)s status=%(s)s duration=%(L)s", "--error-logfile", "-"]
     build:
       context: .
       dockerfile: deploy/docker/backend.Dockerfile
-    environment:
+    environment: &backend_environment
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       DJANGO_COOKIE_SECURE: ${DJANGO_COOKIE_SECURE:-False}
@@ -33,10 +39,35 @@ services:
       AUTH_LOGIN_IP_LIMIT: ${AUTH_LOGIN_IP_LIMIT:-60}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost}
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
-      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_USER: ${POSTGRES_RUNTIME_USER:-${POSTGRES_USER}}
+      POSTGRES_PASSWORD: ${POSTGRES_RUNTIME_PASSWORD:-${POSTGRES_PASSWORD}}
       POSTGRES_HOST: ${POSTGRES_HOST:-db}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      FILE_SCAN_REQUIRED: ${FILE_SCAN_REQUIRED:-False}
+      CLAMAV_SOCKET: ${CLAMAV_SOCKET:-}
+      AI_ENABLED: ${AI_ENABLED:-False}
+      AI_PROVIDER: ${AI_PROVIDER:-deepseek}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-flash}
+      AI_CONNECT_TIMEOUT_SECONDS: ${AI_CONNECT_TIMEOUT_SECONDS:-5}
+      AI_REQUEST_TIMEOUT_SECONDS: ${AI_REQUEST_TIMEOUT_SECONDS:-60}
+      AI_MAX_RETRIES: ${AI_MAX_RETRIES:-2}
+      AI_MAX_INPUT_TOKENS: ${AI_MAX_INPUT_TOKENS:-24000}
+      AI_MAX_OUTPUT_TOKENS: ${AI_MAX_OUTPUT_TOKENS:-4000}
+      AI_USER_DAILY_LIMIT: ${AI_USER_DAILY_LIMIT:-10}
+      AI_GLOBAL_DAILY_LIMIT: ${AI_GLOBAL_DAILY_LIMIT:-100}
+      AI_GLOBAL_DAILY_BUDGET_CNY: ${AI_GLOBAL_DAILY_BUDGET_CNY:-10}
+      AI_PRICE_INPUT_CNY_PER_MILLION: ${AI_PRICE_INPUT_CNY_PER_MILLION:-}
+      AI_PRICE_OUTPUT_CNY_PER_MILLION: ${AI_PRICE_OUTPUT_CNY_PER_MILLION:-}
+      AI_PRICE_EFFECTIVE_DATE: ${AI_PRICE_EFFECTIVE_DATE:-}
+      AI_SOURCE_RETENTION_DAYS: ${AI_SOURCE_RETENTION_DAYS:-7}
+      AI_CANDIDATE_RETENTION_DAYS: ${AI_CANDIDATE_RETENTION_DAYS:-30}
+      AI_LEASE_SECONDS: ${AI_LEASE_SECONDS:-240}
+      TRUSTED_PROXY_NETWORKS: ${TRUSTED_PROXY_NETWORKS:-}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-}
+      DJANGO_SSL_REDIRECT: ${DJANGO_SSL_REDIRECT:-False}
+      DJANGO_HSTS_SECONDS: ${DJANGO_HSTS_SECONDS:-0}
     volumes:
       - private_media:/app/private_media
     ports:
@@ -53,6 +84,55 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+  migrate:
+    image: lab-web-backend:v789-index-20261106
+    profiles: ["maintenance"]
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    environment:
+      <<: *backend_environment
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - private_media:/app/private_media
+    networks: [backend]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    image: lab-web-backend:v789-index-20261106
+    profiles: ["ai"]
+    command: ["python", "manage.py", "run_ai_worker"]
+    environment: *backend_environment
+    volumes:
+      - private_media:/app/private_media
+    networks: [backend, host_access]
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 64
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,time; os.kill(1, 0); assert time.time()-os.stat('/tmp/lab-ai-worker-heartbeat').st_mtime < 300"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 
 volumes:
