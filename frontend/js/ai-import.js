@@ -19,7 +19,7 @@
   }
   async function list(path='/api/ai/imports/'){
     const data=await C.request(path),box=$('#ai-jobs');box.replaceChildren();
-    for(const item of data.results){const row=C.node('div',undefined,{class:'ai-job'});row.append(C.button(`${names[item.target_type]} · ${item.state} · ${item.id}`,()=>select(item.id)));box.append(row);}
+    for(const item of data.results){const row=C.node('div',undefined,{class:'ai-job'});row.append(C.button(`${names[item.target_type]} · ${item.state}`,()=>select(item.id)));box.append(row);}
     if(!data.results.length)box.append(C.node('p','暂无 AI 任务。'));
     const pagination=$('#ai-job-pages');pagination.replaceChildren();
     for(const [url,label]of [[data.previous,'上一页'],[data.next,'下一页']])if(url)pagination.append(C.button(label,()=>list(url)));
@@ -40,7 +40,7 @@
   }
   function render(){
     if(!job)return;
-    $('#ai-current').hidden=false;$('#ai-job-id').textContent=job.id;$('#ai-job-state').textContent=job.state;$('#ai-job-message').textContent=job.message;
+    $('#ai-current').hidden=false;$('#ai-job-id').textContent=names[job.target_type]||'文档处理';$('#ai-job-state').textContent=job.state;$('#ai-job-message').textContent=job.message;
     $('#ai-job-cost').textContent=`额度状态 ${job.usage.state} · 预留 ¥${job.usage.reserved_cny} · 按配置价格计量 ${job.usage.actual_cny===null?'待结算':'¥'+job.usage.actual_cny}`;
     $('#ai-consent-form').hidden=job.state!=='AWAITING_CONSENT';
     if(job.state==='AWAITING_CONSENT'&&document.activeElement!==$('#ai-preview'))$('#ai-preview').value=job.preview;
@@ -63,9 +63,10 @@
     for(const note of [...(job.candidate.warnings||[]),...(record.warnings||[])])$('#ai-evidence').append(C.node('p',note,{class:'ai-warning'}));
     const box=$('#ai-field-options');box.replaceChildren();
     for(const path of paths(record.fields)){
-      const label=C.node('label',undefined,{class:'ai-check'}),checkbox=C.node('input',undefined,{type:'checkbox',value:path,'data-ai-field':''});label.append(checkbox,document.createTextNode('确认字段 '+path));box.append(label);
+      const titles={display_name:'姓名',bio:'个人简介',education:'教育经历',research_areas:'研究方向',alumni:'毕业去向',title:'标题',summary:'摘要',authors:'作者',body:'正文',venue:'期刊/会议',publication_date:'发表日期',doi:'DOI',event_name:'赛事名称',award_name:'奖项',award_date:'获奖日期',start_date:'开始日期',end_date:'结束日期',event_date:'日期',publisher:'出版社',isbn:'ISBN',project_number:'项目编号',funder:'资助方',level:'级别',category:'分类',location:'地点'};
+      const label=C.node('label',undefined,{class:'ai-check'}),checkbox=C.node('input',undefined,{type:'checkbox',value:path,'data-ai-field':''});label.append(checkbox,document.createTextNode('确认 '+(titles[path.split('.').at(-1)]||'候选信息')));box.append(label);
       const value=path.startsWith('detail.')?record.fields.detail[path.split('.')[1]]:record.fields[path];
-      box.append(C.node('div',typeof value==='string'?value:JSON.stringify(value),{class:'ai-field-value'}));
+      box.append(C.node('div',typeof value==='string'?value:Array.isArray(value)?value.map(v=>typeof v==='object'?Object.values(v).filter(x=>typeof x==='string').join(' · '):String(v)).join('；'):value&&typeof value==='object'?Object.values(value).filter(v=>typeof v==='string'||typeof v==='number').join(' · '):String(value??''),{class:'ai-field-value'}));
       if((record.uncertain_fields||[]).includes(path))box.append(C.node('p','此字段存在不确定或人工修改，请结合来源核对。',{class:'ai-warning'}));
     }
     const already=job.applied?.[String(index)];C.disabled($('#ai-apply'),!!already);$('#ai-confirm-fields').checked=false;

@@ -3,7 +3,7 @@
  'use strict';
  const C=window.LabContent,$=s=>document.querySelector(s),mode=document.body.dataset.v10Page;
  const N=(tag,text,attrs={})=>C.node(tag,text,attrs);
- let dirty=false,user;
+ let dirty=false,user,fieldSerial=0,fillProfileCandidate=null;
  const labels={PAPER:'发表论文',PROJECT:'科研项目',AWARD:'竞赛与荣誉',NEWS:'团队新闻',ACTIVITY:'团队活动',BLOG:'文章与资源',PUBLICATION:'出版成果',LAB_PAGE:'团队介绍'};
  const schemas={
   PAPER:[['venue','期刊/会议'],['publication_date','发表日期','date'],['doi','DOI'],['category','论文分类'],['volume','卷'],['issue','期'],['pages','页码'],['open_url','公开链接','url']],
@@ -16,7 +16,7 @@
   LAB_PAGE:[['page_key','页面','select',[['about','团队简介'],['contact','联系我们']]],['body','正文','textarea']]
  };
  function field(parent,name,label,type='text',value='',required=false,options){
-  const wrap=N('div'),id='v10-'+name.replace(/[^a-z0-9_-]/gi,'-'),l=N('label',label+' ',{for:id});
+  const wrap=N('div'),id='v10-'+(++fieldSerial)+'-'+name.replace(/[^a-z0-9_-]/gi,'-'),l=N('label',label+' ',{for:id});
   l.append(N('span',required?'*':'选填',{class:required?'required':'optional'}));
   const input=N(type==='textarea'?'textarea':type==='select'?'select':'input',undefined,{name,id});
   if(type!=='textarea'&&type!=='select')input.type=type;
@@ -61,16 +61,27 @@
    if(user.role==='CUSTOMER'&&!user.is_superuser&&!new URLSearchParams(location.search).has('member')){privacy.hidden=true;$('#privacy-note').textContent='Customer 资料和简历默认私有，不会在官网展示。Teacher / Student 身份由 Root 授予。';}
    else $('#privacy-note').textContent='只展示你选择公开的内容。Teacher 编辑其他成员时不能替其扩大公开范围。';
    $('#education-rows').replaceChildren();for(const row of data.education||[])educationRow(row);
+   renderAlumni(data.alumni);
+
   }
   function educationRow(row={}){
    const wrap=N('fieldset');wrap.append(N('legend','教育经历'));
    for(const [key,label,type] of [['school','学校','text'],['major','专业','text'],['degree','学历/学位','text'],['start_date','开始日期','date'],['end_date','结束日期','date']])field(wrap,key,label,type,row[key]);
    check(wrap,'is_public','允许公开这条经历',row.is_public);wrap.append(C.button('移除这条经历',()=>{wrap.remove();dirty=true;}));$('#education-rows').append(wrap);
   }
+  function renderAlumni(alumni){
+   let box=$('#alumni-fields');if(!box){box=N('fieldset',undefined,{id:'alumni-fields'});$('#education').after(box);}box.replaceChildren(N('legend','毕业去向 · 选填'));
+   field(box,'graduation_year','毕业年份','number',alumni?.graduation_year);field(box,'alumni_degree','学历/学位','text',alumni?.degree);field(box,'destination_type','去向类型','select',alumni?.destination_type||'OTHER',false,[['OTHER','其他'],['WORK','工作'],['STUDY','继续深造']]);field(box,'organization','去向单位','text',alumni?.organization);check(box,'alumni_is_public','允许公开这条毕业信息',alumni?.is_public);
+  }
+  fillProfileCandidate=(fields,selected)=>{
+   if(selected.includes('education')&&Array.isArray(fields.education)){$('#education-rows').replaceChildren();for(const row of fields.education)educationRow(row);}
+   if(selected.includes('alumni'))renderAlumni(fields.alumni);
+  };
   $('#add-education').onclick=()=>{educationRow();dirty=true;};render();
   bind(f,async()=>{
    const payload={lock_version:data.lock_version,avatar_asset:avatar,education:[],research_areas:formValue(f,'research_areas').split(/[,，]/).map(v=>v.trim()).filter(Boolean)};
    for(const key of ['display_name','bio','public_contact_email','phone','internal_contact'])if(f.elements[key])payload[key]=formValue(f,key);
+   const year=formValue(f,'graduation_year');payload.alumni=year?{graduation_year:Number(year),degree:formValue(f,'alumni_degree'),destination_type:formValue(f,'destination_type'),organization:formValue(f,'organization'),is_public:f.elements.alumni_is_public.checked}:null;
    payload.public_contact_enabled=f.elements.public_contact_enabled.checked;
    for(const key of ['public_visible','contact_visible','education_visible','alumni_visible'])if(!$('#privacy-fields').hidden)payload[key]=f.elements[key].checked;
    for(const [index,row] of [...$('#education-rows').children].entries()){
@@ -163,8 +174,10 @@
     const fields=records[Number(params.get('ai_record')||0)]?.fields;
     if(!fields)throw {status:400,data:{detail:'候选不可用，请返回 AI 页面重新选择。'}};
     const selected=(params.get('ai_fields')||'').split(',');
+    if(mode==='profile'&&fillProfileCandidate)fillProfileCandidate(fields,selected);
     for(const key of selected){
-     if(key==='authors')continue;
+     if(['authors','education','alumni'].includes(key))continue;
+     if(key.startsWith('detail.')){const name=key.slice(7);if(schemas[document.querySelector('[name=kind]')?.value]?.some(row=>row[0]===name)){const el=document.querySelector('[name=detail_'+name+']');if(el)el.value=fields.detail?.[name]??'';}continue;}
      if(key==='detail'){for(const [name,value] of Object.entries(fields.detail||{})){const el=document.querySelector('[name="detail_'+name+'"]');if(el)el.value=value??'';}}
      else {const el=document.querySelector('[name="'+key+'"]');if(el)el.value=Array.isArray(fields[key])?fields[key].join('，'):fields[key]??'';}
     }

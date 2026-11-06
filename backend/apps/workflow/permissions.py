@@ -20,7 +20,8 @@ def actor_for(request, manager=False, editor=False):
 def visible_items(actor):
     if not actor.is_active or not (actor.is_superuser or actor.role in ('ADMIN','TEACHER','STUDENT')):
         return ContentItem.objects.none()
-    return ContentItem.objects.all().order_by('-updated_at','id')
+    from apps.content.direct_services import readable
+    return readable(actor).order_by('-updated_at','id')
 
 
 def can_edit(actor,item):

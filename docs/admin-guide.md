@@ -1,3 +1,5 @@
+> V10变更：本文保留旧版本契约供历史追溯。新直接保存、身份权限、简历及首页接口以 [V10使用与部署说明](V10-使用与部署说明.md) 为准；旧提交/审核流程已停用。
+
 # 管理员使用
 
 现有ROOT用户名root_admin；密码由负责人掌握，忘记用服务器交互命令 `docker compose exec backend python manage.py changepassword root_admin` 重设，不提供默认密码。ROOT由is_superuser独立标识，普通role=CUSTOMER不影响ROOT能力。

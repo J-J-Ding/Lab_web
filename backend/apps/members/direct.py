@@ -45,9 +45,11 @@ def profile_data(profile,actor,revision=None):
 
 @transaction.atomic
 def get_profile(request,pk=None):
-    actor,_=locked_users(request)
+    reference=get_object_or_404(MemberProfile,pk=pk,merged_into__isnull=True) if pk else None
+    actor,target=locked_users(request,reference.user_id if reference else None)
     if pk:
         profile=get_object_or_404(MemberProfile.objects.select_for_update(),pk=pk,merged_into__isnull=True)
+        if profile.user_id!=reference.user_id:raise VersionConflict('Profile binding changed.')
         require_management(actor,profile)
     else:
         profile,_=MemberProfile.objects.get_or_create(user=actor,defaults={'created_by':actor,'updated_by':actor})
@@ -68,6 +70,7 @@ def save_profile(request,data,pk=None,source_id=None):
         if any(data.get(key,False) and not getattr(profile,key) for key in privacy):raise PermissionDenied('Only the owner or Root may expand visibility.')
         if 'public_contact_email' in data and data['public_contact_email'] != (profile.published_revision.public_contact_email if profile.published_revision else ''):raise PermissionDenied()
         if data.get('public_contact_enabled') and not (profile.published_revision and profile.published_revision.public_contact_enabled):raise PermissionDenied()
+    current=profile.published_revision
     source=get_object_or_404(MemberRevision,pk=source_id,profile=profile) if source_id else (profile.published_revision or profile.draft_revision)
     if profile.draft_revision_id:
         draft=profile.draft_revision
@@ -77,6 +80,8 @@ def save_profile(request,data,pk=None,source_id=None):
     values={f:getattr(source,f) for f in fields} if source else {'display_name':' '.join(filter(None,(owner.first_name,owner.last_name)))}
     for key in ('display_name','slug','bio','public_contact_email','public_contact_enabled'):
         if key in data:values[key]=data[key]
+    if source_id:
+        values['public_contact_enabled']=bool(current and current.public_contact_enabled and current.public_contact_email==values.get('public_contact_email'))
     values['slug']=values.get('slug') or 'member-'+str(profile.pk)
     if MemberSlug.objects.filter(slug=values['slug']).exclude(profile=profile).exists():raise ValidationError({'slug':'This public address is already used.'})
     MemberSlug.objects.get_or_create(slug=values['slug'],defaults={'profile':profile})
@@ -92,7 +97,7 @@ def save_profile(request,data,pk=None,source_id=None):
     if values.get('avatar_asset_id'):
         image=get_object_or_404(AssetFile.objects.select_for_update(),pk=values['avatar_asset_id'],scan_status='CLEAN',purpose='avatar',deletion_requested_at__isnull=True)
         previous=source.avatar_asset_id if source else None
-        if image.owner_id not in (actor.pk,owner.pk) and image.pk!=previous:raise PermissionDenied()
+        if image.owner_id!=actor.pk and image.pk!=previous:raise PermissionDenied()
         if image.expires_at and image.expires_at<=timezone.now():raise ValidationError({'avatar_asset':'Image expired; upload again.'})
         image.expires_at=None;image.visibility='PUBLIC' if profile.public_visible else 'PRIVATE';image.save(update_fields=['visibility','expires_at'])
     revision=MemberRevision.objects.create(profile=profile,number=(profile.revisions.aggregate(n=Max('number'))['n'] or 0)+1,base_published_revision=profile.published_revision,member_kind=owner.role if owner.role in ('TEACHER','STUDENT','CUSTOMER') else 'TEACHER',public_member_status=source.public_member_status if source else 'ACTIVE',edited_by=actor,**values)
@@ -100,6 +105,10 @@ def save_profile(request,data,pk=None,source_id=None):
     if not private_allowed:
         old_public={e['school'] for e in (list(source.education.filter(is_public=True).values('school')) if source else [])}
         if any(e['is_public'] and e['school'] not in old_public for e in education):raise PermissionDenied('Cannot expand another member’s education visibility.')
+    if source_id:
+        keys=('school','major','degree','start_date','end_date')
+        allowed={tuple(getattr(e,k) for k in keys) for e in current.education.filter(is_public=True)} if current else set()
+        education=[{**entry,'is_public':bool(entry.get('is_public') and tuple(entry.get(k) for k in keys) in allowed)} for entry in education]
     EducationEntry.objects.bulk_create([EducationEntry(revision=revision,**entry) for entry in education])
     names=data.get('research_areas',[link.area.name for link in source.research_links.select_related('area')] if source else [])
     for position,name in enumerate(names,1):
@@ -108,6 +117,9 @@ def save_profile(request,data,pk=None,source_id=None):
     if 'alumni' not in data and source:
         old=getattr(source,'alumni',None)
         if old:alumni={f:getattr(old,f) for f in ('graduation_year','degree','destination_type','organization','is_public')}
+    if alumni and source_id:
+        baseline=getattr(current,'alumni',None) if current else None
+        alumni={**alumni,'is_public':bool(baseline and baseline.is_public and all(getattr(baseline,k)==alumni.get(k) for k in ('graduation_year','degree','destination_type','organization')))}
     if alumni:
         if not private_allowed and alumni.get('is_public') and not (source and getattr(source,'alumni',None) and source.alumni.is_public):raise PermissionDenied()
         AlumniDestination.objects.create(revision=revision,**alumni)

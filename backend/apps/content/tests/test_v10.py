@@ -108,3 +108,24 @@ class DirectCollaborationTests(TestCase):
         c=APIClient();r=c.post('/api/auth/register/',{'username':'中文登录','password':'Secure-long-Password19!'},format='json');self.assertEqual(r.status_code,400)
         legacy=User.objects.create_user(username='旧中文',password='Secure-long-Password19!')
         self.assertEqual(c.post('/api/auth/login/',{'username':legacy.username,'password':'Secure-long-Password19!'},format='json').status_code,200)
+
+    def test_restore_never_revives_revoked_field_privacy(self):
+        c=self.client_for(self.student);initial=c.get('/api/members/me/profile/').data
+        fields={'lock_version':initial['lock_version'],'display_name':'隐私同学','public_visible':True,'contact_visible':True,'education_visible':True,'alumni_visible':True,'public_contact_enabled':True,'public_contact_email':'public@example.com','education':[{'school':'原学校','is_public':True,'position':1}],'alumni':{'graduation_year':2025,'destination_type':'WORK','organization':'原单位','is_public':True}}
+        first=c.patch('/api/members/me/profile/',fields,format='json');self.assertEqual(first.status_code,200,first.data)
+        second=c.patch('/api/members/me/profile/',{'lock_version':first.data['lock_version'],'public_contact_enabled':False,'education':[{'school':'原学校','is_public':False,'position':1}],'alumni':{'graduation_year':2025,'destination_type':'WORK','organization':'原单位','is_public':False}},format='json');self.assertEqual(second.status_code,200,second.data)
+        r=self.client_for(self.teacher).post('/api/members/'+first.data['id']+'/restore/',{'lock_version':second.data['lock_version'],'source_revision':str(MemberProfile.objects.get(user=self.student).revisions.get(number=1).pk)},format='json')
+        self.assertEqual(r.status_code,200,r.data);self.assertFalse(r.data['public_contact_enabled']);self.assertFalse(r.data['education'][0]['is_public']);self.assertFalse(r.data['alumni']['is_public'])
+
+    def test_restore_rejects_disabled_author_and_preserves_history(self):
+        self.profile(self.student,'作者');c=self.client_for(self.student);item=self.create(c,authors=[self.student.pk]);revision=item['revision']['id']
+        User.objects.filter(pk=self.student.pk).update(role='CUSTOMER')
+        r=self.client_for(self.teacher).post('/api/content/items/'+item['id']+'/restore/',{'lock_version':item['lock_version'],'source_revision':revision},format='json');self.assertEqual(r.status_code,409,r.data)
+        self.assertEqual(ContentItem.objects.get(pk=item['id']).revisions.count(),1)
+
+    def test_teacher_cannot_download_customer_legacy_review_avatar(self):
+        from apps.assets.models import AssetFile
+        from apps.members.models import MemberRevision
+        a=AssetFile.objects.create(owner=self.customer,purpose='avatar',storage_key='v10-private.png',original_filename='private.png',mime_type='image/png',size=1,sha256='0'*64,scan_status='CLEAN')
+        p=MemberProfile.objects.create(user=self.customer);r=MemberRevision.objects.create(profile=p,number=1,state='SUBMITTED',avatar_asset=a);p.draft_revision=r;p.save()
+        self.assertEqual(self.client_for(self.teacher).get('/api/assets/'+str(a.pk)+'/download/').status_code,404)

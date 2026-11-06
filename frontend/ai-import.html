@@ -7,14 +7,14 @@
 <h1>AI 文档与草稿助手</h1><nav class="work-nav" aria-label="协同平台"><a href="profile.html">个人中心</a><a href="workspace.html">我的工作区</a><a href="member-application.html">成员资料</a><a href="manage/index.html" data-manager-only hidden>团队管理</a></nav>
 <p id="business-status" role="status" aria-live="polite"></p>
 <div id="business-content" hidden>
-<section class="work-card"><h2>处理范围与额度</h2><p id="ai-quota" role="status">正在读取额度…</p><p>文档原件保留在本服务器。先本地提取并显示脱敏预览，只有你确认的文本才会发送至 DeepSeek；未授权前不调用模型。原件默认保留7天，候选30天；供应商和备份副本遵循各自保留政策。</p><p>仅支持有文本层的 PDF 和 DOCX（≤20 MiB）。扫描件需要 OCR 或人工录入。所有结果都是待核对的候选，确认后只保存草稿，最终公开范围由保存表单时选择。</p></section>
+<section class="work-card"><h2>处理范围与额度</h2><p id="ai-quota" role="status">正在读取额度…</p><p>文档原件保留在本服务器。先本地提取并显示脱敏预览，只有你确认的文本才会发送至 DeepSeek；未授权前不调用模型。原件默认保留7天，候选30天；供应商和备份副本遵循各自保留政策。</p><p>仅支持有文本层的 PDF 和 DOCX（≤20 MiB）。扫描件需要 OCR 或人工录入。所有结果都是待核对的候选，核对后进入结构化表单，最终公开范围由保存表单时选择。</p></section>
 <div class="ai-columns">
 <section class="work-card"><h2>1. 上传并本地解析</h2><form id="ai-upload-form">
 <label for="ai-target">导入目标</label><select id="ai-target" name="target_type"></select>
 <label for="ai-file">私有文档</label><input id="ai-file" type="file" accept=".pdf,.docx" required>
 <label class="ai-check"><input id="ai-local-consent" type="checkbox" required>同意在本服务器解析私有文件</label>
 <button type="submit">上传并本地解析</button></form>
-<details><summary>从已核实字段生成简介/摘要</summary><form id="ai-summary-form">
+<details hidden><summary>从已核实字段生成简介/摘要</summary><form id="ai-summary-form">
 <label for="ai-summary-target">摘要目标</label><select id="ai-summary-target" name="target_type"></select>
 <label for="ai-verified">已核实字段 JSON</label><textarea id="ai-verified" rows="6" maxlength="20000" required>{}</textarea>
 <label class="ai-check"><input id="ai-summary-consent" type="checkbox" required>我已核实上述字段并同意发送至 DeepSeek</label><button type="submit">生成候选摘要</button></form></details></section>
@@ -26,6 +26,6 @@
 <p id="ai-cancel-note">取消已发送请求不保证撤回供应商处理或费用；不确定计费会保留预算等待核对。</p></section>
 <section class="work-card" id="ai-candidate-section" hidden><h2>3. 核对候选与来源</h2><p>在下一步结构化表单中修改候选，无需编辑 JSON。</p><textarea hidden id="ai-candidate" rows="13" spellcheck="false"></textarea><button hidden type="button" id="ai-save-candidate">保存候选修改</button>
 <label for="ai-record">选择候选条目</label><select id="ai-record"></select><div id="ai-evidence"></div><div id="ai-field-options"></div><div id="ai-author-matches"></div><div id="ai-duplicates"></div><button type="button" id="ai-refresh-matches">刷新匹配提示</button>
-<form id="ai-apply-form"><label hidden for="ai-target-id">目标草稿 ID（留空新建）</label><input hidden id="ai-target-id" type="text" maxlength="36"><label hidden for="ai-target-version">目标版本号</label><input hidden id="ai-target-version" type="number" min="0"><button hidden type="button" id="ai-read-target">读取目标版本</button>
-<p>个人资料只写入本人草稿。作者须人工选择贡献者；不按姓名自动绑定或创建账号。已有 DOI/项目号冲突需手工核对，不能自动合并。</p><label class="ai-check"><input id="ai-confirm-fields" type="checkbox" required>我已逐项核对所选字段和来源</label><button type="submit" id="ai-apply">填写到表单</button></form><div id="ai-applied-result" role="status"></div></section>
+<form id="ai-apply-form"><label hidden for="ai-target-id">填写到表单</label><input hidden id="ai-target-id" type="text" maxlength="36"><label hidden for="ai-target-version">目标版本号</label><input hidden id="ai-target-version" type="number" min="0"><button hidden type="button" id="ai-read-target">读取目标版本</button>
+<p>个人资料只填写本人表单。成果作者请在下一步从团队成员列表选择，系统不会按姓名自动绑定账号。</p><label class="ai-check"><input id="ai-confirm-fields" type="checkbox" required>我已逐项核对所选字段和来源</label><button type="submit" id="ai-apply">填写到表单</button></form><div id="ai-applied-result" role="status"></div></section>
 </div></main><script defer src="/js/layout.js?v=10"></script></body></html>

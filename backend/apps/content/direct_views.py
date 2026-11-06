@@ -41,7 +41,7 @@ def validated(cls,request):
 
 
 def item_data(item,actor):
-    r=item.published_revision or item.working_revision
+    r=item.published_revision or (item.working_revision if services.editable(actor,item) else None)
     rev=revision_data(r)
     authors=[]
     if r:

@@ -62,12 +62,10 @@ def permitted_asset(actor,pk):
         content_reference=asset.purpose in ('image','attachment') and asset.revisionasset_set.filter(revision__item__in=visible_items(actor),revision_id=F('revision__item__published_revision_id'),revision__item__visibility_gate=True,revision__item__archived_at__isnull=True).exists()
         if not content_reference:
             if not is_manager(actor):raise NotFound()
-            applications=asset.membershipapplication_set.select_related('applicant')
-            from django.db.models import F
-            avatar_candidates=asset.memberrevision_set.filter(state='SUBMITTED',profile__draft_revision_id=F('id'))
-            if not actor.is_superuser:avatar_candidates=avatar_candidates.filter(profile__user__is_superuser=False,profile__user__role__in=['CUSTOMER','STUDENT','TEACHER'])
-            reviewing_avatar=asset.mime_type.startswith('image/') and avatar_candidates.exists()
-            if not reviewing_avatar and not any(can_manage(actor,a.applicant) for a in applications):raise NotFound()
+            # Current business avatar access only; retired review status grants no access.
+            from apps.members.models import MemberProfile
+            candidates=MemberProfile.objects.filter(published_revision__avatar_asset=asset,merged_into__isnull=True,user__is_active=True,user__role__in=['TEACHER','STUDENT'],user__is_superuser=False)
+            if not (asset.purpose=='avatar' and candidates.exists()):raise NotFound()
     root=Path(settings.PRIVATE_MEDIA_ROOT).resolve();original=root/asset.storage_key
     if original.is_symlink():raise NotFound()
     path=original.resolve()

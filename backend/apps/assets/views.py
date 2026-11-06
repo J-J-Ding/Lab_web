@@ -22,6 +22,10 @@ class DownloadView(AccountAPIView):
     http_method_names=['get']
     def get(self,request,pk):
         asset,path=services.permitted_asset(request.user,pk)
+        if asset.purpose=='resume' and request.user.is_superuser and asset.owner_id!=request.user.pk:
+            from django.db import transaction
+            from apps.workflow.audit import record
+            with transaction.atomic():record(request.user,asset,'resume.download',())
         response=FileResponse(path.open('rb'),as_attachment=True,filename='document.docx' if asset.mime_type.endswith('document') else 'document.pdf' if asset.mime_type=='application/pdf' else 'image.png',content_type=asset.mime_type)
         response['X-Content-Type-Options']='nosniff';response['Cache-Control']='no-store'
         return response

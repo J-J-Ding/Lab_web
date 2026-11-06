@@ -27,7 +27,11 @@ def editable(user, item):
 
 
 def readable(user):
-    return ContentItem.objects.all() if team(user) else ContentItem.objects.none()
+    if not team(user):return ContentItem.objects.none()
+    qs=ContentItem.objects.all()
+    if is_manager(user):return qs
+    grants=ContentEditGrant.objects.filter(user=user,revoked_at__isnull=True).values('item_id')
+    return qs.filter(Q(published_revision__isnull=False)|Q(created_by=user)|Q(pk__in=grants))
 
 
 def name_for(profile):
@@ -95,6 +99,8 @@ def save(request, data, pk=None, source_id=None):
         if not data.get('authors_ordered',True):
             previous=list(source.contributions.filter(contributor__member_profile__user_id__in=ids).order_by('position','id').values_list('contributor__member_profile__user_id',flat=True)) if source else []
             ids=list(dict.fromkeys(previous))+sorted(set(ids)-set(previous))
+        from apps.accounts.models import User
+        list(User.objects.select_for_update().filter(pk__in=ids).order_by('pk'))
         profiles={p.user_id:p for p in directory().select_for_update(of=('self',)).filter(user_id__in=ids)}
         if len(profiles)!=len(ids) or any(not name_for(p) for p in profiles.values()):raise ValidationError({'authors':'Select registered active Teacher/Student members with completed names.'})
         for position,uid in enumerate(ids,1):
@@ -106,6 +112,8 @@ def save(request, data, pk=None, source_id=None):
         for position,link in enumerate(legacy,len(ids)+1):
             RevisionContribution.objects.create(revision=revision,contributor=link.contributor,contribution_role=link.contribution_role,position=position,approved_display_name=link.approved_display_name,approved_affiliation=link.approved_affiliation,is_corresponding=link.is_corresponding)
     elif source:
+        if source_id and source.contributions.filter(contributor__member_profile__user__isnull=False).exclude(contributor__member_profile__user__is_active=True,contributor__member_profile__user__role__in=['TEACHER','STUDENT']).exists():
+            raise VersionConflict('Historical author is no longer an active team member. Load the content in the editor and select valid authors instead.')
         for link in source.contributions.all():
             RevisionContribution.objects.create(revision=revision,**{f:getattr(link,f) for f in ('contributor_id','contribution_role','position','is_corresponding','approved_display_name','approved_affiliation')})
     previous=list(source.assets.values_list('asset_id',flat=True)) if source else []

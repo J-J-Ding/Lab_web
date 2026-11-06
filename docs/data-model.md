@@ -80,3 +80,7 @@ AssetFile 增加 purpose、deletion_requested_at，区分证明与可公开候�
 V7新增AIImportJob、AIConsent、AICandidate、AIUsageLedger、AIQuotaBucket五张表，ai_assistant/0001、0002记录租约、授权文本摘要、候选/应用指针、已发送标记、计费预留/实结/UNKNOWN及核账理由摘要；assets/0004只扩展ai_source用途，不修改已发布内容。候选最多10条逐条应用，原业务版本与公开指针仍由原服务控制。
 
 V8使用原成果/成员/审核表ORM聚合，不另建事实库。V9无业务模型变更，增加服务器运行角色分权；迁移服务保留服务器管理员身份，backend/worker运行角色无superuser/CREATEDB/CREATEROLE。旧User及角色枚举不变。
+
+## V10增量
+
+ContentItem新增visibility_scope（PUBLIC/TEAM）与featured，公开读取同时校验范围、撤下和归档门禁。ContentRevision/MemberRevision仍为不可变历史，直接保存创建新生效快照；新迁移保留旧审核/确认/申请记录。MemberRevision支持CUSTOMER但其资料不进入公开选择器；Resume保存本人私有求职意向/简介和resume用途文件引用。旧ADMIN受控归并为TEACHER并审计，所有账号刷新Session版本；Teacher业务编辑与Root账号安全管理分离。contact为新增受控LAB_PAGE键，home布局由前端代码固定。
