@@ -81,3 +81,7 @@ sudo docker compose -f docker-compose.yml -f "$V6_BACKUP/release.yml" logs --tai
 列表为空是未发布资料的正常状态；详细页/旧映射在获批前 404。示例先 dry-run，人工核验后按 [迁移手册](legacy-migration.md) 分批 apply，绝不自动发布。只用测试账号在回环或受控 HTTPS 验证上传、独立审核、三个成员成果/项目 UUID 一致、待审隔离、公开撤下和旧文件直链；不得在无 HTTPS 公网用真实账号测试。逐项对账清单不是仅看总数。
 
 回退使用 old-image.txt 对应旧镜像建立 rollback override，然后以该 override `up -d --no-deps --no-build --wait backend`。关闭不兼容的新入口即可，不要把原始隐私正文或媒体复制回 frontend。保留扩展数据库表、历史与媒体，不反向迁移、不 drop、不对生产执行 down --volumes；数据库/文件恢复必须另行批准并使用匹配备份。后续升级命令持续携带 release override，避免误用默认旧镜像标签。
+
+## 2026-11-06 现场更新
+
+用户随后要求修复 V2/V6 运行版本不一致，服务器已升级为 `lab-web-backend:v6-6d2975b`，默认 Compose 镜像同步修正。上文“尚未执行”描述的是最初交付状态，后续实际执行、备份与验证见 [部署记录](V6-部署记录.md)。公开数据为空与接口未部署是两种不同状态。
