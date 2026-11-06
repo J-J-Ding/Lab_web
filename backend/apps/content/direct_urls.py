@@ -1,0 +1,26 @@
+from django.urls import path,re_path
+from . import direct_views as v
+urlpatterns=[
+ path('public/home/',v.Home.as_view()),
+ path('content/capabilities/',v.Capabilities.as_view()),
+ path('content/items/',v.Items.as_view()),path('content/items/<uuid:pk>/',v.Item.as_view()),
+ path('content/items/<uuid:pk>/history/',v.History.as_view()),path('content/items/<uuid:pk>/restore/',v.History.as_view()),
+ path('content/items/<uuid:pk>/grants/',v.Grant.as_view()),
+ path('members/directory/',v.Directory.as_view()),path('members/me/profile/',v.Profile.as_view()),
+ path('members/<uuid:pk>/profile/',v.Profile.as_view()),
+ path('members/me/history/',v.ProfileHistory.as_view()),path('members/me/restore/',v.ProfileHistory.as_view()),
+ path('members/<uuid:pk>/history/',v.ProfileHistory.as_view()),path('members/<uuid:pk>/restore/',v.ProfileHistory.as_view()),
+ path('members/me/resumes/',v.Resumes.as_view()),path('members/me/resumes/<uuid:pk>/',v.Resumes.as_view()),
+ path('admin/members/<int:owner_id>/resumes/',v.Resumes.as_view()),
+ re_path(r'^ai/imports/[^/]+/apply/$',v.Gone.as_view()),
+ re_path(r'^review/.*$',v.Gone.as_view()),
+ re_path(r'^members/applications/.*$',v.Gone.as_view()),
+ re_path(r'^members/me/draft/(submit|withdraw)/$',v.Gone.as_view()),
+ re_path(r'^content/revisions/[^/]+/(submit|withdraw|discard)/$',v.Gone.as_view()),
+ re_path(r'^content/contributions/[^/]+/confirm/$',v.Gone.as_view()),
+ re_path(r'^content/items/[^/]+/revisions/$',v.Gone.as_view()),
+ re_path(r'^content/revisions/.*$',v.Gone.as_view()),
+ re_path(r'^content/contributors/.*$',v.Gone.as_view()),
+ re_path(r'^members/me/draft/.*$',v.Gone.as_view()),
+ path('content/confirmations/',v.Gone.as_view()),
+]

@@ -9,6 +9,10 @@
     if(term && term.length<2){P.status.textContent='搜索至少输入 2 个字符';return;}
     const members=kind==='MEMBER'||kind==='GRADUATE';
     if(!members)query.set('kind',kind);
+    const incoming=new URLSearchParams(location.search);
+    if(kind==='MEMBER'&&['TEACHER','STUDENT'].includes(incoming.get('member_kind')))query.set('member_kind',incoming.get('member_kind'));
+    if(document.body.dataset.resource)query.set('category','RESOURCE');
+    else if(kind==='AWARD'&&incoming.get('category'))query.set('category',incoming.get('category'));
     if(term && kind!=='GRADUATE')query.set('q',term);
     if(form.elements.year.value)query.set('year',form.elements.year.value);
     let endpoint=kind==='MEMBER'?'members':kind==='GRADUATE'?'graduates':'content';
@@ -17,7 +21,7 @@
       const card=P.node('article',undefined,'public-card');
       const title=P.node('h2');title.append(P.link(item.display_name||item.title,members?'/member.html?slug='+encodeURIComponent(item.slug):'/content.html?id='+encodeURIComponent(item.id)));card.append(title);
       if(members){card.append(P.node('p',item.bio));if(item.alumni)card.append(P.node('p',`${item.alumni.graduation_year} · ${item.alumni.organization}`));}
-      else {card.append(P.node('p',item.date,'public-meta'),P.node('p',item.summary));}
+      else {if(item.date)card.append(P.node('p',item.date,'public-meta'));if(item.summary)card.append(P.node('p',item.summary));}
       P.content.append(card);
     }
     P.ready(data.count);

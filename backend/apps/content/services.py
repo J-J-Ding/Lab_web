@@ -32,7 +32,7 @@ def normalize_identifier(scheme, value):
             raise ValidationError({'isbn':'Invalid ISBN checksum.'})
     elif scheme=='PROJECT':
         value=re.sub(r'\s+','',value).upper()
-    elif scheme=='PAGE' and value not in ('home','about'):
+    elif scheme=='PAGE' and value not in ('home','about','contact'):
         raise ValidationError({'page_key':'Invalid page key.'})
     if not value or len(value)>255:
         raise ValidationError({'identifier':'Invalid identifier length.'})
@@ -45,7 +45,7 @@ def locked_editor(actor):
         raise PermissionDenied()
     if is_manager(user):
         return user
-    if user.role=='STUDENT' and hasattr(user,'member_profile') and user.member_profile.membership_status=='ACTIVE':
+    if user.role=='STUDENT':
         return user
     raise PermissionDenied('An active membership is required.')
 

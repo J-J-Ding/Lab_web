@@ -102,7 +102,7 @@ class Graduates(PublicView):
 class FixedPage(PublicView):
     def get(self,request,key):
         params(request,set())
-        if key not in ('home','about'):
+        if key not in ('home','about','contact'):
             from rest_framework.exceptions import NotFound
             raise NotFound()
         return Response(content_data(get_object_or_404(content_queryset(),kind='LAB_PAGE',published_revision__lab_page__page_key=key)))

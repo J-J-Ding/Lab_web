@@ -73,10 +73,10 @@ class PublicationDetail(models.Model):
 
 class LabPageDetail(models.Model):
     revision=models.OneToOneField(ContentRevision,on_delete=models.CASCADE,primary_key=True,related_name='lab_page')
-    page_key=models.CharField(max_length=8,choices=[('home','home'),('about','about')])
+    page_key=models.CharField(max_length=8,choices=[('home','home'),('about','about'),('contact','contact')])
     body=models.TextField(blank=True,max_length=50000)
     class Meta:
-        constraints=[models.CheckConstraint(condition=Q(page_key__in=['home','about']),name='lab_page_key_valid')]
+        constraints=[models.CheckConstraint(condition=Q(page_key__in=['home','about','contact']),name='lab_page_key_valid')]
 
 
 DETAIL_MODELS={'PAPER':PaperDetail,'PROJECT':ProjectDetail,'AWARD':AwardDetail,'ACTIVITY':ActivityDetail,'NEWS':NewsDetail,'BLOG':BlogDetail,'PUBLICATION':PublicationDetail,'LAB_PAGE':LabPageDetail}

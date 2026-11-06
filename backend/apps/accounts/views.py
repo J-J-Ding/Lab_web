@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import services
-from .permissions import IsManager
+from .permissions import IsRoot
 from .serializers import (AdminCreateSerializer, AdminUpdateSerializer, ChangePasswordSerializer,
                           LoginSerializer, PasswordSerializer, ProfileSerializer, RegisterSerializer,
                           StrictSerializer, UserSerializer)
@@ -122,7 +122,7 @@ class UserPagination(PageNumberPagination):
 
 
 class UsersView(AccountAPIView):
-    permission_classes = [IsManager]
+    permission_classes = [IsRoot]
     http_method_names = ['get', 'post']
 
     def get(self, request):
@@ -136,7 +136,7 @@ class UsersView(AccountAPIView):
 
 
 class UserDetailView(AccountAPIView):
-    permission_classes = [IsManager]
+    permission_classes = [IsRoot]
     http_method_names = ['get', 'patch']
 
     def get(self, request, pk):
@@ -149,7 +149,7 @@ class UserDetailView(AccountAPIView):
 
 
 class ResetPasswordView(AccountAPIView):
-    permission_classes = [IsManager]
+    permission_classes = [IsRoot]
     http_method_names = ['post']
 
     def post(self, request, pk):

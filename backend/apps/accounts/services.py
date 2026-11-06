@@ -35,7 +35,7 @@ def locked_users(request, target_id=None):
 def visible_users(actor):
     if actor.is_superuser:
         return User.objects.all().order_by('pk')
-    return User.objects.filter(is_superuser=False, role__in=ORDINARY_ROLES).order_by('pk')
+    return User.objects.none()
 
 
 def create_user(data, request, managed=False):
@@ -44,7 +44,7 @@ def create_user(data, request, managed=False):
             actor = None
             if managed:
                 actor, _ = locked_users(request)
-                if not is_manager(actor):
+                if not actor.is_superuser:
                     raise PermissionDenied()
                 if not actor.is_superuser and data.get('role', 'CUSTOMER') not in ORDINARY_ROLES:
                     raise PermissionDenied('Role is not assignable.')
@@ -110,7 +110,7 @@ def change_password(request, data):
 def manage_user(request, target_id, data, reset_password=False):
     with transaction.atomic():
         actor, target = locked_users(request, target_id)
-        if not is_manager(actor):
+        if not actor.is_superuser:
             raise PermissionDenied()
         if target is None or not can_manage(actor, target):
             raise NotFound()
@@ -124,10 +124,16 @@ def manage_user(request, target_id, data, reset_password=False):
                 if data['role'] not in ORDINARY_ROLES or actor.pk == target.pk:
                     raise PermissionDenied('Role is not assignable.')
             changes = {key: {'before': getattr(target, key), 'after': data[key]} for key in ('role', 'is_active') if key in data and getattr(target, key) != data[key]}
-            if target.is_active and data.get('is_active') is False:
+            if (target.is_active and data.get('is_active') is False) or ('role' in data and target.role!=data['role']):
                 target.session_version += 1
             for key, value in data.items():
                 setattr(target, key, value)
             target.save()
+            if 'role' in data:
+                from apps.members.models import MemberProfile
+                profile,_=MemberProfile.objects.get_or_create(user=target,defaults={'created_by':actor,'updated_by':actor})
+                if target.role=='CUSTOMER':
+                    profile.public_visible=profile.contact_visible=profile.education_visible=profile.alumni_visible=False
+                    profile.save()
             audit('user.updated', actor=actor, target=target, request=request, fields=data.keys(), changes=changes)
         return target

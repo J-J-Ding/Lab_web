@@ -8,9 +8,14 @@ def is_manager(user):
 
 
 def can_manage(actor, target):
-    return is_manager(actor) and (actor.is_superuser or (not target.is_superuser and target.role in ORDINARY_ROLES))
+    return bool(actor and actor.is_authenticated and actor.is_active and actor.is_superuser)
 
 
 class IsManager(BasePermission):
     def has_permission(self, request, view):
         return is_manager(request.user)
+
+
+class IsRoot(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_active and request.user.is_superuser)

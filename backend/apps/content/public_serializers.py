@@ -31,8 +31,9 @@ def content_data(item):
     people=[]
     for c in r.contributions.all():
         p=c.contributor.member_profile
-        public=p and p.public_visible and p.merged_into_id is None and p.published_revision_id and p.published_revision.state=='PUBLISHED' and p.published_revision.public_member_status in ('ACTIVE','ALUMNI')
-        people.append({'name':c.approved_display_name,'affiliation':c.approved_affiliation,'position':c.position,
+        public=p and (p.user_id is None or (p.user.is_active and p.user.role in ('TEACHER','STUDENT'))) and p.public_visible and p.merged_into_id is None and p.published_revision_id and p.published_revision.state=='PUBLISHED' and p.published_revision.public_member_status in ('ACTIVE','ALUMNI')
+        name=p.published_revision.display_name if public else ('团队成员' if p and p.user_id else c.approved_display_name)
+        people.append({'name':name,'affiliation':c.approved_affiliation,'position':c.position,
             'role':c.contribution_role,'is_corresponding':c.is_corresponding,'member_slug':p.published_revision.slug if public else None})
     return {'id':str(item.pk),'kind':item.kind,'revision':str(r.pk),'title':r.title,'summary':r.summary,
         'date':item.public_date,'detail':data,'contributions':people,

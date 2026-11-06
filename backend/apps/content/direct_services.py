@@ -1,0 +1,123 @@
+"""V10 direct saves: authorization, complete immutable snapshots and one atomic pointer update."""
+from django.db import transaction
+from django.db.models import Max, Q
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.core.exceptions import ValidationError as ModelError
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from apps.accounts.services import locked_users
+from apps.accounts.permissions import is_manager
+from apps.assets.models import AssetFile
+from apps.members.models import MemberProfile
+from apps.members.services import VersionConflict
+from apps.workflow.audit import record
+from apps.workflow.models import ContentEditGrant, RevisionEditEvent
+from .models import ContentItem, ContentRevision, DETAIL_MODELS, Contributor, RevisionContribution, RevisionAsset, ContentProjectLink, ContentIdentifier
+from .serializers import validate_detail
+from .services import locked_editor, normalize_identifier
+from .types import CONTRIBUTION_ROLES
+
+
+def team(user):
+    return bool(user.is_authenticated and user.is_active and (user.is_superuser or user.role in ('ADMIN','TEACHER','STUDENT')))
+
+
+def editable(user, item):
+    return team(user) and (is_manager(user) or item.created_by_id == user.pk or ContentEditGrant.objects.filter(item=item,user=user,can_edit=True,revoked_at__isnull=True).exists())
+
+
+def readable(user):
+    return ContentItem.objects.all() if team(user) else ContentItem.objects.none()
+
+
+def name_for(profile):
+    revision = profile.published_revision or profile.draft_revision
+    return revision.display_name.strip() if revision else ''
+
+
+def directory():
+    return MemberProfile.objects.filter(user__is_active=True,user__role__in=['TEACHER','STUDENT'],merged_into__isnull=True).select_related('user','published_revision','draft_revision').order_by('user_id')
+
+
+def asset_check(actor, ids, previous=()):
+    if len(ids) != len(set(ids)):
+        raise ValidationError({'assets':'Duplicate attachment.'})
+    assets=list(AssetFile.objects.select_for_update().filter(pk__in=ids,scan_status='CLEAN',purpose__in=['image','attachment'],deletion_requested_at__isnull=True).filter(Q(owner=actor)|Q(pk__in=previous)).filter(Q(expires_at__isnull=True)|Q(expires_at__gt=timezone.now())))
+    if len(assets)!=len(ids):raise ValidationError({'assets':'File unavailable or not owned by you.'})
+    return {a.pk:a for a in assets}
+
+
+@transaction.atomic
+def save(request, data, pk=None, source_id=None):
+    actor,_=locked_users(request);actor=locked_editor(actor)
+    item=get_object_or_404(readable(actor).select_for_update(),pk=pk) if pk else None
+    if item and not editable(actor,item):raise PermissionDenied()
+    if item and item.lock_version!=data.get('lock_version'):raise VersionConflict()
+    if item and item.archived_at:raise VersionConflict('Unarchive before editing.')
+    source=None
+    if item:
+        source=get_object_or_404(ContentRevision,item=item,pk=source_id) if source_id else (item.published_revision or item.working_revision)
+    kind=item.kind if item else data['kind']
+    if kind=='LAB_PAGE' and not is_manager(actor):raise PermissionDenied()
+    if kind=='LAB_PAGE' and data.get('detail',{}).get('page_key')=='home':raise ValidationError({'detail':'Homepage layout is controlled by the website template.'})
+    if 'featured' in data and not is_manager(actor):raise PermissionDenied('Only teachers can select featured content.')
+    title=data.get('title',source.title if source else '').strip()
+    if not title:raise ValidationError({'title':'Title required.'})
+    detail={f.name:getattr(getattr(source,DETAIL_MODELS[kind]._meta.get_field('revision').remote_field.related_name),f.name) for f in DETAIL_MODELS[kind]._meta.fields if f.name!='revision'} if source else {}
+    detail.update(data.get('detail',{}));detail=validate_detail(kind,detail)
+    if kind=='LAB_PAGE' and detail.get('page_key')=='home':raise ValidationError({'detail':'Use the fixed homepage instead.'})
+    if not item:item=ContentItem.objects.create(kind=kind,created_by=actor,last_edited_by=actor)
+    # Old unprocessed work remains historical; no automatic publication of its content.
+    if item.working_revision_id:
+        old=item.working_revision
+        if old.state=='DRAFT':old.state='WITHDRAWN';old.save(update_fields=['state'])
+        elif old.state=='SUBMITTED':old.state='WITHDRAWN';old.save(update_fields=['state'])
+        # Legacy APPROVED is retained; the partial working constraint requires settling it.
+        elif old.state=='APPROVED':old.state='WITHDRAWN';old.save(update_fields=['state'])
+        item.working_revision=None
+    revision=ContentRevision.objects.create(item=item,number=(item.revisions.aggregate(n=Max('number'))['n'] or 0)+1,title=title,summary=data.get('summary',source.summary if source else ''),edited_by=actor,base_published_revision=item.published_revision)
+    mapping={'PAPER':('DOI','doi'),'PROJECT':('PROJECT','project_number'),'PUBLICATION':('ISBN','isbn'),'LAB_PAGE':('PAGE','page_key')}
+    if kind in mapping:
+        scheme,field=mapping[kind];value=detail.get(field)
+        ContentIdentifier.objects.filter(item=item,scheme=scheme,is_current=True).update(is_current=False)
+        if value:
+            value=normalize_identifier(scheme,value);detail[field]=value
+            conflict=ContentIdentifier.objects.filter(scheme=scheme,value=value).exclude(item=item).exists()
+            if conflict:raise ValidationError({field:'Identifier already belongs to another record.'})
+            ContentIdentifier.objects.update_or_create(item=item,scheme=scheme,value=value,defaults={'is_current':True})
+    instance=DETAIL_MODELS[kind](revision=revision,**detail)
+    try:instance.full_clean();instance.save()
+    except ModelError as exc:raise ValidationError(exc.message_dict) from None
+    if 'authors' in data:
+        ids=data['authors']
+        if ids and not CONTRIBUTION_ROLES[kind]:raise ValidationError({'authors':'This page does not accept authors.'})
+        if len(ids)!=len(set(ids)):raise ValidationError({'authors':'Duplicate member.'})
+        if not data.get('authors_ordered',True):
+            previous=list(source.contributions.filter(contributor__member_profile__user_id__in=ids).order_by('position','id').values_list('contributor__member_profile__user_id',flat=True)) if source else []
+            ids=list(dict.fromkeys(previous))+sorted(set(ids)-set(previous))
+        profiles={p.user_id:p for p in directory().select_for_update(of=('self',)).filter(user_id__in=ids)}
+        if len(profiles)!=len(ids) or any(not name_for(p) for p in profiles.values()):raise ValidationError({'authors':'Select registered active Teacher/Student members with completed names.'})
+        for position,uid in enumerate(ids,1):
+            profile=profiles[uid];contributor,_=Contributor.objects.get_or_create(member_profile=profile,defaults={'display_name':name_for(profile),'created_by':actor})
+            role='AUTHOR' if 'AUTHOR' in CONTRIBUTION_ROLES[kind] else CONTRIBUTION_ROLES[kind][0]
+            RevisionContribution.objects.create(revision=revision,contributor=contributor,contribution_role=role,position=position,approved_display_name=name_for(profile))
+        # Immutable external historical signatures are retained, never added through user input.
+        legacy=source.contributions.filter(Q(contributor__member_profile__isnull=True)|Q(contributor__member_profile__user__isnull=True)) if source else []
+        for position,link in enumerate(legacy,len(ids)+1):
+            RevisionContribution.objects.create(revision=revision,contributor=link.contributor,contribution_role=link.contribution_role,position=position,approved_display_name=link.approved_display_name,approved_affiliation=link.approved_affiliation,is_corresponding=link.is_corresponding)
+    elif source:
+        for link in source.contributions.all():
+            RevisionContribution.objects.create(revision=revision,**{f:getattr(link,f) for f in ('contributor_id','contribution_role','position','is_corresponding','approved_display_name','approved_affiliation')})
+    previous=list(source.assets.values_list('asset_id',flat=True)) if source else []
+    ids=data.get('assets',previous);assets=asset_check(actor,ids,previous)
+    for position,aid in enumerate(ids,1):
+        asset=assets[aid];asset.visibility='PUBLIC' if data.get('visibility_scope',item.visibility_scope)=='PUBLIC' else 'PRIVATE';asset.expires_at=None;asset.save(update_fields=['visibility','expires_at'])
+        RevisionAsset.objects.create(revision=revision,asset=asset,purpose=asset.purpose,position=position)
+    projects=data.get('project_links',list(source.project_links.values_list('target_project_id',flat=True)) if source else [])
+    if len(projects)!=len(set(projects)) or ContentItem.objects.filter(pk__in=projects,kind='PROJECT').exclude(pk=item.pk).count()!=len(projects):raise ValidationError({'project_links':'Select existing projects.'})
+    for project in projects:ContentProjectLink.objects.create(source_revision=revision,target_project_id=project)
+    revision.state='PUBLISHED';revision.save(update_fields=['state'])
+    item.published_revision=revision;item.visibility_scope=data.get('visibility_scope',item.visibility_scope);item.visibility_gate=True;item.featured=data.get('featured',item.featured);item.last_edited_by=actor;item.lock_version+=1;item.save()
+    RevisionEditEvent.objects.create(content_revision=revision,editor=actor,editor_snapshot=actor.pk)
+    record(actor,item,'content.restore' if source_id else 'content.saved',tuple(data),revision)
+    return item

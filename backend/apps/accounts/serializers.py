@@ -1,3 +1,4 @@
+import re
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -30,9 +31,25 @@ class StrictSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    identity = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
+    capabilities = serializers.SerializerMethodField()
+
+    def get_identity(self, user):
+        return 'Root' if user.is_superuser else {'ADMIN':'Teacher','TEACHER':'Teacher','STUDENT':'Student','CUSTOMER':'Customer'}[user.role]
+
+    def get_display_name(self, user):
+        profile = getattr(user, 'member_profile', None)
+        revision = (profile.published_revision or profile.draft_revision) if profile else None
+        return revision.display_name if revision else ' '.join(filter(None, (user.first_name, user.last_name)))
+
+    def get_capabilities(self, user):
+        team = user.is_active and (user.is_superuser or user.role in ('ADMIN','TEACHER','STUDENT'))
+        return {'can_edit_content':team,'can_manage_team':team and (user.is_superuser or user.role in ('ADMIN','TEACHER')), 'can_manage_accounts':user.is_active and user.is_superuser}
+
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'role', 'is_active', 'is_superuser', 'date_joined')
+        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'role', 'is_active', 'is_superuser', 'date_joined', 'identity', 'display_name', 'capabilities')
         read_only_fields = fields
 
 
@@ -55,6 +72,8 @@ class RegisterSerializer(ProfileSerializer):
 
     def validate_username(self, value):
         value = User.normalize_username(value)
+        if not re.fullmatch(r'[A-Za-z0-9._@+\-]+', value):
+            raise serializers.ValidationError('Use letters, digits and . _ @ + - for the login name; enter your name in your profile.')
         UnicodeUsernameValidator()(value)
         if len(value) > 150:
             raise serializers.ValidationError('Username too long.')
@@ -69,12 +88,12 @@ class RegisterSerializer(ProfileSerializer):
 
 
 class AdminCreateSerializer(RegisterSerializer):
-    role = serializers.ChoiceField(choices=UserRole.choices, default=UserRole.CUSTOMER)
+    role = serializers.ChoiceField(choices=[(r,r) for r in ('CUSTOMER','STUDENT','TEACHER')], default=UserRole.CUSTOMER)
     is_active = StrictBoolean(default=True)
 
 
 class AdminUpdateSerializer(ProfileSerializer):
-    role = serializers.ChoiceField(choices=UserRole.choices, required=False)
+    role = serializers.ChoiceField(choices=[(r,r) for r in ('CUSTOMER','STUDENT','TEACHER')], required=False)
     is_active = StrictBoolean(required=False)
 
 

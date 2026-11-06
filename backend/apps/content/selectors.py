@@ -2,7 +2,7 @@ from .models import ContentItem
 
 
 def published_content():
-    return ContentItem.objects.filter(visibility_gate=True,published_revision__state='PUBLISHED').select_related('published_revision').prefetch_related('published_revision__contributions').order_by('-created_at','id')
+    return ContentItem.objects.filter(visibility_gate=True,visibility_scope='PUBLIC',archived_at__isnull=True,published_revision__state='PUBLISHED').select_related('published_revision').prefetch_related('published_revision__contributions').order_by('-created_at','id')
 
 
 def published_for_member(profile):

@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI 文档与草稿助手 - 智能系统实验室</title>
-<link rel="stylesheet" href="css/style.css?v=7"><link rel="stylesheet" href="css/workspace.css?v=7"><link rel="stylesheet" href="css/ai-import.css?v=7">
-<script defer src="js/auth.js?v=5-20261106"></script><script defer src="js/navbar-loader.js?v=6"></script><script defer src="js/content-api.js?v=5-20261106"></script><script defer src="js/ai-import.js?v=7"></script></head>
+<link rel="stylesheet" href="css/style.css?v=10"><link rel="stylesheet" href="css/workspace.css?v=7"><link rel="stylesheet" href="css/ai-import.css?v=7">
+<script defer src="js/auth.js?v=5-20261106"></script><script defer src="js/navbar-loader.js?v=10"></script><script defer src="js/content-api.js?v=5-20261106"></script><script defer src="js/ai-import.js?v=7"></script></head>
 <body data-management="false"><div id="navbar-container"></div><main class="work-main">
 <h1>AI 文档与草稿助手</h1><nav class="work-nav" aria-label="协同平台"><a href="profile.html">个人中心</a><a href="workspace.html">我的工作区</a><a href="member-application.html">成员资料</a><a href="manage/index.html" data-manager-only hidden>团队管理</a></nav>
 <p id="business-status" role="status" aria-live="polite"></p>
 <div id="business-content" hidden>
-<section class="work-card"><h2>处理范围与额度</h2><p id="ai-quota" role="status">正在读取额度…</p><p>文档原件保留在本服务器。先本地提取并显示脱敏预览，只有你确认的文本才会发送至 DeepSeek；未授权前不调用模型。原件默认保留7天，候选30天；供应商和备份副本遵循各自保留政策。</p><p>仅支持有文本层的 PDF 和 DOCX（≤20 MiB）。扫描件需要 OCR 或人工录入。所有结果都是待核对的候选，确认后只保存草稿，发布仍需审核。</p></section>
+<section class="work-card"><h2>处理范围与额度</h2><p id="ai-quota" role="status">正在读取额度…</p><p>文档原件保留在本服务器。先本地提取并显示脱敏预览，只有你确认的文本才会发送至 DeepSeek；未授权前不调用模型。原件默认保留7天，候选30天；供应商和备份副本遵循各自保留政策。</p><p>仅支持有文本层的 PDF 和 DOCX（≤20 MiB）。扫描件需要 OCR 或人工录入。所有结果都是待核对的候选，确认后只保存草稿，最终公开范围由保存表单时选择。</p></section>
 <div class="ai-columns">
 <section class="work-card"><h2>1. 上传并本地解析</h2><form id="ai-upload-form">
 <label for="ai-target">导入目标</label><select id="ai-target" name="target_type"></select>
@@ -24,8 +24,8 @@
 <div class="work-actions"><button type="button" id="ai-refresh">刷新当前任务</button><button type="button" id="ai-cancel">取消任务</button><button type="button" id="ai-delete" class="secondary">删除候选（保留业务草稿）</button></div>
 <form id="ai-consent-form" hidden><label for="ai-preview">将发送的脱敏文本</label><textarea id="ai-preview" rows="10" maxlength="100000" required></textarea><p>可以选择原文的连续片段分批处理；不要在这里改写原文。邮箱、电话及识别到的凭据/证件信息已移除，请再次核对。</p><label class="ai-check"><input id="ai-remote-consent" type="checkbox" required>同意将上方脱敏文本发送至 DeepSeek</label><button type="submit">授权并生成候选</button></form>
 <p id="ai-cancel-note">取消已发送请求不保证撤回供应商处理或费用；不确定计费会保留预算等待核对。</p></section>
-<section class="work-card" id="ai-candidate-section" hidden><h2>3. 核对候选与来源</h2><label for="ai-candidate">结构化候选 JSON（可编辑）</label><textarea id="ai-candidate" rows="13" spellcheck="false"></textarea><button type="button" id="ai-save-candidate">保存候选修改</button>
+<section class="work-card" id="ai-candidate-section" hidden><h2>3. 核对候选与来源</h2><p>在下一步结构化表单中修改候选，无需编辑 JSON。</p><textarea hidden id="ai-candidate" rows="13" spellcheck="false"></textarea><button hidden type="button" id="ai-save-candidate">保存候选修改</button>
 <label for="ai-record">选择候选条目</label><select id="ai-record"></select><div id="ai-evidence"></div><div id="ai-field-options"></div><div id="ai-author-matches"></div><div id="ai-duplicates"></div><button type="button" id="ai-refresh-matches">刷新匹配提示</button>
-<form id="ai-apply-form"><label for="ai-target-id">目标草稿 ID（留空新建）</label><input id="ai-target-id" type="text" maxlength="36"><label for="ai-target-version">目标版本号</label><input id="ai-target-version" type="number" min="0"><button type="button" id="ai-read-target">读取目标版本</button>
-<p>个人资料只写入本人草稿。作者须人工选择贡献者；不按姓名自动绑定或创建账号。已有 DOI/项目号冲突需手工核对，不能自动合并。</p><label class="ai-check"><input id="ai-confirm-fields" type="checkbox" required>我已逐项核对所选字段和来源</label><button type="submit" id="ai-apply">保存为草稿</button></form><div id="ai-applied-result" role="status"></div></section>
-</div></main></body></html>
+<form id="ai-apply-form"><label hidden for="ai-target-id">目标草稿 ID（留空新建）</label><input hidden id="ai-target-id" type="text" maxlength="36"><label hidden for="ai-target-version">目标版本号</label><input hidden id="ai-target-version" type="number" min="0"><button hidden type="button" id="ai-read-target">读取目标版本</button>
+<p>个人资料只写入本人草稿。作者须人工选择贡献者；不按姓名自动绑定或创建账号。已有 DOI/项目号冲突需手工核对，不能自动合并。</p><label class="ai-check"><input id="ai-confirm-fields" type="checkbox" required>我已逐项核对所选字段和来源</label><button type="submit" id="ai-apply">填写到表单</button></form><div id="ai-applied-result" role="status"></div></section>
+</div></main><script defer src="/js/layout.js?v=10"></script></body></html>

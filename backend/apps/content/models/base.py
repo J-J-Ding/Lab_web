@@ -13,6 +13,8 @@ class ContentItem(models.Model):
     last_edited_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,on_delete=models.SET_NULL,related_name='+')
     published_revision=models.OneToOneField('ContentRevision',null=True,blank=True,on_delete=models.PROTECT,related_name='+')
     working_revision=models.OneToOneField('ContentRevision',null=True,blank=True,on_delete=models.SET_NULL,related_name='+')
+    visibility_scope=models.CharField(max_length=7,choices=[('PUBLIC','PUBLIC'),('TEAM','TEAM')],default='PUBLIC')
+    featured=models.BooleanField(default=False)
     visibility_gate=models.BooleanField(default=True)
     public_sort_date=models.DateField(null=True,editable=False)
     archived_at=models.DateTimeField(null=True,blank=True)

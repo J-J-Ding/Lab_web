@@ -37,7 +37,7 @@ class MemberRevision(models.Model):
     profile=models.ForeignKey(MemberProfile,on_delete=models.CASCADE,related_name='revisions')
     number=models.PositiveIntegerField()
     base_published_revision=models.ForeignKey("self",null=True,blank=True,on_delete=models.PROTECT,related_name="+")
-    member_kind=models.CharField(max_length=8,choices=[('STUDENT','STUDENT'),('TEACHER','TEACHER')],default='STUDENT')
+    member_kind=models.CharField(max_length=8,choices=[('STUDENT','STUDENT'),('TEACHER','TEACHER'),('CUSTOMER','CUSTOMER')],default='STUDENT')
     public_member_status=models.CharField(max_length=8,choices=[('ACTIVE','ACTIVE'),('ALUMNI','ALUMNI'),('LEFT','LEFT')],default='ACTIVE')
     display_name=models.CharField(max_length=150,blank=True)
     slug=models.SlugField(max_length=160,blank=True,allow_unicode=True)
@@ -49,7 +49,7 @@ class MemberRevision(models.Model):
     edited_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,on_delete=models.SET_NULL)
     created_at=models.DateTimeField(auto_now_add=True)
     class Meta:
-        constraints=[models.UniqueConstraint(fields=['profile','number'],name='member_revision_number_unique'),models.UniqueConstraint(fields=['profile'],condition=Q(state__in=['DRAFT','SUBMITTED','APPROVED']),name='member_one_working_revision'),models.CheckConstraint(condition=Q(number__gt=0),name='member_revision_positive'),models.CheckConstraint(condition=Q(state__in=RevisionState.values),name='member_revision_state_valid'),models.CheckConstraint(condition=Q(member_kind__in=['STUDENT','TEACHER']),name='member_kind_valid'),models.CheckConstraint(condition=Q(public_member_status__in=['ACTIVE','ALUMNI','LEFT']),name='member_public_status_valid'),models.CheckConstraint(condition=Q(public_contact_enabled=False)|~Q(public_contact_email=''),name='member_public_contact_required')]
+        constraints=[models.UniqueConstraint(fields=['profile','number'],name='member_revision_number_unique'),models.UniqueConstraint(fields=['profile'],condition=Q(state__in=['DRAFT','SUBMITTED','APPROVED']),name='member_one_working_revision'),models.CheckConstraint(condition=Q(number__gt=0),name='member_revision_positive'),models.CheckConstraint(condition=Q(state__in=RevisionState.values),name='member_revision_state_valid'),models.CheckConstraint(condition=Q(member_kind__in=['STUDENT','TEACHER','CUSTOMER']),name='member_kind_valid'),models.CheckConstraint(condition=Q(public_member_status__in=['ACTIVE','ALUMNI','LEFT']),name='member_public_status_valid'),models.CheckConstraint(condition=Q(public_contact_enabled=False)|~Q(public_contact_email=''),name='member_public_contact_required')]
 
 
 class MemberSlug(models.Model):
@@ -126,3 +126,15 @@ class MemberRevisionAsset(models.Model):
     position=models.PositiveIntegerField(default=1)
     class Meta:
         constraints=[models.UniqueConstraint(fields=['revision','asset','purpose'],name='member_asset_unique'),models.CheckConstraint(condition=Q(position__gt=0),name='member_asset_position_positive')]
+
+
+class Resume(models.Model):
+    id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    owner=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,related_name='resumes')
+    title=models.CharField(max_length=200,default='我的简历')
+    intention=models.CharField(max_length=300,blank=True)
+    introduction=models.TextField(blank=True,max_length=10000)
+    asset=models.ForeignKey('assets.AssetFile',null=True,blank=True,on_delete=models.PROTECT)
+    lock_version=models.PositiveBigIntegerField(default=0)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)

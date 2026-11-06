@@ -12,7 +12,7 @@ class UploadView(AccountAPIView):
     def post(self,request):
         from apps.accounts.throttling import consume
         consume('asset_user', str(request.user.pk), 20)
-        if set(request.data)-{'file','purpose'} or request.data.get('purpose') not in ('avatar','proof','image','attachment','ai_source') or 'file' not in request.FILES:
+        if set(request.data)-{'file','purpose'} or request.data.get('purpose') not in ('avatar','proof','image','attachment','ai_source','resume') or 'file' not in request.FILES:
             raise ValidationError({'detail':'Expected a file and supported purpose only.'})
         asset=services.upload(request,request.FILES['file'],request.data['purpose'])
         return Response({'id':str(asset.pk),'mime_type':asset.mime_type,'size':asset.size,'visibility':'PRIVATE','expires_at':asset.expires_at,'download_url':f'/api/assets/{asset.pk}/download/'},status=201)

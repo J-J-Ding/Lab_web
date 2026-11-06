@@ -11,8 +11,8 @@ def lock_actor(actor):
 
 
 def require_management(actor, profile):
-    if profile.user_id:
-        if not can_manage(actor,profile.user):
-            raise NotFound()
-    elif not (actor.is_superuser or actor.role in ('ADMIN','TEACHER')) or not actor.is_active:
-        raise NotFound()
+    if actor.is_superuser or profile.user_id == actor.pk:
+        return
+    if actor.is_active and actor.role in ('ADMIN','TEACHER') and profile.user_id and profile.user.role in ('TEACHER','STUDENT') and not profile.user.is_superuser:
+        return
+    raise NotFound()

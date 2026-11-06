@@ -24,19 +24,19 @@ class Me(BusinessAPIView):
         from apps.members.selectors import own_profile
         from apps.content.selectors import published_for_member
         p=own_profile(request.user);items=ContentItem.objects.filter(created_by=request.user)
-        return Response(metrics.envelope({}, {'own_items':items.count(),'own_drafts':items.filter(working_revision__state='DRAFT').count(),'own_submitted':items.filter(working_revision__state='SUBMITTED').count(),'own_published':items.filter(published_revision__isnull=False,visibility_gate=True).count(),'participating_public':published_for_member(p).count()}))
+        return Response(metrics.envelope({}, {'own_items':items.count(),'own_drafts':items.filter(working_revision__state='DRAFT').count(),'own_submitted':items.filter(working_revision__state='SUBMITTED').count(),'own_published':items.filter(published_revision__isnull=False,visibility_gate=True,visibility_scope='PUBLIC',archived_at__isnull=True).count(),'participating_public':published_for_member(p).count()}))
 class AdminOverview(BusinessAPIView):
     permission_classes=[IsManager]
     def get(self,request):
         f=metrics.filters(request)
         from apps.members.models import MemberProfile
         profiles=MemberProfile.objects.filter(merged_into__isnull=True)
-        if not request.user.is_superuser:profiles=profiles.filter(Q(user=request.user)|Q(user__isnull=True)|Q(user__is_superuser=False,user__role__in=['CUSTOMER','STUDENT','TEACHER']))
+        if not request.user.is_superuser:profiles=profiles.filter(Q(user=request.user)|Q(user__isnull=True)|Q(user__is_superuser=False,user__role__in=['STUDENT','TEACHER']))
         qs=visible_items(request.user).order_by().filter(created_at__year__gte=f['year_from'],created_at__year__lte=f['year_to'])
         if f.get('kind'):qs=qs.filter(kind=f['kind'])
         if f.get('category'):
             c=f['category'];qs=qs.filter(Q(working_revision__paper__category=c)|Q(working_revision__award__category=c)|Q(working_revision__news__category=c)|Q(working_revision__blog__category=c)|Q(published_revision__paper__category=c)|Q(published_revision__award__category=c)|Q(published_revision__news__category=c)|Q(published_revision__blog__category=c))
-        return Response(metrics.envelope(f,{'items':qs.count(),'working_states':list(qs.values('working_revision__state').annotate(count=Count('pk'))),'manageable_member_profiles':profiles.count(),'review':metrics.review_metrics(f)}))
+        return Response(metrics.envelope(f,{'items':qs.count(),'working_states':list(qs.values('working_revision__state').annotate(count=Count('pk'))),'manageable_member_profiles':profiles.count(),'review':{'historical':True,**metrics.review_metrics(f)}}))
 class AdminReview(BusinessAPIView):
     permission_classes=[IsManager]
     def get(self,request):

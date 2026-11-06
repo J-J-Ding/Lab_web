@@ -18,15 +18,13 @@ def actor_for(request, manager=False, editor=False):
 
 
 def visible_items(actor):
-    qs=ContentItem.objects.all()
-    if not is_manager(actor):
-        grants=ContentEditGrant.objects.filter(user=actor,revoked_at__isnull=True).values('item_id')
-        qs=qs.filter(Q(created_by=actor)|Q(pk__in=grants))
-    return qs.order_by('-updated_at','id')
+    if not actor.is_active or not (actor.is_superuser or actor.role in ('ADMIN','TEACHER','STUDENT')):
+        return ContentItem.objects.none()
+    return ContentItem.objects.all().order_by('-updated_at','id')
 
 
 def can_edit(actor,item):
-    return is_manager(actor) or item.created_by_id==actor.pk or ContentEditGrant.objects.filter(item=item,user=actor,can_edit=True,revoked_at__isnull=True).exists()
+    return actor.is_active and (actor.is_superuser or actor.role in ('ADMIN','TEACHER','STUDENT')) and (is_manager(actor) or item.created_by_id==actor.pk or ContentEditGrant.objects.filter(item=item,user=actor,can_edit=True,revoked_at__isnull=True).exists())
 
 
 def locked_item(actor,pk,edit=False):
@@ -46,7 +44,7 @@ def locked_revision(actor,pk,edit=False):
 
 def can_submit(actor):
     from apps.members.models import MemberProfile
-    return is_manager(actor) or (actor.role=='STUDENT' and MemberProfile.objects.filter(user=actor,membership_status='ACTIVE',merged_into__isnull=True).exists())
+    return actor.is_active and (is_manager(actor) or actor.role=='STUDENT')
 
 
 def selectable_contributors(actor):

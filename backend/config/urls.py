@@ -1,6 +1,7 @@
 from django.urls import include, path
 
 urlpatterns = [
+    path("api/", include("apps.content.direct_urls")),
     path("api/", include("apps.analytics.urls")),
     path("api/", include("apps.ai_assistant.urls")),
     path("api/", include("apps.content.public_urls")),

@@ -13,8 +13,8 @@
     for(const form of [$('#ai-upload-form'),$('#ai-summary-form')])form.querySelectorAll('input,select,textarea,button').forEach(el=>el.disabled=!quota.enabled);
     for(const select of [$('#ai-target'),$('#ai-summary-target')]){
       select.replaceChildren();
-      for(const [key,name] of Object.entries(names)){const option=C.node('option',name,{value:key});option.disabled=key!=='MEMBER'&&!C.capabilities.can_submit;select.append(option);}
-      select.value=C.capabilities.can_submit?'BLOG':'MEMBER';
+      for(const [key,name] of Object.entries(names)){const option=C.node('option',name,{value:key});option.disabled=key!=='MEMBER'&&!C.capabilities.can_edit_content;select.append(option);}
+      select.value=C.capabilities.can_edit_content?'BLOG':'MEMBER';
     }
   }
   async function list(path='/api/ai/imports/'){
@@ -131,15 +131,11 @@
       if(candidateDirty)throw localError('请先保存候选修改，再确认应用。');
       const index=Number($('#ai-record').value),fields=[...document.querySelectorAll('[data-ai-field]:checked')].map(c=>c.value);
       const data={lock_version:job.lock_version,record_index:index,confirmed_fields:fields,confirm:$('#ai-confirm-fields').checked};
-      const target=$('#ai-target-id').value.trim(),targetVersion=$('#ai-target-version').value;
-      if(target)data.target_id=target;if(targetVersion!=='')data.target_lock_version=Number(targetVersion);
-      if(fields.includes('authors')){
-        data.contributor_matches=(job.candidate.records[index].fields.authors||[]).map((author,i)=>{
-          const contributor=$(`[data-author-index="${i}"]`)?.value;if(!contributor)throw localError('请刷新匹配提示并人工选择每位作者。');
-          return {index:i,contributor,contribution_role:$(`[data-author-role="${i}"]`).value,position:i+1,is_corresponding:false};
-        });
-      }
-      const result=await C.request(`/api/ai/imports/${job.id}/apply/`,{method:'POST',data});await refresh();showApplied(result);await list();await loadQuota();C.status('已保存草稿；没有自动审核或发布。');
+      if(!data.confirm||!fields.length)throw localError('请核对并勾选要填写的字段。');
+      const query=new URLSearchParams({ai_job:job.id,ai_record:String(index),ai_fields:fields.join(',')});
+      if(job.target_type!=='MEMBER')query.set('kind',job.target_type);
+      location.assign((job.target_type==='MEMBER'?'/profile.html':'/content-editor.html')+'?'+query);
+
     });
     $('#ai-record').addEventListener('change',()=>{renderRecord();});
     for(const [id,action]of [['ai-refresh-list',list],['ai-refresh',refresh],['ai-refresh-matches',loadMatches],['ai-read-target',readTarget]])$('#'+id).addEventListener('click',()=>Promise.resolve(action()).catch(C.showError));

@@ -22,6 +22,7 @@ def upload(request,file,purpose):
     allowed['image']=allowed['avatar']
     allowed['attachment']={'.pdf':'application/pdf','.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}
     allowed['ai_source']=allowed['attachment']
+    allowed['resume']=allowed['attachment']
     ext=Path(file.name).suffix.lower()
     if ext not in allowed[purpose] or file.content_type!=allowed[purpose][ext]:raise ValidationError({'file':'Unsupported extension or MIME type.'})
     if file.size<=0 or file.size>limit:raise ValidationError({'file':'File exceeds the allowed size.'})
@@ -54,9 +55,11 @@ def upload(request,file,purpose):
 def permitted_asset(actor,pk):
     asset=AssetFile.objects.filter(pk=pk,scan_status='CLEAN').first()
     if not asset or (asset.expires_at and asset.expires_at<=timezone.now()):raise NotFound()
-    if asset.owner_id!=actor.pk:
+    if asset.owner_id!=actor.pk and asset.purpose=='resume' and not actor.is_superuser:raise NotFound()
+    if asset.owner_id!=actor.pk and not actor.is_superuser:
         from apps.workflow.permissions import visible_items
-        content_reference=asset.purpose in ('image','attachment') and asset.revisionasset_set.filter(revision__item__in=visible_items(actor)).exists()
+        from django.db.models import F
+        content_reference=asset.purpose in ('image','attachment') and asset.revisionasset_set.filter(revision__item__in=visible_items(actor),revision_id=F('revision__item__published_revision_id'),revision__item__visibility_gate=True,revision__item__archived_at__isnull=True).exists()
         if not content_reference:
             if not is_manager(actor):raise NotFound()
             applications=asset.membershipapplication_set.select_related('applicant')
