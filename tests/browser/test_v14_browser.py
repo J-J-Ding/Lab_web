@@ -54,8 +54,8 @@ result={'pdf':base64.b64encode(V14Contracts().pdf()).decode()}
  def test_fullscreen_logo_carousel_and_header_logo(self):
   context=self.browser.new_context(viewport={'width':1440,'height':1000},reduced_motion='reduce');page=context.new_page()
   try:
-   page.goto(self.env.url+'/index.html');expect(page.locator('.home-slide')).to_be_visible();expect(page.locator('.home-slide>img')).to_have_attribute('src','/lab-logo.png');header=page.locator('.site-header').bounding_box();hero=page.locator('.home-slide').bounding_box();self.assertLess(abs(header['height']+hero['height']-1000),3);self.assertGreater(page.locator('.brand-link img').bounding_box()['width']/page.locator('.brand-link img').bounding_box()['height'],1.5)
-   first=page.locator('.slide-caption h1').inner_text();page.get_by_role('button',name='下一张',exact=True).click();expect(page.locator('.slide-caption h1')).not_to_have_text(first)
+   page.goto(self.env.url+'/index.html');expect(page.locator('.home-slide.is-active')).to_be_visible();expect(page.locator('.home-slide.is-active>img')).to_have_attribute('src','/lab-logo.png');header=page.locator('.site-header').bounding_box();hero=page.locator('.home-slide.is-active').bounding_box();self.assertLess(abs(header['height']+hero['height']-1000),3);self.assertGreater(page.locator('.brand-link img').bounding_box()['width']/page.locator('.brand-link img').bounding_box()['height'],1.5)
+   first=page.locator('.home-slide.is-active .slide-caption h1').inner_text();page.locator('.slider-dots button').nth(1).click();expect(page.locator('.home-slide.is-active .slide-caption h1')).not_to_have_text(first)
    EVIDENCE.mkdir(parents=True,exist_ok=True);page.screenshot(path=str(EVIDENCE/'v14-home-desktop.png'));page.set_viewport_size({'width':390,'height':844});self.assertTrue(page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'));page.screenshot(path=str(EVIDENCE/'v14-home-mobile.png'))
   finally:context.close()
  def test_root_search_table_account_header_and_avatar(self):
