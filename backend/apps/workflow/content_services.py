@@ -125,6 +125,15 @@ def edit(request,revision_id,data):
         except DjangoValidationError as exc:raise ValidationError(exc.message_dict) from None
         except IntegrityError:raise ValidationError({'detail':'Identifier already reserved.'}) from None
     if 'contributions' in data:replace_contributions(actor,item,revision,data['contributions'])
+    if 'assets' in data:
+        from apps.assets.models import AssetFile
+        from django.utils import timezone
+        ids=set(data['assets'])
+        existing=set(revision.assets.values_list('asset_id',flat=True))
+        assets=list(AssetFile.objects.select_for_update().filter(pk__in=ids,scan_status='CLEAN',purpose__in=['image','attachment'],deletion_requested_at__isnull=True).filter(Q(owner=actor)|Q(pk__in=existing)).filter(Q(expires_at__isnull=True)|Q(expires_at__gt=timezone.now())).order_by('pk'))
+        if len(assets)!=len(ids):raise ValidationError({'assets':'Asset unavailable.'})
+        revision.assets.all().delete()
+        for pos,asset in enumerate(assets,1):RevisionAsset.objects.create(revision=revision,asset=asset,purpose=asset.purpose,position=pos)
     if 'project_links' in data:
         ids=set(data['project_links'])
         # Only publicly known projects or projects already privately visible to this actor.
@@ -195,6 +204,12 @@ def decide(request,revision_id,data):
     if data['decision']=='APPROVE':
         validate_ready(item,revision)
         revision.state='PUBLISHED';revision.save(update_fields=['state'])
+        from apps.assets.models import AssetFile
+        from django.utils import timezone
+        assets=list(AssetFile.objects.select_for_update().filter(revisionasset__revision=revision))
+        for asset in assets:
+            if asset.scan_status!='CLEAN' or asset.purpose not in ('image','attachment') or asset.deletion_requested_at or (asset.expires_at and asset.expires_at<=timezone.now()):raise ValidationError({'assets':'Asset unavailable.'})
+            asset.visibility='PUBLIC';asset.expires_at=None;asset.save(update_fields=['visibility','expires_at'])
         item.published_revision=revision;item.visibility_gate=True
         detail=DETAIL_MODELS[item.kind].objects.get(revision=revision)
         mapping={'PAPER':('DOI','doi'),'PROJECT':('PROJECT','project_number'),'PUBLICATION':('ISBN','isbn'),'LAB_PAGE':('PAGE','page_key')}

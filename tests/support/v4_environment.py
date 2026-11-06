@@ -8,7 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 STAGE = os.environ.get('LAB_TEST_STAGE', 'v4')
-assert STAGE in ('v4', 'v5')
+assert STAGE in ('v4', 'v5', 'v6')
 RUNTIME = ROOT / f'.browser-artifacts/{STAGE}-runtime'
 
 
@@ -71,6 +71,7 @@ def main():
         print('Independent test database and image ready:', prepare()['project'])
     elif action == 'manage':
         options = ['run', '--rm', '--no-deps']
+        if STAGE=='v6':options += ['-v',str(ROOT/'legacy_samples')+':/legacy:ro','-e','LAB_LEGACY_ROOT=/legacy/originals']
         if args and args[0] == 'makemigrations' and '--check' not in args:
             options += ['--user', f'{os.getuid()}:{os.getgid()}', '-v', f'{ROOT / "backend"}:/w:rw', '--workdir', '/w']
         database = None
@@ -87,7 +88,7 @@ def main():
         database = 'test_lab_web_upgrade_' + secrets.token_hex(4)
         subprocess.run(prefix + ['exec', '-T', 'db', 'sh', '-c', 'createdb -U "$POSTGRES_USER" "$1"', 'test-upgrade', database], check=True)
         try:
-            script = (ROOT / ('tests/support/verify_v5_upgrade.py' if STAGE == 'v5' else 'tests/support/verify_upgrade.py')).read_text()
+            script = (ROOT / ('tests/support/verify_v6_upgrade.py' if STAGE == 'v6' else 'tests/support/verify_v5_upgrade.py' if STAGE == 'v5' else 'tests/support/verify_upgrade.py')).read_text()
             subprocess.run(prefix + ['run', '--rm', '--no-deps', '-T', '-e', f'POSTGRES_DB={database}', 'backend', 'python', '-c', script], check=True)
         finally:
             subprocess.run(prefix + ['exec', '-T', 'db', 'sh', '-c', 'dropdb -U "$POSTGRES_USER" "$1"', 'test-upgrade', database], check=True)

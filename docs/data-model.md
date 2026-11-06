@@ -68,3 +68,9 @@ V5继续建立编辑授权、追加确认事件、审核决策和身份申请流
 新增 8 张业务表：ContentEditGrant、RevisionEditEvent、RevisionSubmission、ReviewDecision、ContributionConfirmation、CorrectionRequest、MemberPublicationConsent、ContentModerationEvent。记录协作权、实际编辑、提交、审批、署名确认、纠错、公开授权和管理理由；核心历史追加不可改。原 V4 27 张业务表扩展为 35 张，不改变自定义 User 和四种业务 role。
 
 MemberProfile 增加 privacy_version；MemberRevision 增加 base_published_revision；MembershipApplication 增加 statement、review_note、lock_version；Contributor 增加可空 created_by。9 个新增迁移位于 content/members/workflow，包含 V4 编辑历史与成员草稿发布基线回填，不改原快照字段或伪造批准。ROOT/ADMIN 私密成员审批按目标账号保护；实际编辑者元数据不被审核动作覆盖。私有文件使用新增 private_media 卷，不存数据库文件或公网媒体目录。详见 [工作流](workflow.md) 和 [V5 验收](V5-验收报告.md)。
+
+## V6 增量
+
+新增 ImportBatch、ImportRecord、LegacyURLMap 三张表，记录清单哈希、管理者、逐条源哈希/载荷摘要/结果/目标，以及规范旧路径到内容或成员的唯一映射。跨来源别名碰撞拒绝，不按姓名认领；同批次幂等，源变更保留历史并建立候选稿。
+
+AssetFile 增加 purpose、deletion_requested_at，区分证明与可公开候选附件。三项迁移为 assets/0002、0003 与 content/0004。0003 回填已有头像用途，并只提升当前公开已批准的清洁头像可见性；证明不公开。既有 User/角色/审核历史不变。公共 API 使用集中 public_selectors 和显式投影，所有公开读取 no-store，未加入搜索集群、共享缓存或 AI 模块。

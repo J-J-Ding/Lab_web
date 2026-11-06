@@ -1,0 +1,506 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "source": "data/papers/202308_A new deep clustering method with application to customer selection for demand response program/index.html",
+      "sha256": "6c5d9d580ff228539a767c422f6227d138760bf9a0abf18113833f209cf27d63",
+      "kind": "PAPER",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/index.html"
+      ],
+      "payload": {
+        "title": "示例发表论文 01",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "venue": "Example Research Journal",
+          "publication_date": "2026-01-01"
+        }
+      },
+      "assets": [
+        {
+          "source": "synthetic-example.png",
+          "sha256": "431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460",
+          "purpose": "image",
+          "mime_type": "image/png"
+        },
+        {
+          "source": "synthetic-example.pdf",
+          "sha256": "54014b35a9dbbc8b742570250f89fc60736bfa3df7f1b6a84f3004aeae361837",
+          "purpose": "attachment",
+          "mime_type": "application/pdf"
+        }
+      ]
+    },
+    {
+      "source": "data/projects/200801NSFC_Youth/index.html",
+      "sha256": "4198a1bfebad4d11b10fff29d852e02a823b24507167a65a7612f9ed39690133",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/200801NSFC_Youth/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 01",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-001",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/200901NCET/index.html",
+      "sha256": "77ab0e162545a0f9a31bf35b3fbc2a4b47c6741d9499d4e8c05d3247baf95444",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/200901NCET/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 02",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-002",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/201101NSFC_Internet/index.html",
+      "sha256": "59a1b3d053dbb17cc28b33ac85d38488b1e12678fd14494d6ebd691aa36ae63d",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/201101NSFC_Internet/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 03",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-003",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/201201Central_University/index.html",
+      "sha256": "31ff187c90508ea29aff4c9f6c759e67b8c284f9dd3097d5c2a246d06886a7a4",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/201201Central_University/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 04",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-004",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/201401NSFC_Multiagent/index.html",
+      "sha256": "8479f8419d5995a0da4bc89664f26b98fae481c67af268820a6b1db7c937ca17",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/201401NSFC_Multiagent/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 05",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-005",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/201601Microgrid_PI/index.html",
+      "sha256": "6c2cc5fec621500cccbefd69fbd53be8f728328788fefb23274de64d5e983e54",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/201601Microgrid_PI/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 06",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-006",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/201601NARI_Temp/index.html",
+      "sha256": "c86ffdb564ae37afd4f48177583ac6eb1a1288b11853c919ac1a9522d5f10004",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/201601NARI_Temp/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 07",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-007",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/201708NSFC_Excellent/index.html",
+      "sha256": "0fafaf323bd9ec480e9d8b8296245a42986449115a0ecee1c87a144919bc2210",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/201708NSFC_Excellent/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 08",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-008",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/201801NSFC_DC_Microgrid/index.html",
+      "sha256": "ab79118f6023afe3470b4f9e871e34558752e639abba701a89cbaacedf6ad5bb",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/201801NSFC_DC_Microgrid/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 09",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-009",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/201901Defense_Lab/index.html",
+      "sha256": "bf0ca0585b8c1733b4368952032376e47470c236e04a13cb8fcb8e91b4062ac4",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/201901Defense_Lab/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 10",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-010",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/202110Hubei_Microgrid/index.html",
+      "sha256": "015fa287c61a6f1303deeb0112819c8a4a9e089399dc3bc84a34b86c630c95b2",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/202110Hubei_Microgrid/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 11",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-011",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/202201NSFC_Game_Theory/index.html",
+      "sha256": "ad8ddb3877eac76a72d51c5b8747fc5a127b033242035d270ea1d0af0b888715",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/202201NSFC_Game_Theory/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 12",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-012",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/202301NSFC_Key_Project/index.html",
+      "sha256": "e711a1b11ee85217cb0e8981de559ea8e4f74afa8bfe8e5a13582b5e5a8572c0",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/202301NSFC_Key_Project/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 13",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-013",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/202508Hubei_Innovation/index.html",
+      "sha256": "e5265ccd1057534b9627ecc3dbf52727af172e8f356028e17621d6474d87fbc1",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/202508Hubei_Innovation/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 14",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-014",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/projects/202601NSFC_Heterogeneous/index.html",
+      "sha256": "8bc0153b151bdb097db3806b2a694261b526cefaea8550330789e5bcb23ef546",
+      "kind": "PROJECT",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/projects/202601NSFC_Heterogeneous/index.html"
+      ],
+      "payload": {
+        "title": "示例课题项目 15",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "project_number": "DEMO-V6-015",
+          "start_date": "2026-01-01",
+          "funder": "示例科研基金"
+        }
+      }
+    },
+    {
+      "source": "data/competitions/20261228金融科技竞赛/index.html",
+      "sha256": "076d8ab707a6cddfc741cb14acd7cd55bb240d4234413ec4cab2eba5fa908dfa",
+      "kind": "AWARD",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/competitions/20261228金融科技竞赛/index.html"
+      ],
+      "payload": {
+        "title": "示例学科竞赛 01",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "event_name": "示例科研竞赛",
+          "category": "COMPETITION",
+          "award_name": "示例奖项",
+          "award_date": "2026-01-01"
+        }
+      }
+    },
+    {
+      "source": "data/publications/202506自动控制原理/index.html",
+      "sha256": "3a4a219fc4659b55573c9f96d9b76439bd4a51f30101ef5e6ce0de8f95bea3b8",
+      "kind": "PUBLICATION",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/publications/202506自动控制原理/index.html"
+      ],
+      "payload": {
+        "title": "示例出版刊物 01",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "publisher": "Example Publisher",
+          "publication_date": "2026-01-01"
+        }
+      }
+    },
+    {
+      "source": "data/activities/20251211羽毛球赛/index.html",
+      "sha256": "7277d2f4ad3aafa1d38b5e12f259614cd9b0e55d786213af8b2c00c61268463a",
+      "kind": "ACTIVITY",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/activities/20251211羽毛球赛/index.html"
+      ],
+      "payload": {
+        "title": "示例团队活动 01",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "body": "这是一条示例内容。编辑、提交并由他人审核后，才会公开展示。",
+          "starts_at": "2026-01-01T09:00:00Z"
+        }
+      }
+    },
+    {
+      "source": "data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/index.html",
+      "sha256": "356028e89868a45adea08622ff296d8d0c61902007f98f8c7b9d75a230a11b69",
+      "kind": "NEWS",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/index.html"
+      ],
+      "payload": {
+        "title": "示例新闻动态 01",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "body": "这是一条示例内容。编辑、提交并由他人审核后，才会公开展示。"
+        }
+      }
+    },
+    {
+      "source": "data/blogs/20231003TPA-LSTM/index.html",
+      "sha256": "3ea85d1bb3b96f332a927b1e42740aac54916fceac2a833f697070e59a86e510",
+      "kind": "BLOG",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/blogs/20231003TPA-LSTM/index.html"
+      ],
+      "payload": {
+        "title": "示例技术博客 01",
+        "summary": "用于演示新版审核与公开展示流程的虚构数据。",
+        "detail": {
+          "body": "这是一条示例内容。编辑、提交并由他人审核后，才会公开展示。"
+        }
+      }
+    },
+    {
+      "source": "data/members/students/Junjie_Ding/index.html",
+      "sha256": "306b78998eaa1714e5e3bc89b50ee848a0a07ba7b6109fb9da7103aa77c41481",
+      "kind": "MEMBER",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/members/students/Junjie_Ding/index.html"
+      ],
+      "payload": {
+        "display_name": "示例成员 01",
+        "slug": "example-member-01",
+        "member_kind": "STUDENT",
+        "bio": "用于演示成员主页的虚构资料。"
+      }
+    },
+    {
+      "source": "data/members/teachers/Jiangwen_Xiao/index.html",
+      "sha256": "6eb53f22e0d87ed3b2996c8e4d824ed55f97ef7667aec7aa67d18d5f052d5cdd",
+      "kind": "MEMBER",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/members/teachers/Jiangwen_Xiao/index.html"
+      ],
+      "payload": {
+        "display_name": "示例成员 02",
+        "slug": "example-member-02",
+        "member_kind": "TEACHER",
+        "bio": "用于演示成员主页的虚构资料。"
+      }
+    },
+    {
+      "source": "data/members/teachers/Xiaokang_Liu/index.html",
+      "sha256": "2f66f1b7c71b3bac6008e790940f2a21631c8903211199786f8e73c20d695e3e",
+      "kind": "MEMBER",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/members/teachers/Xiaokang_Liu/index.html"
+      ],
+      "payload": {
+        "display_name": "示例成员 03",
+        "slug": "example-member-03",
+        "member_kind": "TEACHER",
+        "bio": "用于演示成员主页的虚构资料。"
+      }
+    },
+    {
+      "source": "data/members/teachers/Yanwu_Wang/index.html",
+      "sha256": "a842b462fd4cc6b2f83054698345139c7783e72af6307c7d9aac075b81dee128",
+      "kind": "MEMBER",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/members/teachers/Yanwu_Wang/index.html"
+      ],
+      "payload": {
+        "display_name": "示例成员 04",
+        "slug": "example-member-04",
+        "member_kind": "TEACHER",
+        "bio": "用于演示成员主页的虚构资料。"
+      }
+    },
+    {
+      "source": "home.txt",
+      "sha256": "17766038ea6b68961ee4c0a3211a468a514c6e05f5898ca5996d7ee8fedba193",
+      "kind": "LAB_PAGE",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/pages/home/index.html"
+      ],
+      "payload": {
+        "title": "智能系统实验室",
+        "detail": {
+          "page_key": "home",
+          "body": "欢迎来到实验室协同科研平台。本页为虚构示例，正式介绍须由团队编辑审核。"
+        }
+      }
+    },
+    {
+      "source": "about.txt",
+      "sha256": "a73d2fb15d2c19b0b67cb162307df4a42cf474e659764f5d5408c77a92d03776",
+      "kind": "LAB_PAGE",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/pages/about/index.html"
+      ],
+      "payload": {
+        "title": "关于实验室",
+        "detail": {
+          "page_key": "about",
+          "body": "欢迎来到实验室协同科研平台。本页为虚构示例，正式介绍须由团队编辑审核。"
+        }
+      }
+    },
+    {
+      "source": "synthetic-graduate.txt",
+      "sha256": "dd0314bf6682383a1ec57a4df196fe93b8ce0129c90442e034a2c176cd18ed39",
+      "kind": "MEMBER",
+      "public_authorized": true,
+      "legacy_paths": [
+        "/data/graduates/example/index.html"
+      ],
+      "payload": {
+        "display_name": "示例毕业生",
+        "slug": "example-graduate",
+        "member_kind": "STUDENT",
+        "public_member_status": "ALUMNI",
+        "bio": "虚构毕业去向，用于展示经授权的校友资料。",
+        "alumni": {
+          "graduation_year": 2026,
+          "degree": "硕士",
+          "destination_type": "WORK",
+          "organization": "示例研究机构",
+          "is_public": true
+        }
+      }
+    }
+  ]
+}

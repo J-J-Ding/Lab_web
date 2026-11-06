@@ -13,6 +13,8 @@ class AssetFile(models.Model):
         REJECTED='REJECTED'
     id=models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner=models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    purpose=models.CharField(max_length=12,choices=[('avatar','avatar'),('proof','proof'),('image','image'),('attachment','attachment')],default='proof')
+    deletion_requested_at=models.DateTimeField(null=True,blank=True)
     storage_key=models.CharField(max_length=255, unique=True)
     original_filename=models.CharField(max_length=255)
     mime_type=models.CharField(max_length=100)

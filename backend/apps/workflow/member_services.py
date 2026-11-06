@@ -156,7 +156,7 @@ def decide_profile(request,revision_id,data):
         if revision.avatar_asset_id:
             image=AssetFile.objects.select_for_update().get(pk=revision.avatar_asset_id)
             if image.scan_status!='CLEAN' or image.owner_id!=profile.user_id or (image.expires_at and image.expires_at<=timezone.now()):raise ValidationError({'avatar_asset':'Avatar no longer available.'})
-            image.expires_at=None;image.save(update_fields=['expires_at'])
+            image.expires_at=None;image.visibility='PUBLIC';image.save(update_fields=['expires_at','visibility'])
         revision.state='PUBLISHED';revision.save(update_fields=['state'])
         profile.published_revision=revision
         for field in ('public_visible','contact_visible','education_visible','alumni_visible'):setattr(profile,field,getattr(consent,field))

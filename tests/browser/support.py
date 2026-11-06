@@ -41,7 +41,7 @@ class Environment:
         self.server = None
 
     def start(self):
-        if not COMPOSE or '-p' not in COMPOSE or not COMPOSE[COMPOSE.index('-p') + 1].startswith(('lab-web-test-v4-', 'lab-web-test-v5-')):
+        if not COMPOSE or '-p' not in COMPOSE or not COMPOSE[COMPOSE.index('-p') + 1].startswith(('lab-web-test-v4-', 'lab-web-test-v5-', 'lab-web-test-v6-')):
             raise RuntimeError('Use tests/support/v4_environment.py browser: isolated Compose configuration is required.')
         assert self.database.startswith('test_lab_web_browser_') and self.port not in (80, 8000)
         try:

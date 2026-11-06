@@ -1,0 +1,3 @@
+# Keep archived source snapshots byte-for-byte, including original trailing spaces.
+legacy_samples/originals/** whitespace=-blank-at-eol
+*.pdf binary

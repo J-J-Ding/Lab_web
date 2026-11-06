@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const C=LabContent,$=s=>document.querySelector(s);
-  let item=null,contributors=[],links=[],projectChoices=[],dirty=false;
+  let item=null,contributors=[],links=[],attachments=[],projectChoices=[],dirty=false;
   const types={
     BLOG:[['body','正文','textarea',true],['category','分类']],NEWS:[['body','正文','textarea',true],['event_date','事件日期','date'],['category','分类']],PAPER:[['doi','DOI'],['venue','期刊或会议','text',true],['publication_date','发表日期','date',true],['category','论文类别'],['volume','卷'],['issue','期'],['pages','页码'],['open_url','开放访问链接','url']],PROJECT:[['project_number','项目编号'],['funder','资助方','text',true],['level','项目级别'],['start_date','开始日期','date',true],['end_date','结束日期','date'],['status','项目状态','status'],['funding_amount','内部经费','number']],AWARD:[['event_name','竞赛或奖励名称','text',true],['award_name','奖项','text',true],['award_date','获奖日期','date',true],['category','类别','award'],['level','奖励级别']],ACTIVITY:[['starts_at','开始时间','datetime-local',true],['ends_at','结束时间','datetime-local'],['location','地点'],['body','活动正文','textarea',true]],PUBLICATION:[['isbn','ISBN'],['publisher','出版社','text',true],['publication_date','出版日期','date',true],['edition','版次']],LAB_PAGE:[['page_key','固定页面','page'],['body','介绍正文','textarea',true]]
   }
@@ -127,10 +127,17 @@
     box.append(dl);
     for(const c of revision.contributions||[])box.append(C.node('p',`${c.name} · ${c.contribution_role} · ${c.position} · ${c.confirmation_status}`));
   }
+  function attachmentRows(){
+    const box=$('#attachment-list');box.replaceChildren();
+    const editable=!item||(item.can_edit&&item.working_revision?.state==='DRAFT'&&!item.archived);
+    for(const id of attachments){const row=C.node('p','附件 '+id+' ');row.append(C.node('a','下载附件',{href:`/api/assets/${encodeURIComponent(id)}/download/`,target:'_blank',rel:'noopener noreferrer'}));if(editable){const b=C.button('移除此附件',()=>{attachments=attachments.filter(x=>x!==id);dirty=true;attachmentRows();});row.append(b);}box.append(row);}
+  }
   function permissions(){
     $('#content-form').hidden=false;
     const r=item?.working_revision,editable=!item||(item.can_edit&&r?.state==='DRAFT'&&!item.archived);
     C.disabled($('#save-content'),!editable);
+    C.disabled($('#upload-attachment'),!editable);
+    attachmentRows();
     C.disabled($('#submit-content'),!item||!editable);
     C.disabled($('#discard-content'),!item||!editable);
     C.disabled($('#withdraw-content'),!item||r?.state!=='SUBMITTED'||!item.can_edit);
@@ -157,6 +164,7 @@
     $('#content-form').hidden=true;
     item=await C.request(`/api/content/items/${encodeURIComponent(id)}/`);
     const r=item.working_revision||item.published_revision;
+    attachments=r?.assets||[];
     $('#kind').value=item.kind;
     $('#title').value=r?.title||'';
     $('#summary').value=r?.summary||'';
@@ -259,7 +267,7 @@
     let result;
     if(item)result=await C.request(`/api/content/revisions/${item.working_revision.id}/`,{
       method:'PATCH',data:{
-        ...data,lock_version:item.lock_version,project_links:[...$('#project-links').selectedOptions].map(o=>o.value)
+        ...data,assets:attachments,lock_version:item.lock_version,project_links:[...$('#project-links').selectedOptions].map(o=>o.value)
       }
     }
     );
@@ -269,6 +277,7 @@
       }
     }
     );
+    if(!item && (attachments.length || $('#project-links').selectedOptions.length))result=await C.request(`/api/content/revisions/${result.working_revision.id}/`,{method:'PATCH',data:{lock_version:result.lock_version,assets:attachments,project_links:[...$('#project-links').selectedOptions].map(o=>o.value)}});
     history.replaceState(null,'',`?id=${result.id}`);
     await load();
     C.status('草稿已保存，尚未公开。');
@@ -395,6 +404,14 @@
         C.status('协作授权已更新。');
       }
       );
+      $('#upload-attachment').addEventListener('click',async()=>{
+        const button=$('#upload-attachment');button.disabled=true;
+        try{
+          const file=$('#attachment-file').files[0];if(!file)throw {status:400,data:{detail:'请先选择附件。'}};
+          const form=new FormData();form.append('file',file);form.append('purpose',file.type.startsWith('image/')?'image':'attachment');
+          const result=await C.request('/api/assets/',{method:'POST',file:form});attachments.push(result.id);dirty=true;attachmentRows();$('#attachment-file').value='';C.status('附件已上传，请保存草稿。');
+        }catch(error){C.showError(error);}finally{button.disabled=false;}
+      });
       await load();
     }
     catch(error){

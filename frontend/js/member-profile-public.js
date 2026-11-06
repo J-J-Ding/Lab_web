@@ -1,0 +1,23 @@
+(function(){
+  'use strict';
+  const P=window.LabPublic;
+  async function load(){return P.run(async current=>{
+    const slug=new URLSearchParams(location.search).get('slug');if(!slug)throw new Error('内容不存在或尚未公开');
+    const data=await P.get('/api/public/members/'+encodeURIComponent(slug)+'/');if(!current())return;
+    const card=P.node('article',undefined,'public-card');card.append(P.node('h1',data.display_name),P.node('p',data.bio,'public-body'));
+    card.append(P.node('p',(data.research_areas||[]).join(' · ')));
+    if(data.public_contact_email)card.append(P.node('p','公开邮箱：'+data.public_contact_email));
+    for(const education of data.education||[])card.append(P.node('p',`${education.school} · ${education.major} · ${education.degree}`));
+    if(data.alumni)card.append(P.node('p',`${data.alumni.graduation_year} · ${data.alumni.degree} · ${data.alumni.organization}`));
+    if(data.avatar)window.renderPublicAssets([data.avatar],card);P.content.append(card);
+    const outputs=P.node('section');P.content.append(outputs);let page=1;
+    const show=async()=>{
+      const rows=await P.get('/api/public/members/'+encodeURIComponent(slug)+`/achievements/?page=${page}`);if(!current())return;
+      outputs.replaceChildren(P.node('h2','参与成果'));
+      for(const row of rows.results){const line=P.node('p');line.append(P.link(row.title,'/content.html?id='+row.id));outputs.append(line);}
+      if(!rows.count)outputs.append(P.node('p','暂无公开成果'));
+      for(const [text,ok,delta] of [['上一页',rows.previous,-1],['下一页',rows.next,1]]){const b=P.node('button',text);b.disabled=!ok;b.onclick=()=>{page+=delta;show().catch(e=>{outputs.textContent=e.message;});};outputs.append(b);}
+    };await show();P.ready();
+  });}
+  document.getElementById('public-retry').addEventListener('click',load);load();
+})();

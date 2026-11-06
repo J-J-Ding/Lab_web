@@ -1,0 +1,722 @@
+[
+  {
+    "path": "/content-editor.html",
+    "sha256": "7a119131a2f102b65791adc82a8c7648279d31dbb011545cb558a8ffba279abd",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/content-editor.html"
+  },
+  {
+    "path": "/css/auth.css",
+    "sha256": "dfc971ba301f80b154f107de94b8b0bff6aa3439199c886e10f12949cb5f66ac",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/css/auth.css"
+  },
+  {
+    "path": "/css/pagination.css",
+    "sha256": "7a24e7546e35b9aba21c2deb2138f09da5a48550f83170957190fae0dc18d169",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/css/pagination.css"
+  },
+  {
+    "path": "/css/slider.css",
+    "sha256": "35e044f5ec6b7300dbd867a7a75ffa7f3840934fb3c677c38bd3316cac861610",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/css/slider.css"
+  },
+  {
+    "path": "/css/style.css",
+    "sha256": "042c3d9f271490e0212fb74a02372a5f0870be899900957f9f9487bc22b63fad",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/css/style.css"
+  },
+  {
+    "path": "/css/workspace.css",
+    "sha256": "00789cdbebd2f62a39dff84dec8833a219be5bf1f7a03d9dd0fbbd9987c9cf93",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/css/workspace.css"
+  },
+  {
+    "path": "/data/activities/20251211羽毛球赛/index.html",
+    "sha256": "7277d2f4ad3aafa1d38b5e12f259614cd9b0e55d786213af8b2c00c61268463a",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/activities/20251211羽毛球赛/index.html"
+  },
+  {
+    "path": "/data/activities/20251211羽毛球赛/活动照片1.jpg",
+    "sha256": "87824acbcb9a5c71ab0bfcc566bd1bdbe410017e47356e4d2a0272b9833ad3ad",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/activities/20251211羽毛球赛/活动照片1.jpg"
+  },
+  {
+    "path": "/data/activities/20251211羽毛球赛/活动照片3.jpg",
+    "sha256": "4990f05cbf4f1de6895ecb283167ac903550f2da12479142d28a56b12da61d31",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/activities/20251211羽毛球赛/活动照片3.jpg"
+  },
+  {
+    "path": "/data/activities/20251211羽毛球赛/活动照片4.jpg",
+    "sha256": "76868205eb660fd80bb3e094df5b331af55e6b4010c3553ff1eb156b9e4cf102",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/activities/20251211羽毛球赛/活动照片4.jpg"
+  },
+  {
+    "path": "/data/activities/20251211羽毛球赛/羽毛球赛.jpg",
+    "sha256": "fad0a43550882b05e8968944aa26025b3c87c4bf3f4ada87d5769f157e4b6b29",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/activities/20251211羽毛球赛/羽毛球赛.jpg"
+  },
+  {
+    "path": "/data/activities/README.md",
+    "sha256": "62140a5962994e70aa61761cea46674a07ea4ce44e78952e4992db9b62b626cf",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/activities/README.md"
+  },
+  {
+    "path": "/data/activities/css/activity_detail.css",
+    "sha256": "b8ef9cfdab4e861832ee18a19df151b277ff4d9c1fb792e19f3daf7f211df26e",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/activities/css/activity_detail.css"
+  },
+  {
+    "path": "/data/activities/index.html",
+    "sha256": "36f37e37362c8a2743ba02f998ed3a100a2ebbc1913d324ce5865bd8617d292f",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/activities/index.html"
+  },
+  {
+    "path": "/data/blogs/20231003TPA-LSTM/index.html",
+    "sha256": "3ea85d1bb3b96f332a927b1e42740aac54916fceac2a833f697070e59a86e510",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/blogs/20231003TPA-LSTM/index.html"
+  },
+  {
+    "path": "/data/blogs/20231003TPA-LSTM/封面图.png",
+    "sha256": "9255ff1e195e22248d5cdfc6d334cccc3438030d9eaed13f08836f9cd4fc7a6e",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/blogs/20231003TPA-LSTM/封面图.png"
+  },
+  {
+    "path": "/data/blogs/20231003TPA-LSTM/相关性热力图.png",
+    "sha256": "d8594def50d292e0d83af763734a0335c985a73322ea5ea86fa4896c8e63bd10",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/blogs/20231003TPA-LSTM/相关性热力图.png"
+  },
+  {
+    "path": "/data/blogs/README.md",
+    "sha256": "59094dcac5a8bbd06b95f1c0b372a6149b750bcb82e5de0770625286a6b5bef5",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/blogs/README.md"
+  },
+  {
+    "path": "/data/blogs/css/blog_detail.css",
+    "sha256": "d00655ebb2bef553d838193d7422d7e604d60bfb422555fb864ef4fb515a066b",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/blogs/css/blog_detail.css"
+  },
+  {
+    "path": "/data/blogs/index.html",
+    "sha256": "342147563e238843c05f20b8ca13d5bcface40c9fa7b227090fb4d42e8b71b30",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/blogs/index.html"
+  },
+  {
+    "path": "/data/competitions/20261228金融科技竞赛/index.html",
+    "sha256": "076d8ab707a6cddfc741cb14acd7cd55bb240d4234413ec4cab2eba5fa908dfa",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/competitions/20261228金融科技竞赛/index.html"
+  },
+  {
+    "path": "/data/competitions/20261228金融科技竞赛/封面图.jpg",
+    "sha256": "4a72d4cb114b0f8f94243f6021fb9e7c66eb4beb036a7eb591e37222d2e09546",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/competitions/20261228金融科技竞赛/封面图.jpg"
+  },
+  {
+    "path": "/data/competitions/20261228金融科技竞赛/获奖证书.png",
+    "sha256": "85928088b645a437433789ca652c3ab2881e3dc4be440fd4f3c077c05ed7b5fd",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/competitions/20261228金融科技竞赛/获奖证书.png"
+  },
+  {
+    "path": "/data/competitions/README.md",
+    "sha256": "487125247ba9de987e9af9a70d6177955d2380eac218fb2c24044536455ffbf1",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/competitions/README.md"
+  },
+  {
+    "path": "/data/competitions/css/competition_detail.css",
+    "sha256": "996d29e31728dcb386e4bbca3f33636aac3add16dbac79135eb94362ae922721",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/competitions/css/competition_detail.css"
+  },
+  {
+    "path": "/data/competitions/index.html",
+    "sha256": "213b6b0d6616ea1d6799376bdb521818588a147b8f990750e3de22444ff9a9f1",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/competitions/index.html"
+  },
+  {
+    "path": "/data/graduates/README.md",
+    "sha256": "d0abba7f67705f47f8c78b90b6ccd234c339e2b1a267e5619ebc9272a71f7119",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/graduates/README.md"
+  },
+  {
+    "path": "/data/graduates/figs/陈悦江.jpg",
+    "sha256": "b3d6dab5d1a81bb25ca3d667e3336006ca5acd9a1b812e138e4195c91f2babb2",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/graduates/figs/陈悦江.jpg"
+  },
+  {
+    "path": "/data/graduates/index.html",
+    "sha256": "1dab91c1baf4a9b91f5d2f56dca891d930083622440562ac6ab61f644bc8786e",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/graduates/index.html"
+  },
+  {
+    "path": "/data/members/README.md",
+    "sha256": "47037df6ddbdfcec9b277db3091f38843559ab924f101a2a1487a4325bd6eb18",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/members/README.md"
+  },
+  {
+    "path": "/data/members/css/member_detail.css",
+    "sha256": "f5b9f8257c5b4e3b46f3c05da50effd4bc3d65ad02cb84230cf14c7e85199c70",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/members/css/member_detail.css"
+  },
+  {
+    "path": "/data/members/index.html",
+    "sha256": "8e27f17e6e729a867091a33ce90377585a4b3b5e1209363fa3e24ca97c335bdd",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/members/index.html"
+  },
+  {
+    "path": "/data/members/students/Junjie_Ding/index.html",
+    "sha256": "306b78998eaa1714e5e3bc89b50ee848a0a07ba7b6109fb9da7103aa77c41481",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/members/students/Junjie_Ding/index.html"
+  },
+  {
+    "path": "/data/members/students/Junjie_Ding/丁俊杰.jpg",
+    "sha256": "fc60c07f11efcd3886f432ccda8bff3aec03be4fc4bc6a0c19901b1fe4dd3f00",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/members/students/Junjie_Ding/丁俊杰.jpg"
+  },
+  {
+    "path": "/data/members/teachers/Jiangwen_Xiao/index.html",
+    "sha256": "6eb53f22e0d87ed3b2996c8e4d824ed55f97ef7667aec7aa67d18d5f052d5cdd",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/members/teachers/Jiangwen_Xiao/index.html"
+  },
+  {
+    "path": "/data/members/teachers/Jiangwen_Xiao/肖江文.png",
+    "sha256": "e41fdea5e68ee44d27eb4a8b9215e62f68c7ed16fae0174d42f427fb42b1a61d",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/members/teachers/Jiangwen_Xiao/肖江文.png"
+  },
+  {
+    "path": "/data/members/teachers/Xiaokang_Liu/index.html",
+    "sha256": "2f66f1b7c71b3bac6008e790940f2a21631c8903211199786f8e73c20d695e3e",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/members/teachers/Xiaokang_Liu/index.html"
+  },
+  {
+    "path": "/data/members/teachers/Xiaokang_Liu/刘骁康.png",
+    "sha256": "6b2453e66c8549a23df418f7e527004eb15b46f56be66be3d56b136a59e6b6ce",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/members/teachers/Xiaokang_Liu/刘骁康.png"
+  },
+  {
+    "path": "/data/members/teachers/Yanwu_Wang/index.html",
+    "sha256": "a842b462fd4cc6b2f83054698345139c7783e72af6307c7d9aac075b81dee128",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/members/teachers/Yanwu_Wang/index.html"
+  },
+  {
+    "path": "/data/members/teachers/Yanwu_Wang/王燕舞.png",
+    "sha256": "13773c56ed9b8705a0345e9acfb0bc675eae8c79e7a6cba8334476afe7024764",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/members/teachers/Yanwu_Wang/王燕舞.png"
+  },
+  {
+    "path": "/data/navbar-unified.html",
+    "sha256": "f3568d19df67974b243e81fdd413fa31c5fd8e9b8964c9bc6668143c2ccfdaf1",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/navbar-unified.html"
+  },
+  {
+    "path": "/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/index.html",
+    "sha256": "356028e89868a45adea08622ff296d8d0c61902007f98f8c7b9d75a230a11b69",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/index.html"
+  },
+  {
+    "path": "/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/封面图.png",
+    "sha256": "48c20bcc1b89e267b7e2a12d7f3266ac61f270be21f04181cc909313fa398458",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/封面图.png"
+  },
+  {
+    "path": "/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/附件1-硕博连读申请系统操作指南.docx",
+    "sha256": "45618177bde4e951093c80d7951ca15cf5c1c95dde0dade6d46f29cfc157bd37",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/附件1-硕博连读申请系统操作指南.docx"
+  },
+  {
+    "path": "/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/附件2-《攻读博士学位期间拟开展的研究计划》模板.doc",
+    "sha256": "f709cdde35ce861d3ea2cc174bc965abdc603ce548dd9683c3023f4f73b6a303",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/news/20251215人工智能与自动化学院关于开展2026年硕博连读工作的安排/附件2-《攻读博士学位期间拟开展的研究计划》模板.doc"
+  },
+  {
+    "path": "/data/news/README.md",
+    "sha256": "3529831e23460dea22d8446063cd557ba9fcb71cc88c082b292837844962a794",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/news/README.md"
+  },
+  {
+    "path": "/data/news/css/news_detail.css",
+    "sha256": "195d1ee83558b06070bec1a9c4db80b2daf2338346cc2073ccf3174f14ce5217",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/news/css/news_detail.css"
+  },
+  {
+    "path": "/data/news/index.html",
+    "sha256": "19f2548bba28e6ec0b6530e04993437269a12ef4ffca15ce477d1ec904cb06d9",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/news/index.html"
+  },
+  {
+    "path": "/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/framework1.png",
+    "sha256": "da939f1983a679eaba03acaa2af752e36e70dae891e377f56e987af5b771f304",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/framework1.png"
+  },
+  {
+    "path": "/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/framework2.png",
+    "sha256": "47840f7d8e578a418aba7ecf8586bcb8351690366f0f028c4758a751972372eb",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/framework2.png"
+  },
+  {
+    "path": "/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/index.html",
+    "sha256": "6c5d9d580ff228539a767c422f6227d138760bf9a0abf18113833f209cf27d63",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/index.html"
+  },
+  {
+    "path": "/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/paper.pdf",
+    "sha256": "107b1ef80bf03df721f14e9aa725e956a70445c5530aa444a25e644718079d23",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/paper.pdf"
+  },
+  {
+    "path": "/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/封面图.png",
+    "sha256": "6cfaa5ad3313f0e9ba92eb33d4ed28b287ef90a81650e8d24b8fdc471eab4653",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/papers/202308_A new deep clustering method with application to customer selection for demand response program/封面图.png"
+  },
+  {
+    "path": "/data/papers/README.md",
+    "sha256": "87e917f09ed08e763b476d3998da6a939d1864a95d489f805e9faef3e7056c88",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/papers/README.md"
+  },
+  {
+    "path": "/data/papers/css/paper_detail.css",
+    "sha256": "84dc468afca6c940da9ec0edc3768a23a39b0b1a12c65c509ad40b580cbea3f8",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/papers/css/paper_detail.css"
+  },
+  {
+    "path": "/data/papers/index.html",
+    "sha256": "b224ce51e39b6085af4780ff172d64eefeb2b223177b27950eeb63d2c1c632d1",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/papers/index.html"
+  },
+  {
+    "path": "/data/projects/200801NSFC_Youth/index.html",
+    "sha256": "4198a1bfebad4d11b10fff29d852e02a823b24507167a65a7612f9ed39690133",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/200801NSFC_Youth/index.html"
+  },
+  {
+    "path": "/data/projects/200801NSFC_Youth/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/200801NSFC_Youth/封面图.png"
+  },
+  {
+    "path": "/data/projects/200901NCET/index.html",
+    "sha256": "77ab0e162545a0f9a31bf35b3fbc2a4b47c6741d9499d4e8c05d3247baf95444",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/200901NCET/index.html"
+  },
+  {
+    "path": "/data/projects/200901NCET/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/200901NCET/封面图.png"
+  },
+  {
+    "path": "/data/projects/201101NSFC_Internet/index.html",
+    "sha256": "59a1b3d053dbb17cc28b33ac85d38488b1e12678fd14494d6ebd691aa36ae63d",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/201101NSFC_Internet/index.html"
+  },
+  {
+    "path": "/data/projects/201101NSFC_Internet/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/201101NSFC_Internet/封面图.png"
+  },
+  {
+    "path": "/data/projects/201201Central_University/index.html",
+    "sha256": "31ff187c90508ea29aff4c9f6c759e67b8c284f9dd3097d5c2a246d06886a7a4",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/201201Central_University/index.html"
+  },
+  {
+    "path": "/data/projects/201201Central_University/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/201201Central_University/封面图.png"
+  },
+  {
+    "path": "/data/projects/201401NSFC_Multiagent/index.html",
+    "sha256": "8479f8419d5995a0da4bc89664f26b98fae481c67af268820a6b1db7c937ca17",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/201401NSFC_Multiagent/index.html"
+  },
+  {
+    "path": "/data/projects/201401NSFC_Multiagent/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/201401NSFC_Multiagent/封面图.png"
+  },
+  {
+    "path": "/data/projects/201601Microgrid_PI/index.html",
+    "sha256": "6c2cc5fec621500cccbefd69fbd53be8f728328788fefb23274de64d5e983e54",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/201601Microgrid_PI/index.html"
+  },
+  {
+    "path": "/data/projects/201601Microgrid_PI/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/201601Microgrid_PI/封面图.png"
+  },
+  {
+    "path": "/data/projects/201601NARI_Temp/index.html",
+    "sha256": "c86ffdb564ae37afd4f48177583ac6eb1a1288b11853c919ac1a9522d5f10004",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/201601NARI_Temp/index.html"
+  },
+  {
+    "path": "/data/projects/201601NARI_Temp/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/201601NARI_Temp/封面图.png"
+  },
+  {
+    "path": "/data/projects/201708NSFC_Excellent/index.html",
+    "sha256": "0fafaf323bd9ec480e9d8b8296245a42986449115a0ecee1c87a144919bc2210",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/201708NSFC_Excellent/index.html"
+  },
+  {
+    "path": "/data/projects/201708NSFC_Excellent/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/201708NSFC_Excellent/封面图.png"
+  },
+  {
+    "path": "/data/projects/201801NSFC_DC_Microgrid/index.html",
+    "sha256": "ab79118f6023afe3470b4f9e871e34558752e639abba701a89cbaacedf6ad5bb",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/201801NSFC_DC_Microgrid/index.html"
+  },
+  {
+    "path": "/data/projects/201801NSFC_DC_Microgrid/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/201801NSFC_DC_Microgrid/封面图.png"
+  },
+  {
+    "path": "/data/projects/201901Defense_Lab/index.html",
+    "sha256": "bf0ca0585b8c1733b4368952032376e47470c236e04a13cb8fcb8e91b4062ac4",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/201901Defense_Lab/index.html"
+  },
+  {
+    "path": "/data/projects/201901Defense_Lab/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/201901Defense_Lab/封面图.png"
+  },
+  {
+    "path": "/data/projects/202110Hubei_Microgrid/index.html",
+    "sha256": "015fa287c61a6f1303deeb0112819c8a4a9e089399dc3bc84a34b86c630c95b2",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/202110Hubei_Microgrid/index.html"
+  },
+  {
+    "path": "/data/projects/202110Hubei_Microgrid/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/202110Hubei_Microgrid/封面图.png"
+  },
+  {
+    "path": "/data/projects/202201NSFC_Game_Theory/index.html",
+    "sha256": "ad8ddb3877eac76a72d51c5b8747fc5a127b033242035d270ea1d0af0b888715",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/202201NSFC_Game_Theory/index.html"
+  },
+  {
+    "path": "/data/projects/202201NSFC_Game_Theory/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/202201NSFC_Game_Theory/封面图.png"
+  },
+  {
+    "path": "/data/projects/202301NSFC_Key_Project/index.html",
+    "sha256": "e711a1b11ee85217cb0e8981de559ea8e4f74afa8bfe8e5a13582b5e5a8572c0",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/202301NSFC_Key_Project/index.html"
+  },
+  {
+    "path": "/data/projects/202301NSFC_Key_Project/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/202301NSFC_Key_Project/封面图.png"
+  },
+  {
+    "path": "/data/projects/202508Hubei_Innovation/index.html",
+    "sha256": "e5265ccd1057534b9627ecc3dbf52727af172e8f356028e17621d6474d87fbc1",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/202508Hubei_Innovation/index.html"
+  },
+  {
+    "path": "/data/projects/202508Hubei_Innovation/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/202508Hubei_Innovation/封面图.png"
+  },
+  {
+    "path": "/data/projects/202601NSFC_Heterogeneous/index.html",
+    "sha256": "8bc0153b151bdb097db3806b2a694261b526cefaea8550330789e5bcb23ef546",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/projects/202601NSFC_Heterogeneous/index.html"
+  },
+  {
+    "path": "/data/projects/202601NSFC_Heterogeneous/封面图.png",
+    "sha256": "a323ea39e590a49b6531de54bcb836db04323fe1df15aa4e149f7377e36e7512",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/202601NSFC_Heterogeneous/封面图.png"
+  },
+  {
+    "path": "/data/projects/README.md",
+    "sha256": "17eb2b75bf4ae28a8fbacab0dab9dcd006573100da00e7defbe9c3a284a2f017",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/projects/README.md"
+  },
+  {
+    "path": "/data/projects/css/project_detail.css",
+    "sha256": "4e76c8a9e234683f68445efa0775b379a637cc84f21e1f40f5c66e5fcb805707",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/projects/css/project_detail.css"
+  },
+  {
+    "path": "/data/projects/index.html",
+    "sha256": "12c51937823d489aa34f3dcfaa11d5eff53c9b3bc7822d68f3fd74dc5062472d",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/projects/index.html"
+  },
+  {
+    "path": "/data/publications/202506自动控制原理/index.html",
+    "sha256": "3a4a219fc4659b55573c9f96d9b76439bd4a51f30101ef5e6ce0de8f95bea3b8",
+    "action": "compatibility-shell",
+    "source": "legacy_samples/originals/data/publications/202506自动控制原理/index.html"
+  },
+  {
+    "path": "/data/publications/202506自动控制原理/封面图.png",
+    "sha256": "b7bd3cfe9d878c79ca6cb26773aa84338d488d63c7082ebc8d2de0a6b1602fff",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/publications/202506自动控制原理/封面图.png"
+  },
+  {
+    "path": "/data/publications/README.md",
+    "sha256": "a490cdcaf3b6c69da640dd2c8cc12cf69388873afef6f060af5a3c819c663fb0",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/data/publications/README.md"
+  },
+  {
+    "path": "/data/publications/css/publication_detail.css",
+    "sha256": "b0d43aab09b72c2b5e067dcc1c4d4686d7e2d55f2a54767d7dee7314f8a4271d",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/data/publications/css/publication_detail.css"
+  },
+  {
+    "path": "/data/publications/index.html",
+    "sha256": "4a93a389f456b28f5e004d466713a12d23b3cd1b72a1ca562e4c1561c9ac5dad",
+    "action": "api-list",
+    "source": "legacy_samples/originals/data/publications/index.html"
+  },
+  {
+    "path": "/example_pdf.pdf",
+    "sha256": "85c3b46a4a6343200522460c9d0c2e265663270ff92f39d9c586de701a0403fe",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/example_pdf.pdf"
+  },
+  {
+    "path": "/figs/羽毛球赛.jpg",
+    "sha256": "fad0a43550882b05e8968944aa26025b3c87c4bf3f4ada87d5769f157e4b6b29",
+    "action": "offline-only",
+    "source": "legacy_samples/originals/figs/羽毛球赛.jpg"
+  },
+  {
+    "path": "/index.html",
+    "sha256": "eec3de7196bd046f5b7402e79a8600152376c808ed2310ee40af2e481e1981a7",
+    "action": "api-fixed-page",
+    "source": "legacy_samples/originals/index.html"
+  },
+  {
+    "path": "/js/auth.js",
+    "sha256": "f690b2830dc7ad6084533be7a453cc1b070b4817845ebea1435557a8407f2c0e",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/auth.js"
+  },
+  {
+    "path": "/js/content-api.js",
+    "sha256": "2f54ba2983a2ea141f297c6c0d3e925736007889cf1bc57b5957dc180bcb68e2",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/content-api.js"
+  },
+  {
+    "path": "/js/content-editor.js",
+    "sha256": "d80be253388645965c5faf7efe144a4b6b3e26fed5f6331621727a43ab140bd6",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/content-editor.js"
+  },
+  {
+    "path": "/js/management.js",
+    "sha256": "34c5884fbecb8e2fa38f91ddcd979736a5b9ecedab2b4d222fa68cdd3629e17f",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/management.js"
+  },
+  {
+    "path": "/js/member-papers.js",
+    "sha256": "cb51c8171be2d72da3300e88a0d918e3da1247547a0adc9cbf58b2059c5d2db6",
+    "action": "api-client",
+    "source": "legacy_samples/originals/js/member-papers.js"
+  },
+  {
+    "path": "/js/member-profile.js",
+    "sha256": "2a01f2dc1d311a621b7676e8a1c52f863d6f3a44053ac20be0e863ac4242d37d",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/member-profile.js"
+  },
+  {
+    "path": "/js/navbar-loader.js",
+    "sha256": "d5e13b72003b476cc414c2bf545bf7989dcdb3b31d12abec3d46668243df3114",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/navbar-loader.js"
+  },
+  {
+    "path": "/js/pagination.js",
+    "sha256": "b20223e802e26a981d468cc24ff815518a6baf969877f0e0cb3a3a774224bdd0",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/pagination.js"
+  },
+  {
+    "path": "/js/review.js",
+    "sha256": "c5787293338fc31e9eedf36e96ac6d56c672d24c0d6f3b1058295bff0fa38073",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/review.js"
+  },
+  {
+    "path": "/js/search.js",
+    "sha256": "1652a52214a1c5405c520285ec532ebd601ab59a1456ef441fbac5a37e1cf482",
+    "action": "api-client",
+    "source": "legacy_samples/originals/js/search.js"
+  },
+  {
+    "path": "/js/slider.js",
+    "sha256": "aafd0d0465dc32c2b5e1490b33fbf2ed54c4367a823922f7698fc97dc68aca51",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/slider.js"
+  },
+  {
+    "path": "/js/workspace.js",
+    "sha256": "b4c4a9c4a85ade72df0454a88f2def79979e244ca4752f7b3e41c402297e4947",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/js/workspace.js"
+  },
+  {
+    "path": "/lab-logo.png",
+    "sha256": "c4c7b26f9beb55e478491450119bc73fb0d13a62d027d97765aa728824ffccb7",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/lab-logo.png"
+  },
+  {
+    "path": "/login.html",
+    "sha256": "289de3af9e93062dd3b4739165e19486f6726fc1d2bbf8988dd2ca5880fe03a9",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/login.html"
+  },
+  {
+    "path": "/manage/content.html",
+    "sha256": "3994ae47f58a911cb32a450eb5e74bac9a7c11b2f2bd09d0268c4dd9424ed67c",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/manage/content.html"
+  },
+  {
+    "path": "/manage/index.html",
+    "sha256": "2258e3323d25a34d03358a8cd36aa71d504678615ea03eb19f373e39723f79ff",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/manage/index.html"
+  },
+  {
+    "path": "/manage/members.html",
+    "sha256": "eb04254148c95fe1856143667194302456ea4db306409325e80767a3227e1f28",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/manage/members.html"
+  },
+  {
+    "path": "/manage/reviews.html",
+    "sha256": "5eca2f0aef80208fa7f92660a4cca7d770b2b5e51abdfea0bafc35d8d4f33fa6",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/manage/reviews.html"
+  },
+  {
+    "path": "/manage/users.html",
+    "sha256": "1521e0c59e853d6e1e69dcaff0ab08a189d4f1c5b7173a32c225d819d54d129c",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/manage/users.html"
+  },
+  {
+    "path": "/member-application.html",
+    "sha256": "b95aab7faa15fcc13bb78ef15aed768d2a1ed5096df4121b1a9ec085bc61ea0c",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/member-application.html"
+  },
+  {
+    "path": "/profile.html",
+    "sha256": "1c9493e3ca63cf43028ee01c700263f01a4fae387001b879b9f375200b48b8e3",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/profile.html"
+  },
+  {
+    "path": "/register.html",
+    "sha256": "72ea311447ea694c2f1721d6e4de80286bead807848b0a4edb217d2ecb184d0a",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/register.html"
+  },
+  {
+    "path": "/workspace.html",
+    "sha256": "4000e7d64c267417fef89b9d4cc8823cd782d459450862403e31fa86ec74123a",
+    "action": "continue-public",
+    "source": "git:87e6da2:frontend/workspace.html"
+  }
+]

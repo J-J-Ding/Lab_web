@@ -78,3 +78,7 @@ CUSTOMER 不具备内容投稿资格；符合条件的正式成员或管理者�
 `POST /api/assets/` 使用 multipart：purpose 为 avatar 或 proof，file 为文件。头像 JPEG/PNG/WebP ≤5MiB；证明 PDF ≤10MiB。必须携带最新 CSRF。每账户默认 900 秒内限制 20 次上传尝试，并检查每小时成功存储数量。清洗失败不入可用资产库。
 
 `GET /api/assets/{id}/download/` 仅本人或有权处理相关申请/档案的审核者可下载；不提供裸媒体目录。文件默认私有，未获保留的文件默认 30 天过期；获批引用头像保留。清理命令默认 dry-run。解析、清洗及资源限制详见 [工作流说明](workflow.md)，不等同完整防病毒扫描。公共头像与官网数据渲染留到 V6。
+
+## V6 附件扩展
+
+内容版本 PATCH 增加 `assets: [UUID,…]`，最多 30 项。新增文件要求当前编辑者所有权，协作者可保留版本已有合法引用；不能通过 UUID 偷加其他人的资产。`revision_data.assets` 返回引用 ID，编辑/审核界面提供受控私有下载。内容批准时复核 CLEAN/用途/到期/删除请求并转 PUBLIC，但匿名下载仍须当前公开版本引用。新增 owner 的 `POST /api/assets/{id}/delete/` 只请求删除，不破坏历史引用。详见 [媒体存储](media-storage.md) 与 [公共 API](public-api.md)。

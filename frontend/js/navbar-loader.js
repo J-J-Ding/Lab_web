@@ -227,16 +227,11 @@ function setActiveNavItem() {
 
 // 初始化搜索功能
 function initializeSearch() {
-    const searchInput = document.getElementById('globalSearch');
-    if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.trim();
-            if (searchTerm.length > 2) {
-                console.log('搜索关键词:', searchTerm);
-                // 这里可以添加实际的搜索逻辑
-            }
-        });
-    }
+    if (!document.getElementById('globalSearch') || document.querySelector('script[data-public-search]')) return;
+    const script = document.createElement('script');
+    script.dataset.publicSearch = 'true';
+    script.src = new URL('/js/search.js?v=6', window.location.origin).href;
+    document.head.appendChild(script);
 }
 
 // Resolve shared account resources relative to the existing site root, including deep detail pages.
