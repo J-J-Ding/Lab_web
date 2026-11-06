@@ -39,6 +39,7 @@ class AlumniInput(StrictSerializer):
 
 
 class DraftInput(StrictSerializer):
+    highest_education=serializers.ChoiceField(choices=['','本科','硕士研究生','博士研究生'],required=False)
     lock_version=StrictInteger(min_value=0)
     display_name=StrictString(max_length=150,allow_blank=True,required=False)
     slug=serializers.SlugField(max_length=160,allow_unicode=True,allow_blank=True,required=False)
@@ -63,7 +64,7 @@ class DraftInput(StrictSerializer):
 def draft_data(profile,revision):
     if revision is None:
         return None
-    result={f:getattr(revision,f) for f in ('number','display_name','slug','bio','enrollment_year','member_kind','public_member_status','public_contact_email','public_contact_enabled','state')}
+    result={f:getattr(revision,f) for f in ('number','display_name','slug','bio','highest_education','enrollment_year','member_kind','public_member_status','public_contact_email','public_contact_enabled','state')}
     result.update(id=str(revision.pk),lock_version=profile.lock_version,avatar_asset=str(revision.avatar_asset_id) if revision.avatar_asset_id else None)
     result['education']=list(revision.education.values('school','education_level','major','degree','start_date','end_date','is_public','position'))
     result['research_areas']=[link.area.name for link in revision.research_links.select_related('area')]

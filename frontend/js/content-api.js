@@ -24,7 +24,7 @@
     if (error.status === 404) return '该记录不存在或你没有访问权限。';
     if (error.status === 413) return '文件超过服务器允许大小，请改用更小文件。';
     if (error.status === 429) return '操作过于频繁，请稍后重试。';
-    if (!error.status) return '连接中断，操作结果未确认，请先重新读取再决定是否重试。';
+    if (!error.status) return error.data?.detail || '连接中断，操作结果未确认，请先重新读取再决定是否重试。';
     if (error.status >= 500) return '服务暂不可用，操作未能确认，请稍后重新读取。';
     const data = error.data?.fields || error.data || {
     }
@@ -60,7 +60,7 @@
     if (url.origin !== location.origin || !url.pathname.startsWith('/api/')) throw new ApiError(400);
     if (method !== 'GET') generation += 1;
     const version = generation, controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 20000);
+    const timer = setTimeout(() => controller.abort(), file ? 60000 : 20000);
     try {
       const headers = {
         Accept: 'application/json'
@@ -104,7 +104,7 @@
     }
     catch (error) {
       if (error instanceof ApiError || error.silent) throw error;
-      throw new ApiError(0);
+      throw new ApiError(0, {detail:error.name==='AbortError'?'请求超时，文件尚未确认上传成功。请检查网络或压缩文件后重试。':'网络连接中断，请检查网络后重试。'});
     }
     finally {
       clearTimeout(timer);
@@ -251,7 +251,7 @@
   }
   );
   window.LabContent = Object.freeze({
-    request, boot, status, showError, bind, button, node, disabled, manager, root, get capabilities(){return capabilities;}, get user(){
+    request, boot, status, errorText, showError, bind, button, node, disabled, manager, root, get capabilities(){return capabilities;}, get user(){
       return user;
     }
   }

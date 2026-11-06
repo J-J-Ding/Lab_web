@@ -38,7 +38,7 @@ class V14Contracts(TestCase):
         rows=APIClient().get('/api/public/members/').data['results'];self.assertEqual(len(rows),1);row=rows[0];self.assertEqual(row['enrollment_year'],2025);self.assertEqual(row['education'][0],{'education_level':'硕士研究生'});self.assertEqual(row['public_contact_email'],'member@example.org')
         self.assertFalse(set(row)&{'bio','phone','cv_private','alumni','internal_contact'})
         self.profile(self.customer,'不进入成员目录');self.assertEqual(APIClient().get('/api/public/members/').data['count'],1)
-        r=c.patch('/api/members/me/profile/',{'lock_version':r.data['lock_version'],'public_contact_email':''},format='json');self.assertEqual(r.status_code,200,r.data);self.assertNotIn('public_contact_email',APIClient().get('/api/public/members/').data['results'][0])
+        r=c.patch('/api/members/me/profile/',{'lock_version':r.data['lock_version'],'public_contact_email':''},format='json');self.assertEqual(r.status_code,400,r.data);self.assertEqual(APIClient().get('/api/public/members/').data['results'][0]['public_contact_email'],'member@example.org')
 
     def test_site_team_matrix_details_stats_home_and_deleted(self):
         c=self.client_for(self.student);self.profile(self.student,'成果成员');public=self.create(c,title='公开论文',authors=[self.student.pk]);internal=self.create(c,title='内部论文',authors=[self.student.pk],visibility_scope='TEAM')
@@ -93,3 +93,29 @@ class V14Contracts(TestCase):
         history=c.get('/api/members/me/history/').data['results'];revision=history[0]['id']
         changed=c.patch('/api/members/me/profile/',{'lock_version':first.data['lock_version'],'enrollment_year':2026,'education':[{'school':'','degree':'硕士','position':1}]},format='json');self.assertEqual(changed.status_code,200,changed.data);self.assertEqual(changed.data['education'][0]['education_level'],'硕士研究生')
         restored=c.post('/api/members/me/restore/',{'lock_version':changed.data['lock_version'],'source_revision':revision},format='json');self.assertEqual(restored.status_code,200,restored.data);self.assertEqual(restored.data['enrollment_year'],2025);self.assertEqual(restored.data['education'][0]['education_level'],'硕士研究生')
+
+    def test_profile_required_fields_and_highest_education(self):
+        from apps.members.direct import ProfileInput
+        for field in ('phone','public_contact_email'):
+            serializer=ProfileInput(data={'lock_version':0,field:''})
+            self.assertFalse(serializer.is_valid(),field)
+        for field in ('gender','political_status'):
+            serializer=ProfileInput(data={'lock_version':0,'cv_private':{field:''}})
+            self.assertFalse(serializer.is_valid(),field)
+        c=self.client_for(self.student);initial=c.get('/api/members/me/profile/').data
+        r=c.patch('/api/members/me/profile/',{'lock_version':initial['lock_version'],'display_name':'学历成员','highest_education':'博士研究生','phone':'13800138000','public_contact_email':'student@example.org','cv_private':{'gender':'男','political_status':'群众'}},format='json')
+        self.assertEqual(r.status_code,200,r.data)
+        self.assertEqual(r.data['highest_education'],'博士研究生')
+        rows=APIClient().get('/api/public/members/').data['results']
+        self.assertEqual(rows[0]['highest_education'],'博士研究生')
+        self.assertNotIn('phone',rows[0])
+
+    def test_resume_size_limit_reports_before_reading(self):
+        from unittest.mock import patch,Mock
+        from apps.assets.services import upload
+        from rest_framework.exceptions import ValidationError
+        file=Mock(name='large_file');file.name='超大简历.pdf';file.content_type='application/pdf';file.size=20*1024*1024+1
+        with patch('apps.assets.services.actor_for',return_value=self.student):
+            with self.assertRaises(ValidationError) as error:upload(None,file,'resume')
+        self.assertIn('20MiB',str(error.exception))
+        file.read.assert_not_called()

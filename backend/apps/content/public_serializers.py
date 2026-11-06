@@ -18,7 +18,7 @@ def cover_for_revision(revision):
 def member_data(profile):
     r=profile.published_revision
     result={'id':str(profile.pk),'slug':r.slug,'display_name':r.display_name,
-        'member_kind':r.member_kind,'public_member_status':r.public_member_status,'enrollment_year':r.enrollment_year,
+        'member_kind':r.member_kind,'public_member_status':r.public_member_status,'enrollment_year':r.enrollment_year,'highest_education':r.highest_education,
         'research_areas':[l.area.name for l in r.research_links.all()],
         'education':[{'education_level':e.education_level} for e in r.education.all() if e.education_level]}
     if r.public_contact_email:result['public_contact_email']=r.public_contact_email

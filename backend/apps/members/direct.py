@@ -32,10 +32,10 @@ class ExperienceInput(StrictSerializer):
 
 
 class CVPrivateInput(StrictSerializer):
-    gender=serializers.ChoiceField(choices=["",*GENDERS],required=False)
+    gender=serializers.ChoiceField(choices=GENDERS,required=False)
     native_region=RegionInput(required=False)
     skills=StrictString(max_length=3000,allow_blank=True,required=False)
-    political_status=StrictString(max_length=100,allow_blank=True,required=False)
+    political_status=StrictString(max_length=100,allow_blank=False,required=False)
     education_note=StrictString(max_length=3000,allow_blank=True,required=False)
     internships=ExperienceInput(many=True,max_length=30,required=False)
     practice=ExperienceInput(many=True,max_length=30,required=False)
@@ -54,7 +54,8 @@ class ProfileInput(DraftInput):
     contact_visible=StrictBoolean(required=False)
     education_visible=StrictBoolean(required=False)
     alumni_visible=StrictBoolean(required=False)
-    phone=StrictString(max_length=40,allow_blank=True,required=False)
+    public_contact_email=serializers.EmailField(max_length=254,allow_blank=False,required=False)
+    phone=StrictString(max_length=40,allow_blank=False,required=False)
     internal_contact=StrictString(max_length=254,allow_blank=True,required=False)
 
 
@@ -108,9 +109,9 @@ def save_profile(request,data,pk=None,source_id=None):
         draft=profile.draft_revision
         if draft.state in ('DRAFT','SUBMITTED','APPROVED'):draft.state='WITHDRAWN';draft.save(update_fields=['state'])
         profile.draft_revision=None
-    fields=('display_name','slug','bio','enrollment_year','public_contact_email','public_contact_enabled','avatar_asset_id')
+    fields=('display_name','slug','bio','highest_education','enrollment_year','public_contact_email','public_contact_enabled','avatar_asset_id')
     values={f:getattr(source,f) for f in fields} if source else {'display_name':' '.join(filter(None,(owner.first_name,owner.last_name)))}
-    for key in ('display_name','slug','bio','enrollment_year','public_contact_email','public_contact_enabled'):
+    for key in ('display_name','slug','bio','highest_education','enrollment_year','public_contact_email','public_contact_enabled'):
         if key in data:values[key]=data[key]
     if source_id:
         values['public_contact_enabled']=bool(current and current.public_contact_enabled and current.public_contact_email==values.get('public_contact_email'))

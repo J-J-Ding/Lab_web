@@ -19,7 +19,7 @@
   const summary=member?'':row.summary;if(summary)body.append(P.node('p',summary.length>150?summary.slice(0,150)+'…':summary));
   if(member&&row.research_areas?.length)body.append(P.node('p',row.research_areas.join(' · '),'teaser-meta'));
   if(row.date)body.append(P.node('p',row.date,'teaser-meta'));
-  if(member){const levels=(row.education||[]).map(e=>e.education_level).filter(Boolean);if(levels.length)body.append(P.node('p',levels.join(' · '),'teaser-meta'));if(row.enrollment_year)body.append(P.node('p',row.enrollment_year+'级','teaser-meta'));if(row.public_contact_email)body.append(P.node('p',row.public_contact_email,'teaser-meta'));}
+  if(member){const levels=(row.highest_education?[{education_level:row.highest_education}]:(row.education||[])).map(e=>e.education_level).filter(Boolean);if(levels.length)body.append(P.node('p',levels.join(' · '),'teaser-meta'));if(row.enrollment_year)body.append(P.node('p',row.enrollment_year+'级','teaser-meta'));if(row.public_contact_email)body.append(P.node('p',row.public_contact_email,'teaser-meta'));}
   if(!member){const names=(row.contributions||[]).map(c=>c.name);if(names.length)body.append(P.node('p',names.join('、'),'teaser-meta'));}
   article.append(body);return article;
  };

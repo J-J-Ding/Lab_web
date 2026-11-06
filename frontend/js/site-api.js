@@ -6,7 +6,7 @@
  function changed(event){const s=event.detail,next=s.status+':'+(s.user?.id||'')+':'+(s.user?.role||'')+':'+!!s.user?.is_superuser;state=s;checked=Date.now();if(key!==null&&key!==next){epoch++;clear();document.dispatchEvent(new Event('site-access-changed'));}key=next;}
  document.addEventListener('lab-auth-state',changed);
  async function identity(){
-  if(!window.LabAuth){authLoad||=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/js/auth.js?v=14-20261107-01';script.onload=resolve;script.onerror=reject;document.head.append(script);});await authLoad;}
+  if(!window.LabAuth){authLoad||=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/js/auth.js?v=14-20261107-02';script.onload=resolve;script.onerror=reject;document.head.append(script);});await authLoad;}
   if(state&&Date.now()-checked<1000)return state;
   if(!pending)pending=LabAuth.refreshUser(true).finally(()=>pending=null);return pending;
  }

@@ -7,7 +7,7 @@
     const card=P.node('article',undefined,'public-card');card.append(P.node('h1',data.display_name));
     card.append(P.node('p',(data.research_areas||[]).join(' · ')));
     if(data.public_contact_email)card.append(P.node('p','公开邮箱：'+data.public_contact_email));
-    for(const education of data.education||[])card.append(P.node('p',education.education_level));
+    for(const education of data.highest_education?[{education_level:data.highest_education}]:(data.education||[]))card.append(P.node('p',education.education_level));
     if(data.enrollment_year)card.append(P.node('p',data.enrollment_year+'级'));
     if(data.avatar)window.renderPublicAssets([data.avatar],card);P.content.append(card);
     const outputs=P.node('section');P.content.append(outputs);let page=1;

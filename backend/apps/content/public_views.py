@@ -98,7 +98,7 @@ class Graduates(PublicView):
         p=params(request,{'year','degree','q'});qs=member_queryset().filter(published_revision__public_member_status='ALUMNI')
         if 'year' in p:qs=qs.filter(published_revision__enrollment_year=int(p['year']))
         if 'q' in p:qs=qs.filter(Q(published_revision__display_name__icontains=p['q']))
-        if 'degree' in p:qs=qs.filter(published_revision__education__education_level=p['degree']).distinct()
+        if 'degree' in p:qs=qs.filter(Q(published_revision__highest_education=p['degree'])|Q(published_revision__highest_education='',published_revision__education__education_level=p['degree'])).distinct()
         return paged(request,qs,member_data)
 class FixedPage(PublicView):
     def get(self,request,key):

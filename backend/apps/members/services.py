@@ -16,7 +16,7 @@ class VersionConflict(APIException):
 
 def clone_revision(profile, actor):
     original=profile.revisions.filter(state__in=["PUBLISHED","REJECTED","WITHDRAWN"]).order_by("-number").first()
-    fields=('member_kind','public_member_status','display_name','slug','bio','enrollment_year','public_contact_email','public_contact_enabled','avatar_asset_id')
+    fields=('member_kind','public_member_status','display_name','slug','bio','highest_education','enrollment_year','public_contact_email','public_contact_enabled','avatar_asset_id')
     data={f:getattr(original,f) for f in fields} if original else {}
     if not original:
         data['display_name']=' '.join(v for v in (actor.first_name,actor.last_name) if v)

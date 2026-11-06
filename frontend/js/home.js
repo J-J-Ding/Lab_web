@@ -11,7 +11,7 @@
    if(image?.url&&/^\/api\/(public|site)\/assets\//.test(image.url)){const img=node('img');img.src=image.url;img.alt=member?row.display_name:row.title;img.loading='lazy';if(member)img.className='home-member-photo';a.append(img);}
    a.append(node('span',label,'kind-tag'),node('h3',member?row.display_name:row.title));article.append(a);
    const text=member?'':row.summary;if(text)article.append(node('p',text.slice(0,100)+(text.length>100?'…':'')));
-   if(member){const description=[...(row.education||[]).map(e=>e.education_level),...(row.research_areas||[]),row.enrollment_year?row.enrollment_year+'级':'',row.public_contact_email].filter(Boolean);if(description.length)article.append(node('p',description.join(' · ')));}
+   if(member){const description=[...(row.highest_education?[{education_level:row.highest_education}]:(row.education||[])).map(e=>e.education_level),...(row.research_areas||[]),row.enrollment_year?row.enrollment_year+'级':'',row.public_contact_email].filter(Boolean);if(description.length)article.append(node('p',description.join(' · ')));}
    if(row.date)article.append(node('time',row.date));box.append(article);
   }
  }

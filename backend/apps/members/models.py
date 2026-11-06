@@ -41,6 +41,7 @@ class MemberRevision(models.Model):
     public_member_status=models.CharField(max_length=8,choices=[('ACTIVE','ACTIVE'),('ALUMNI','ALUMNI'),('LEFT','LEFT')],default='ACTIVE')
     display_name=models.CharField(max_length=150,blank=True)
     slug=models.SlugField(max_length=160,blank=True,allow_unicode=True)
+    highest_education=models.CharField(max_length=32,blank=True)
     enrollment_year=models.PositiveIntegerField(null=True,blank=True)
     bio=models.TextField(blank=True,max_length=10000)
     public_contact_email=models.EmailField(blank=True)

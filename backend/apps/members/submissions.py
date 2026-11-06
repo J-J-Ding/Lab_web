@@ -29,7 +29,7 @@ def receiver(actor):
 
 def snapshot(profile,actor):
     data=profile_data(profile,actor)
-    allowed=('display_name','bio','phone','internal_contact','education','research_areas','public_member_status','cv_private','public_contact_email')
+    allowed=('display_name','highest_education','bio','phone','internal_contact','education','research_areas','public_member_status','cv_private','public_contact_email')
     result={key:data[key] for key in allowed if key in data}
     if 'cv_private' in result:result['cv_private']={k:v for k,v in result['cv_private'].items() if k!='responsibilities'}
     if data.get('public_member_status')=='ALUMNI':result['alumni']=data.get('alumni')

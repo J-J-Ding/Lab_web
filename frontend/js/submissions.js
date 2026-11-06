@@ -16,7 +16,7 @@
    const id=new URLSearchParams(location.search).get('id');if(!id)throw {status:400,data:{detail:'缺少投递编号。'}};
    const row=await C.request('/api/members/resume-inbox/'+encodeURIComponent(id)+'/'),box=document.getElementById('submission-detail');
    box.append(N('h2',row.title),N('p',row.state==='WITHDRAWN'?'已撤回（Root审计查看）':'已投递'),N('p','提交时间：'+new Date(row.created_at).toLocaleString()));
-   const labels={display_name:'姓名',public_contact_email:'邮箱',bio:'个人介绍',phone:'联系电话',internal_contact:'私人联系信息',education:'教育经历',research_areas:'研究方向',cv_private:'简历补充资料',public_member_status:'成员状态',alumni:'毕业去向'};
+   const labels={display_name:'姓名',highest_education:'最高学历',public_contact_email:'邮箱',bio:'个人介绍',phone:'联系电话',internal_contact:'私人联系信息',education:'教育经历',research_areas:'研究方向',cv_private:'简历补充资料',public_member_status:'成员状态',alumni:'毕业去向'};
    box.append(N('h3','随投递提交的个人资料'));
    for(const [key,label] of Object.entries(labels)){const value=row.profile[key];if(value&&(!Array.isArray(value)||value.length))box.append(N('p',label+'：'+format(key,value)));}
    for(const [key,label] of [['introduction','简历介绍']])if(row.resume[key])box.append(N('p',label+'：'+row.resume[key]));

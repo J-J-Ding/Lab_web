@@ -19,7 +19,7 @@
  };
  function field(parent,name,label,type='text',value='',required=false,options){
   const wrap=N('div'),id='v10-'+(++fieldSerial)+'-'+name.replace(/[^a-z0-9_-]/gi,'-'),l=N('label',label+' ',{for:id});
-  l.append(N('span',required?'*':'选填',{class:required?'required':'optional'}));
+  if(required)l.append(N('span','*',{class:'required'}));
   const input=N(type==='textarea'?'textarea':type==='select'?'select':'input',undefined,{name,id});
   if(type!=='textarea'&&type!=='select')input.type=type;
   if(type==='select'){for(const [v,text] of options||[]){input.append(N('option',text,{value:v}));}if(value!==null&&value!==undefined&&value!==''&&![...input.options].some(o=>o.value===String(value)))input.append(N('option','原值：'+value,{value}));}
@@ -43,9 +43,11 @@
  function bind(form,action){form?.addEventListener('input',()=>dirty=true);C.bind(form,action);}
  async function upload(input,purpose,status){
   const file=input.files[0];if(!file)throw {status:400,data:{detail:'请先选择文件。'}};
-  const body=new FormData();body.append('file',file);body.append('purpose',purpose);status.textContent='正在上传 '+file.name+'…';
+  const limit=(['avatar','image'].includes(purpose)?5:purpose==='proof'?10:20)*1024*1024;
+  if(!file.size||file.size>limit){status.textContent='文件须大于0且不超过'+(limit/1024/1024)+' MiB，当前文件为'+(file.size/1024/1024).toFixed(2)+' MiB。';throw {status:400,data:{detail:status.textContent}};}
+  const body=new FormData();body.append('file',file);body.append('purpose',purpose);status.textContent='正在上传并校验 '+file.name+'（'+(file.size/1024/1024).toFixed(2)+' MiB，最多等待60秒）…';
   try{const asset=await C.request('/api/assets/',{method:'POST',file:body});status.textContent='已上传：'+file.name+'，请保存表单。';dirty=true;return {...asset,name:file.name};}
-  catch(e){status.textContent='上传未成功，请重试，原表单内容已保留。';throw e;}
+  catch(e){status.textContent=C.errorText(e)+' 原表单内容已保留。';throw e;}
  }
  function ownURL(path){return '/api/members/'+(new URLSearchParams(location.search).get('member')||'me')+'/'+path+'/';}
  function renderHistory(box,rows,restore){
@@ -54,8 +56,8 @@
  }
  async function profile(){
   const options=await C.request('/api/site/profile-options/');
-  const choices=values=>[['','请选择（选填）'],...values.map(v=>[v,v])];
-  const years=[['','请选择年份（选填）'],...Array.from({length:new Date().getFullYear()+11-1900},(_,i)=>{const y=new Date().getFullYear()+10-i;return [String(y),String(y)+'年'];})];
+  const choices=values=>[['','请选择'],...values.map(v=>[v,v])];
+  const years=[['','请选择年份'],...Array.from({length:new Date().getFullYear()+11-1900},(_,i)=>{const y=new Date().getFullYear()+10-i;return [String(y),String(y)+'年'];})];
   const endpoint=ownURL('profile');let data=await C.request(endpoint),avatar=data.avatar_asset||null;
   const f=$('#business-profile-form'),box=$('#profile-fields');f.addEventListener('input',()=>profileDirty=true);
   $('#identity-summary').textContent=(data.display_name||'请完善你的姓名')+' · '+user.identity;
@@ -63,13 +65,13 @@
    box.replaceChildren();
    field(box,'display_name','姓名','text',data.display_name);field(box,'public_member_status','成员状态','select',data.public_member_status||'ACTIVE',false,[['ACTIVE','在读/在岗'],['ALUMNI','已毕业'],['LEFT','已离开']]);field(box,'bio','个人简介','textarea',data.bio);
    $('#research-fields').replaceChildren();field($('#research-fields'),'research_areas','研究方向（用逗号分隔）','text',(data.research_areas||[]).join('，'));
-   field(box,'public_contact_email',user.capabilities.can_edit_content&&!user.is_superuser?'邮箱（选填，填写后在成员主页展示）':'邮箱（选填）','email',data.public_contact_email);field(box,'enrollment_year','年级 / 入学年份','select',data.enrollment_year,false,years);
-   if('phone' in data)field(box,'phone','联系电话','tel',data.phone);
+   field(box,'public_contact_email','邮箱','email',data.public_contact_email,true);field(box,'highest_education','最高学历','select',data.highest_education,false,choices(['本科','硕士研究生','博士研究生']));field(box,'enrollment_year','年级 / 入学年份','select',data.enrollment_year,false,years);
+   if('phone' in data)field(box,'phone','联系电话','tel',data.phone,true);
    if('internal_contact' in data)field(box,'internal_contact','其他联系信息','text',data.internal_contact);
    if('cv_private' in data){
-    const cv=data.cv_private||{};field(box,'cv_skills','技能简介','textarea',cv.skills);field(box,'cv_political_status','政治面貌','select',cv.political_status,false,choices(options.political_status));field(box,'cv_gender','性别','select',cv.gender,false,choices(options.gender));renderRegion(box,cv.native_region||{});field(box,'cv_education_note','院系 / 教育补充说明','textarea',cv.education_note);
+    const cv=data.cv_private||{};field(box,'cv_skills','技能简介','textarea',cv.skills);field(box,'cv_political_status','政治面貌','select',cv.political_status,true,choices(options.political_status));field(box,'cv_gender','性别','select',cv.gender,true,choices(options.gender));renderRegion(box,cv.native_region||{});
     for(const [key,label] of [['internships','实习经历'],['practice','实践经历']]){
-     const section=N('section',undefined,{id:'cv-'+key});section.append(N('h3',label+'（选填）'));const rows=N('div');section.append(rows);
+     const section=N('section',undefined,{id:'cv-'+key});section.append(N('h3',label+''));const rows=N('div');section.append(rows);
      function add(entry={}){const row=N('fieldset');for(const [name,title,type] of [['organization','单位 / 组织','text'],['role','岗位 / 职务','text'],['start_date','开始日期','date'],['end_date','结束日期（进行中可留空）','date'],['description','工作内容及成果','textarea']])field(row,name,title,type,entry[name]);if(entry.period){const legacy=field(row,'period','历史时间','hidden',entry.period);row.append(N('p','历史时间：'+entry.period,{class:'v10-caption'}));}row.append(C.button('移除此条',()=>{row.remove();dirty=true;profileDirty=true;}));rows.append(row);}
      for(const entry of cv[key]||[])add(entry);section.append(C.button('添加'+label,()=>{add();dirty=true;profileDirty=true;}));box.append(section);
     }
@@ -87,7 +89,7 @@
    $('#alumni-fields').querySelectorAll('input,select,textarea').forEach(el=>el.disabled=!visible);updateProfileNav();
   }
   function renderRegion(parent,saved){
-   const section=N('fieldset',undefined,{class:'region-fields'});section.append(N('legend','籍贯'));
+   const section=N('div',undefined,{class:'region-fields',role:'group','aria-label':'籍贯'});section.append(N('label','籍贯',{class:'region-title'}));
    const provinces=options.regions.provinces;
    const province=field(section,'native_province','省 / 地区','select',saved.province,false,[['','请选择'],...provinces.map(r=>[r.code,r.name]),['OVERSEAS','境外']]);
    const city=field(section,'native_city','市 / 地区','select','',false,[]),district=field(section,'native_district','区县','select','',false,[]),country=field(section,'native_country','国家 / 地区','select',saved.country,false,[['','请选择'],...Object.entries(options.countries)]),note=field(section,'native_note','地区补充说明','text',saved.note);
@@ -112,9 +114,9 @@
   $('#add-education').onclick=()=>{educationRow();dirty=true;profileDirty=true;};render();
   bind(f,async()=>{
    const payload={lock_version:data.lock_version,avatar_asset:avatar,education:[],research_areas:formValue(f,'research_areas').split(/[,，]/).map(v=>v.trim()).filter(Boolean)};
-   for(const key of ['display_name','bio','public_member_status','public_contact_email','phone','internal_contact'])if(f.elements[key])payload[key]=formValue(f,key);
+   for(const key of ['display_name','bio','public_member_status','highest_education','public_contact_email','phone','internal_contact'])if(f.elements[key])payload[key]=formValue(f,key);
    const year=formValue(f,'graduation_year');if(formValue(f,'public_member_status')==='ALUMNI')payload.alumni=year?{graduation_year:Number(year),degree:formValue(f,'alumni_degree'),destination_type:formValue(f,'destination_type'),organization:formValue(f,'organization'),is_public:false}:null;
-   if('cv_private' in data){payload.cv_private={skills:formValue(f,'cv_skills'),political_status:formValue(f,'cv_political_status'),education_note:formValue(f,'cv_education_note'),gender:formValue(f,'cv_gender'),native_region:{province:formValue(f,'native_province'),city:formValue(f,'native_city'),district:formValue(f,'native_district'),country:formValue(f,'native_country'),note:formValue(f,'native_note')}};for(const key of ['internships','practice'])payload.cv_private[key]=[...document.querySelectorAll('#cv-'+key+' fieldset')].map(row=>Object.fromEntries([...row.querySelectorAll('input,textarea')].map(input=>[input.name,input.type==='date'?(input.value||null):input.value])));}
+   if('cv_private' in data){payload.cv_private={skills:formValue(f,'cv_skills'),political_status:formValue(f,'cv_political_status'),gender:formValue(f,'cv_gender'),native_region:{province:formValue(f,'native_province'),city:formValue(f,'native_city'),district:formValue(f,'native_district'),country:formValue(f,'native_country'),note:formValue(f,'native_note')}};for(const key of ['internships','practice'])payload.cv_private[key]=[...document.querySelectorAll('#cv-'+key+' fieldset')].map(row=>Object.fromEntries([...row.querySelectorAll('input,textarea')].map(input=>[input.name,input.type==='date'?(input.value||null):input.value])));}
    payload.enrollment_year=formValue(f,'enrollment_year')?Number(formValue(f,'enrollment_year')):null;
    for(const [index,row] of [...$('#education-rows').children].entries()){
     const values={};for(const key of ['school','education_level','major','degree','start_date','end_date'])values[key]=row.querySelector('[name='+key+']').value;
@@ -136,7 +138,7 @@
    if(cv.missing_fields.length)preview.append(N('p','待完善：'+cv.missing_fields.join('、')));
    const list=N('div');const ordered=[...cv.achievements];
    function render(){list.replaceChildren();for(const [index,item] of ordered.entries()){const row=N('div',undefined,{class:'member-chip'});const checked=item.selected??item.visibility_scope==='PUBLIC';const input=check(row,'cv-item',item.title+' · 第'+item.position+'署名 · '+item.role+(item.visibility_scope==='TEAM'?' · 内部内容':''),checked);input.value=item.id;input.onchange=()=>item.selected=input.checked;
-    for(const [label,delta] of [['上移',-1],['下移',1]]){const b=C.button(label,()=>{[ordered[index],ordered[index+delta]]=[ordered[index+delta],ordered[index]];render();});b.disabled=index+delta<0||index+delta>=ordered.length;row.append(b);}const duty=field(row,'cv-duty-'+item.id,'本人职责（选填）','textarea',item.duty??profile.cv_private?.responsibilities?.[item.id]??'');duty.oninput=()=>item.duty=duty.value;list.append(row);}}
+    for(const [label,delta] of [['上移',-1],['下移',1]]){const b=C.button(label,()=>{[ordered[index],ordered[index+delta]]=[ordered[index+delta],ordered[index]];render();});b.disabled=index+delta<0||index+delta>=ordered.length;row.append(b);}const duty=field(row,'cv-duty-'+item.id,'本人职责','textarea',item.duty??profile.cv_private?.responsibilities?.[item.id]??'');duty.oninput=()=>item.duty=duty.value;list.append(row);}}
    render();preview.append(list);
    controls.append(C.button('保存本人参与职责',async()=>{if(dirty&&!confirm('此操作将重新载入页面，请先保存表单中其他改动；仍要继续吗？'))return;const responsibilities=Object.fromEntries(ordered.map(item=>[item.id,item.duty??profile.cv_private?.responsibilities?.[item.id]??'']));await C.request('/api/members/me/profile/',{method:'PATCH',data:{lock_version:profile.lock_version,cv_private:{responsibilities}}});dirty=false;location.reload();}));const sections=N('fieldset');sections.append(N('legend','显示章节'));for(const label of ['教育经历','实习经历','项目经历','论文','专利','学科竞赛','实践经历','荣誉奖项'])check(sections,'cv-section',label,true).value=label;controls.append(sections);const team=check(controls,'include_team','我确认选入的内部成果可以用于本次简历',false);
    controls.append(C.button('一键生成Word',async()=>{
@@ -188,7 +190,7 @@
   $('#add-author').onclick=()=>{const id=Number($('#author-choice').value),person=directory.find(p=>p.user_id===id);if(person?.selectable&&!authors.some(a=>a.user_id===id)){authors.push(person);dirty=true;renderAuthors();}};renderAuthors();
   if((source?.contributions||[]).length>authors.length)$('#legacy-author-note').textContent='包含历史署名，系统将保留其历史信息；新增关联只接受注册团队成员。';
   const coverBox=N('section',undefined,{class:'cover-uploader'}),preview=N('div'),coverControls=N('div');
-  coverControls.append(N('h2','封面图'),N('p','选填 · 用于列表、首页和详情展示',{class:'v10-caption'}));
+  coverControls.append(N('h2','封面图'),N('p','用于列表、首页和详情展示',{class:'v10-caption'}));
   const coverInput=N('input',undefined,{type:'file',id:'cover-file',accept:'.png,.jpg,.jpeg,.webp','aria-label':'选择封面图片'}),coverStatus=N('p',undefined,{class:'v10-file-status',role:'status'});
   function showCover(){preview.replaceChildren();if(cover){const img=N('img',undefined,{src:'/api/assets/'+cover+'/download/',alt:'当前封面预览'});preview.append(img);}else preview.append(N('div','未设置封面',{class:'cover-placeholder'}));}
   coverControls.append(coverInput,C.button('上传封面',async()=>{const asset=await upload(coverInput,'image',coverStatus);attachments.push(asset);cover=asset.id;showCover();renderAttachments();}),C.button('移除封面',()=>{cover=null;dirty=true;showCover();}),coverStatus);coverBox.append(preview,coverControls);$('#detail-fields').after(coverBox);showCover();
@@ -211,6 +213,7 @@
   let current=null,asset=null;
   const form=$('#resume-form'),customer=user.role==='CUSTOMER'&&!user.is_superuser,previewBox=$('#resume-preview');
   $('#resume-primary').hidden=!customer;
+  $('#resume-file').before(N('p','支持 PDF、DOCX，单个文件不超过 20 MiB（20,971,520 字节）；PDF 限 1–100 页，不支持加密文件。',{class:'v10-caption'}));
   const submissions=N('div',undefined,{id:'resume-submissions',class:'v10-list'});previewBox.after(submissions);
   if(customer)form.before(N('p','投递后，团队老师和Root可以查看本次简历和随投递提交的个人资料。请先保存资料并核对共享预览。',{id:'resume-submit-note',class:'v10-caption'}));
   function status(text,error=false){$('#resume-status').textContent=text;$('#resume-status').dataset.kind=error?'error':'info';C.status(text,error);}
@@ -227,7 +230,7 @@
    const saved=await C.request('/api/members/me/profile/');
    if(!saved.display_name?.trim()){status('请先保存个人资料中的姓名，再进行投递。',true);return;}
    previewBox.replaceChildren();const preview=N('section',undefined,{class:'work-card'});preview.append(N('h3','本次共享资料预览'));
-   for(const [key,label] of Object.entries({display_name:'姓名',public_contact_email:'邮箱',bio:'个人介绍',phone:'私人联系电话',internal_contact:'私人联系信息',education:'教育经历',research_areas:'研究方向',cv_private:'简历补充资料'})){const value=saved[key];if(value&&(!Array.isArray(value)||value.length))preview.append(N('p',label+'：'+displayValue(key,value)));}
+   for(const [key,label] of Object.entries({display_name:'姓名',highest_education:'最高学历',public_contact_email:'邮箱',bio:'个人介绍',phone:'联系电话',internal_contact:'私人联系信息',education:'教育经历',research_areas:'研究方向',cv_private:'简历补充资料'})){const value=saved[key];if(value&&(!Array.isArray(value)||value.length))preview.append(N('p',label+'：'+displayValue(key,value)));}
    if(saved.public_member_status==='ALUMNI'&&saved.alumni)preview.append(N('p','毕业去向：'+displayValue('alumni',saved.alumni)));
    preview.append(N('p','简历：'+r.title+'。确认后，团队老师和Root可查看以上已保存资料及本次文件。'));
    preview.append(C.button('确认共享并投递',async()=>{
@@ -245,7 +248,7 @@
    if(!data.count)box.append(N('p','尚无已保存简历；上传后可在下方直接保存并预览投递。',{class:'v10-caption'}));
   }
   $('#resume-new').onclick=reset;
-  $('#upload-resume').onclick=async()=>{try{asset=(await upload($('#resume-file'),'resume',$('#resume-file-status'))).id;previewBox.replaceChildren();status('文件已上传，尚未投递。');}catch(e){C.showError(e);status($('#business-status').textContent,true);}};
+  $('#upload-resume').onclick=async()=>{const button=$('#upload-resume');button.disabled=true;try{asset=(await upload($('#resume-file'),'resume',$('#resume-file-status'))).id;previewBox.replaceChildren();status('文件已上传，尚未投递。');}catch(e){C.showError(e);status($('#business-status').textContent,true);}finally{button.disabled=false;}};
   form.addEventListener('input',()=>previewBox.replaceChildren());
   bind(form,async(_,submitter)=>{
    const submitting=submitter?.id==='resume-primary';
