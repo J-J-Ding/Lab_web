@@ -5,6 +5,15 @@
   if(!document.querySelector('.site-footer')){
    try{const r=await fetch(new URL('data/footer-unified.html',root),{cache:'no-store'});if(r.ok){const slot=document.createElement('div');slot.innerHTML=await r.text();slot.querySelectorAll('a[href^="/"]').forEach(a=>a.href=new URL(a.getAttribute('href').slice(1),root));document.body.append(slot);}}catch(_){}
   }
+  document.querySelectorAll('[data-footer-year]').forEach(el=>el.textContent=new Date().getFullYear());
+  const emailRow=document.querySelector('[data-footer-email]');
+  if(emailRow){
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+   fetch(new URL('api/public/pages/contact/',root),{credentials:'omit',cache:'no-store',signal:controller.signal}).then(async response=>{
+    if(!response.ok)return;const data=await response.json(),email=data.detail?.contact_email;
+    if(typeof email==='string'&&email.includes('@')&&!/[\s<>]/.test(email)){const a=emailRow.querySelector('a');a.textContent=email;a.href='mailto:'+email;emailRow.hidden=false;}
+   }).catch(()=>{}).finally(()=>clearTimeout(timer));
+  }
   const main=document.querySelector('main');
   const groups=[
    [['/data/projects/index.html','科研项目'],['/data/papers/index.html','发表论文'],['/data/patents/index.html','专利成果'],['/data/publications/index.html','出版成果']],

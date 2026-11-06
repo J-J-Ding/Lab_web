@@ -23,7 +23,7 @@
    for(const [key,label] of Object.entries({news:'团队新闻',papers:'发表论文',projects:'科研项目',competitions:'竞赛成果',resources:'学习资料'}))cards('home-'+key,data[key],label);
    cards('home-members',data.members,'团队成员',true);
    $('home-research').replaceChildren(...data.research_areas.map(text=>node('span',text)));
-   if(!data.research_areas.length)$('home-research').append(node('p','研究领域由团队成员资料自动汇集。','v10-caption'));
+   $('home-research').closest('.intro-panel').hidden=!data.research_areas.length;
    $('home-stats').replaceChildren();for(const [key,label] of Object.entries({members:'团队成员',papers:'发表论文',projects:'科研项目',competitions:'竞赛成果'})){const box=node('div');const number=node('strong','0');number.dataset.target=String(data.stats[key]);box.append(number,node('span',label));$('home-stats').append(box);}
    animateStats();$('home-status').textContent='';
   }catch(error){if(error.silent)return;$('home-status').textContent='公开数据暂不可用，请重试。页面导航仍可正常使用。';$('home-retry').hidden=false;}
