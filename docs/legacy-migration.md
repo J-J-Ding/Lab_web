@@ -22,7 +22,7 @@ dry-run 不写数据库，执行清单结构、路径、哈希和字段验证；
 
 ## 2. 经批准后的 ECS 操作
 
-本次未执行生产迁移或导入。部署先按 [V6 部署步骤](v6-deployment.md) 建候选镜像、停写和配套备份、迁移、启动、health 验证。镜像只包含 backend，示例来源通过只读挂载，不扩大静态根目录。以下命令使用部署手册创建的 release override：
+V6 已按用户要求部署，用户随后确认的 28 条示例也已导入为草稿，见 [示例导入记录](V6-示例导入记录.md)。以下是后续操作手册；重复处理同一来源须使用对应批次，不要另建批次来绕过冲突。部署先按 [V6 部署步骤](v6-deployment.md) 建候选镜像、停写和配套备份、迁移、启动、health 验证。镜像只包含 backend，示例来源通过只读挂载，不扩大静态根目录。以下命令使用部署手册创建的 release override：
 
 ```bash
 sudo docker compose -f docker-compose.yml -f "$V6_BACKUP/release.yml" run --rm --no-deps -v /opt/Lab_web/legacy_samples:/legacy:ro backend python manage.py import_legacy_content --manifest /legacy/manifest.json --source-root /legacy/originals --dry-run --report /app/private_media/import-reports/v6-dry.json
