@@ -24,16 +24,20 @@ def upload(request,file,purpose):
     allowed['ai_source']=allowed['attachment']
     allowed['resume']=allowed['attachment']
     ext=Path(file.name).suffix.lower()
-    if ext not in allowed[purpose] or file.content_type!=allowed[purpose][ext]:raise ValidationError({'file':'Unsupported extension or MIME type.'})
-    if file.size<=0 or file.size>limit:raise ValidationError({'file':'File exceeds the allowed size.'})
+    if ext not in allowed[purpose] or file.content_type not in (allowed[purpose][ext],'application/octet-stream',''):raise ValidationError({'file':'文件类型不支持，请选择PDF或DOCX，确认扩展名与文件内容一致。'})
+    if file.size<=0 or file.size>limit:raise ValidationError({'file':f'文件大小须大于0且不超过{limit//(1024*1024)}MiB。'})
     if AssetFile.objects.filter(owner=actor,created_at__gte=timezone.now()-timezone.timedelta(hours=1)).count()>=20:raise Throttled(wait=3600)
     raw=file.read(limit+1)
     magic={'.png':b'\x89PNG\r\n\x1a\n','.jpg':b'\xff\xd8\xff','.jpeg':b'\xff\xd8\xff','.pdf':b'%PDF-','.webp':b'RIFF','.docx':b'PK\x03\x04'}[ext]
-    if len(raw)>limit or not raw.startswith(magic) or (ext=='.webp' and raw[8:12]!=b'WEBP'):raise ValidationError({'file':'File signature does not match its declared type.'})
+    if len(raw)>limit or not raw.startswith(magic) or (ext=='.webp' and raw[8:12]!=b'WEBP'):raise ValidationError({'file':'文件内容与扩展名不一致，请选择真实PDF/DOCX文件。'})
     try:
-        result=subprocess.run([sys.executable,'-m','apps.assets.inspect_file','avatar' if purpose in ('avatar','image') else 'docx' if ext=='.docx' else 'proof'],input=raw,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=8,env={'PATH':os.defpath,'PYTHONPATH':str(settings.BASE_DIR),'PYTHONDONTWRITEBYTECODE':'1'})
-    except (OSError,subprocess.TimeoutExpired):raise ValidationError({'file':'File validation failed or timed out.'}) from None
-    if result.returncode or not result.stdout or len(result.stdout)>limit:raise ValidationError({'file':'Malformed, unsafe or oversized decoded file.'})
+        result=subprocess.run([sys.executable,'-m','apps.assets.inspect_file','avatar' if purpose in ('avatar','image') else 'docx' if ext=='.docx' else 'proof'],input=raw,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=8,env={'PATH':os.defpath,'PYTHONPATH':str(settings.BASE_DIR),'PYTHONDONTWRITEBYTECODE':'1'})
+    except (OSError,subprocess.TimeoutExpired):raise ValidationError({'file':'文件校验失败或超时，请重新导出较小的标准文件后上传。'}) from None
+    if result.returncode or not result.stdout or len(result.stdout)>limit:
+        import json
+        try:message=json.loads(result.stderr[:1000]).get('message')
+        except (ValueError,TypeError):message=None
+        raise ValidationError({'file':message or '文件解析失败或超过限制，请重新导出PDF/DOCX后上传。'})
     cleaned=result.stdout
     from .scanner import check_bytes
     check_bytes(raw);check_bytes(cleaned)

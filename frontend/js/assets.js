@@ -1,6 +1,6 @@
 (() => {
  'use strict';
- const safe=asset=>asset&&/^\/api\/public\/assets\/[0-9a-f-]+\/$/.test(asset.url);
+ const safe=asset=>asset&&/^\/api\/(?:public|site)\/assets\/[0-9a-f-]+\/$/.test(asset.url);
  window.renderPublicAssets=function(assets,parent){
   const P=window.LabPublic;
   for(const asset of assets||[]){if(!safe(asset))continue;
@@ -16,10 +16,10 @@
   const body=P.node('div',undefined,'teaser-body');
   body.append(P.node('span',member?(row.public_member_status==='ALUMNI'?'已毕业':row.member_kind==='TEACHER'?'老师':'同学'):(P.labels[row.kind]||'科研成果'),'teaser-type'));
   const title=P.node('h2');title.append(P.link(row.display_name||row.title,href));body.append(title);
-  const summary=member?row.bio:row.summary;if(summary)body.append(P.node('p',summary.length>150?summary.slice(0,150)+'…':summary));
+  const summary=member?'':row.summary;if(summary)body.append(P.node('p',summary.length>150?summary.slice(0,150)+'…':summary));
   if(member&&row.research_areas?.length)body.append(P.node('p',row.research_areas.join(' · '),'teaser-meta'));
   if(row.date)body.append(P.node('p',row.date,'teaser-meta'));
-  if(row.alumni)body.append(P.node('p',[row.alumni.graduation_year,row.alumni.degree,row.alumni.organization].filter(Boolean).join(' · '),'teaser-meta'));
+  if(member){const levels=(row.education||[]).map(e=>e.education_level).filter(Boolean);if(levels.length)body.append(P.node('p',levels.join(' · '),'teaser-meta'));if(row.enrollment_year)body.append(P.node('p',row.enrollment_year+'级','teaser-meta'));if(row.public_contact_email)body.append(P.node('p',row.public_contact_email,'teaser-meta'));}
   if(!member){const names=(row.contributions||[]).map(c=>c.name);if(names.length)body.append(P.node('p',names.join('、'),'teaser-meta'));}
   article.append(body);return article;
  };

@@ -10,7 +10,7 @@
  function renderTabs(s){tabs.replaceChildren();for(const [key,label] of [['all','全部成员'],['TEACHER','老师'],['STUDENT','同学'],['graduates','已毕业']]){const a=P.link(label,'/data/members/index.html'+(key==='all'?'':'?tab='+key));if(s.tab===key)a.setAttribute('aria-current','page');if(kind==='MEMBER')a.onclick=e=>{e.preventDefault();update({tab:key==='all'?'':key,member_kind:'',page:'',year:''});};tabs.append(a);}}
  async function load(){const s=state(),current=++ticket;form.elements.q.value=s.q;yearInput.value=s.year;
   const graduates=memberPage&&s.tab==='graduates';yearLabel.hidden=memberPage&&!graduates;
-  if(memberPage){renderTabs(s);yearLabel.firstChild.textContent='毕业年份';}
+  if(memberPage){renderTabs(s);yearLabel.firstChild.textContent='入学年份';}
   P.content.className='public-card-grid';
   return P.run(async valid=>{
    controls.replaceChildren();const query=new URLSearchParams({page:String(s.page)});

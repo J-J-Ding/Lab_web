@@ -15,16 +15,25 @@ from .models import MemberProfile,MemberRevision,MemberSlug,MemberPrivateData,Ed
 from .serializers import DraftInput, StrictInteger, draft_data
 from .services import VersionConflict
 from .permissions import require_management
+from .options import GENDERS,POLITICAL,DEGREES,RegionInput
 
 
 class ExperienceInput(StrictSerializer):
+    start_date=serializers.DateField(required=False,allow_null=True)
+    end_date=serializers.DateField(required=False,allow_null=True)
     organization=StrictString(max_length=300,allow_blank=True,default='')
     role=StrictString(max_length=200,allow_blank=True,default='')
     period=StrictString(max_length=100,allow_blank=True,default='')
     description=StrictString(max_length=3000,allow_blank=True,default='')
 
+    def validate(self,data):
+        if data.get('start_date') and data.get('end_date') and data['end_date']<data['start_date']:raise ValidationError('结束日期不能早于开始日期。')
+        return data
+
 
 class CVPrivateInput(StrictSerializer):
+    gender=serializers.ChoiceField(choices=["",*GENDERS],required=False)
+    native_region=RegionInput(required=False)
     skills=StrictString(max_length=3000,allow_blank=True,required=False)
     political_status=StrictString(max_length=100,allow_blank=True,required=False)
     education_note=StrictString(max_length=3000,allow_blank=True,required=False)
@@ -38,6 +47,7 @@ class CVPrivateInput(StrictSerializer):
 
 
 class ProfileInput(DraftInput):
+    enrollment_year=serializers.IntegerField(min_value=1900,max_value=2200,allow_null=True,required=False)
     cv_private=CVPrivateInput(required=False)
     public_member_status=serializers.ChoiceField(choices=['ACTIVE','ALUMNI','LEFT'],required=False)
     public_visible=StrictBoolean(required=False)
@@ -91,7 +101,6 @@ def save_profile(request,data,pk=None,source_id=None):
     if not private_allowed:
         if set(data)&{'phone','internal_contact','cv_private'}:raise PermissionDenied()
         if any(data.get(key,False) and not getattr(profile,key) for key in privacy):raise PermissionDenied('Only the owner or Root may expand visibility.')
-        if 'public_contact_email' in data and data['public_contact_email'] != (profile.published_revision.public_contact_email if profile.published_revision else ''):raise PermissionDenied()
         if data.get('public_contact_enabled') and not (profile.published_revision and profile.published_revision.public_contact_enabled):raise PermissionDenied()
     current=profile.published_revision
     source=get_object_or_404(MemberRevision,pk=source_id,profile=profile) if source_id else (profile.published_revision or profile.draft_revision)
@@ -99,9 +108,9 @@ def save_profile(request,data,pk=None,source_id=None):
         draft=profile.draft_revision
         if draft.state in ('DRAFT','SUBMITTED','APPROVED'):draft.state='WITHDRAWN';draft.save(update_fields=['state'])
         profile.draft_revision=None
-    fields=('display_name','slug','bio','public_contact_email','public_contact_enabled','avatar_asset_id')
+    fields=('display_name','slug','bio','enrollment_year','public_contact_email','public_contact_enabled','avatar_asset_id')
     values={f:getattr(source,f) for f in fields} if source else {'display_name':' '.join(filter(None,(owner.first_name,owner.last_name)))}
-    for key in ('display_name','slug','bio','public_contact_email','public_contact_enabled'):
+    for key in ('display_name','slug','bio','enrollment_year','public_contact_email','public_contact_enabled'):
         if key in data:values[key]=data[key]
     if source_id:
         values['public_contact_enabled']=bool(current and current.public_contact_enabled and current.public_contact_email==values.get('public_contact_email'))
@@ -114,6 +123,10 @@ def save_profile(request,data,pk=None,source_id=None):
     if is_customer:
         if any(data.get(key) for key in privacy):raise PermissionDenied('Customer profiles and resumes remain private.')
         for key in privacy:setattr(profile,key,False)
+    team_owner=owner.is_active and not owner.is_superuser and owner.role in ('TEACHER','STUDENT')
+    profile.public_visible=bool(team_owner and values.get('display_name','').strip())
+    profile.education_visible=team_owner;profile.contact_visible=team_owner;profile.alumni_visible=False
+    values['public_contact_enabled']=bool(values.get('public_contact_email'))
     if profile.public_visible and not values.get('display_name','').strip():raise ValidationError({'display_name':'Name required for public profiles.'})
     if values.get('public_contact_enabled') and not values.get('public_contact_email'):raise ValidationError({'public_contact_email':'Enter the public contact email.'})
     if 'avatar_asset' in data:values['avatar_asset_id']=data['avatar_asset']
@@ -124,14 +137,21 @@ def save_profile(request,data,pk=None,source_id=None):
         if image.expires_at and image.expires_at<=timezone.now():raise ValidationError({'avatar_asset':'Image expired; upload again.'})
         image.expires_at=None;image.visibility='PUBLIC' if profile.public_visible else 'PRIVATE';image.save(update_fields=['visibility','expires_at'])
     revision=MemberRevision.objects.create(profile=profile,number=(profile.revisions.aggregate(n=Max('number'))['n'] or 0)+1,base_published_revision=profile.published_revision,member_kind=owner.role if owner.role in ('TEACHER','STUDENT','CUSTOMER') else 'TEACHER',public_member_status=data.get('public_member_status',source.public_member_status if source else 'ACTIVE'),edited_by=actor,**values)
-    education=data.get('education',list(source.education.values('school','major','degree','start_date','end_date','is_public','position')) if source else [])
+    education=data.get('education',list(source.education.values('school','education_level','major','degree','start_date','end_date','is_public','position')) if source else [])
     if not private_allowed:
         old_public={e['school'] for e in (list(source.education.filter(is_public=True).values('school')) if source else [])}
         if any(e['is_public'] and e['school'] not in old_public for e in education):raise PermissionDenied('Cannot expand another member’s education visibility.')
     if source_id:
-        keys=('school','major','degree','start_date','end_date')
+        keys=('school','education_level','major','degree','start_date','end_date')
         allowed={tuple(getattr(e,k) for k in keys) for e in current.education.filter(is_public=True)} if current else set()
         education=[{**entry,'is_public':bool(entry.get('is_public') and tuple(entry.get(k) for k in keys) in allowed)} for entry in education]
+    if source:
+        for entry in education:
+            if 'education_level' not in entry:
+                previous=source.education.filter(position=entry['position'],school=entry.get('school',''),degree=entry.get('degree','')).first()
+                if previous:entry['education_level']=previous.education_level
+    old_degrees=set(source.education.values_list('degree',flat=True)) if source else set()
+    if any(e.get('degree','') not in ['',*DEGREES] and e.get('degree','') not in old_degrees for e in education):raise ValidationError({'education':'请选择有效学位。'})
     EducationEntry.objects.bulk_create([EducationEntry(revision=revision,**entry) for entry in education])
     names=data.get('research_areas',[link.area.name for link in source.research_links.select_related('area')] if source else [])
     for position,name in enumerate(names,1):
@@ -152,13 +172,16 @@ def save_profile(request,data,pk=None,source_id=None):
             if key in data:setattr(private,key,data[key])
         if 'cv_private' in data:
             incoming=data['cv_private']
+            if 'political_status' in incoming and incoming['political_status'] not in ['',*POLITICAL] and incoming['political_status']!=private.cv_data.get('political_status'):raise ValidationError({'cv_private':'请选择有效政治面貌。'})
             if incoming.get('responsibilities'):
                 from apps.content.models import ContentItem
                 ids=incoming['responsibilities']
                 try:count=ContentItem.objects.filter(pk__in=ids,deleted_at__isnull=True,published_revision__contributions__contributor__member_profile=profile).distinct().count()
                 except (ValueError,ModelValidationError):raise ValidationError({'cv_private':'Invalid achievement ID.'})
                 if count!=len(ids):raise ValidationError({'cv_private':'Responsibilities may only describe your current contributions.'})
-            private.cv_data={**private.cv_data,**incoming}
+            import json
+            from django.core.serializers.json import DjangoJSONEncoder
+            private.cv_data={**private.cv_data,**json.loads(json.dumps(incoming,cls=DjangoJSONEncoder))}
         private.save()
     revision.state='PUBLISHED';revision.save(update_fields=['state'])
     profile.published_revision=revision;profile.lock_version+=1;profile.privacy_version+=1;profile.updated_by=actor

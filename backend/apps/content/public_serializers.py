@@ -1,10 +1,11 @@
 from django.utils import timezone
 from .models import DETAIL_MODELS
+from .site_context import is_team
 
 
 def asset_data(asset):
-    if asset.scan_status!='CLEAN' or asset.deletion_requested_at or asset.visibility!='PUBLIC' or (asset.expires_at and asset.expires_at<=timezone.now()):return None
-    return {'id':str(asset.pk),'mime_type':asset.mime_type,'size':asset.size,'url':f'/api/public/assets/{asset.pk}/'}
+    if asset.scan_status!='CLEAN' or asset.deletion_requested_at or (asset.expires_at and asset.expires_at<=timezone.now()):return None
+    return {'id':str(asset.pk),'mime_type':asset.mime_type,'size':asset.size,'url':f'/api/{"site" if is_team() else "public"}/assets/{asset.pk}/'}
 
 
 def cover_for_revision(revision):
@@ -16,15 +17,11 @@ def cover_for_revision(revision):
 
 def member_data(profile):
     r=profile.published_revision
-    result={'id':str(profile.pk),'slug':r.slug,'display_name':r.display_name,'bio':r.bio,
-        'member_kind':r.member_kind,'public_member_status':r.public_member_status,
-        'research_areas':[l.area.name for l in r.research_links.all()]}
-    if profile.contact_visible and r.public_contact_enabled:result['public_contact_email']=r.public_contact_email
-    if profile.education_visible:
-        result['education']=[{f:getattr(e,f) for f in ('school','major','degree','start_date','end_date')} for e in r.education.all() if e.is_public]
-    alumni=getattr(r,'alumni',None)
-    if r.public_member_status=="ALUMNI" and profile.alumni_visible and alumni and alumni.is_public:
-        result['alumni']={f:getattr(alumni,f) for f in ('graduation_year','degree','destination_type','organization')}
+    result={'id':str(profile.pk),'slug':r.slug,'display_name':r.display_name,
+        'member_kind':r.member_kind,'public_member_status':r.public_member_status,'enrollment_year':r.enrollment_year,
+        'research_areas':[l.area.name for l in r.research_links.all()],
+        'education':[{'education_level':e.education_level} for e in r.education.all() if e.education_level]}
+    if r.public_contact_email:result['public_contact_email']=r.public_contact_email
     result['avatar']=asset_data(r.avatar_asset) if r.avatar_asset_id else None
     return result
 
@@ -38,7 +35,7 @@ def content_data(item):
     people=[]
     for c in r.contributions.all():
         p=c.contributor.member_profile
-        public=p and (p.user_id is None or (p.user.is_active and p.user.role in ('TEACHER','STUDENT'))) and p.public_visible and p.merged_into_id is None and p.published_revision_id and p.published_revision.state=='PUBLISHED' and p.published_revision.public_member_status in ('ACTIVE','ALUMNI')
+        public=p and (p.user_id is None or (p.user.is_active and p.user.role in ('TEACHER','STUDENT'))) and not (p.user_id and p.user.is_superuser) and p.merged_into_id is None and p.published_revision_id and p.published_revision.state=='PUBLISHED' and p.published_revision.public_member_status in ('ACTIVE','ALUMNI')
         name=p.published_revision.display_name if public else ('团队成员' if p and p.user_id else c.approved_display_name)
         people.append({'name':name,'affiliation':c.approved_affiliation,'position':c.position,
             'role':c.contribution_role,'is_corresponding':c.is_corresponding,'member_slug':p.published_revision.slug if public else None})

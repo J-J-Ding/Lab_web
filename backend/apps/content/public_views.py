@@ -78,8 +78,8 @@ class MemberList(PublicView):
             if p['status'] not in ('ACTIVE','ALUMNI'):raise ValidationError('Invalid status.')
             qs=qs.filter(published_revision__public_member_status=p['status'])
         if 'direction' in p:qs=qs.filter(published_revision__research_links__area__name=p['direction']).distinct()
-        if 'q' in p:qs=qs.filter(Q(published_revision__display_name__icontains=p['q'])|Q(published_revision__bio__icontains=p['q']))
-        if 'year' in p:qs=qs.filter(published_revision__public_member_status='ALUMNI',alumni_visible=True,published_revision__alumni__is_public=True,published_revision__alumni__graduation_year=int(p['year']))
+        if 'q' in p:qs=qs.filter(Q(published_revision__display_name__icontains=p['q']))
+        if 'year' in p:qs=qs.filter(published_revision__enrollment_year=int(p['year']))
         return paged(request,qs,member_data)
 class MemberDetail(PublicView):
     def get(self,request,slug):
@@ -96,9 +96,9 @@ class Outputs(PublicView):
 class Graduates(PublicView):
     def get(self,request):
         p=params(request,{'year','degree','q'});qs=member_queryset().filter(published_revision__public_member_status='ALUMNI')
-        if 'year' in p:qs=qs.filter(published_revision__public_member_status='ALUMNI',alumni_visible=True,published_revision__alumni__is_public=True,published_revision__alumni__graduation_year=int(p['year']))
-        if 'q' in p:qs=qs.filter(Q(published_revision__display_name__icontains=p['q'])|Q(published_revision__bio__icontains=p['q']))
-        if 'degree' in p:qs=qs.filter(alumni_visible=True,published_revision__alumni__is_public=True,published_revision__alumni__degree=p['degree'])
+        if 'year' in p:qs=qs.filter(published_revision__enrollment_year=int(p['year']))
+        if 'q' in p:qs=qs.filter(Q(published_revision__display_name__icontains=p['q']))
+        if 'degree' in p:qs=qs.filter(published_revision__education__education_level=p['degree']).distinct()
         return paged(request,qs,member_data)
 class FixedPage(PublicView):
     def get(self,request,key):

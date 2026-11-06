@@ -2,7 +2,9 @@ from django.urls import path,re_path
 from . import direct_views as v
 from apps.members import submissions as submissions
 from apps.members import cv
+from apps.members.options import Options
 urlpatterns=[
+ path('site/profile-options/',Options.as_view()),
  path('members/me/cv-data/',cv.CVData.as_view()),path('members/me/cv.docx',cv.GenerateCV.as_view()),path('members/me/cv-template.docx',cv.BlankCV.as_view()),
  path('members/me/resume-submissions/',submissions.Submissions.as_view()),
  path('members/me/resume-submissions/<uuid:pk>/withdraw/',submissions.Withdraw.as_view()),

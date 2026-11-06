@@ -9,6 +9,7 @@
    const response=await fetch(new URL('data/navbar-unified.html',root),{cache:'no-store'});if(!response.ok)throw Error();
    target.innerHTML=await response.text();
    target.querySelectorAll('[href^="/"],[src^="/"]').forEach(el=>{for(const key of ['href','src'])if(el.getAttribute(key)?.startsWith('/'))el.setAttribute(key,new URL(el.getAttribute(key).slice(1),root));});
+   const header=target.querySelector('.site-header');const measure=()=>document.documentElement.style.setProperty('--site-header-height',header.getBoundingClientRect().height+'px');measure();new ResizeObserver(measure).observe(header);
    const toggle=target.querySelector('.mobile-toggle'),menu=target.querySelector('.site-nav');
    toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));menu.classList.toggle('is-open',open);});
    const groups=[...target.querySelectorAll('.nav-group')];
@@ -20,9 +21,9 @@
     group.addEventListener('focusout',e=>{if(!group.contains(e.relatedTarget))sub.hidden=true;});
    }
    target.addEventListener('keydown',e=>{if(e.key==='Escape'){close();toggle.setAttribute('aria-expanded','false');menu.classList.remove('is-open');}});
-   for(const link of target.querySelectorAll('a'))if(new URL(link.href).pathname===location.pathname&&!new URL(link.href).search)link.setAttribute('aria-current','page');
-   if(!window.LabAuth)await script('js/auth.js?v=12');
-   LabAuth.initNavigation(target);await script('js/search.js?v=11');
+   for(const link of target.querySelectorAll('a'))if((()=>{const url=new URL(link.href),current=new URL(location.href);return url.pathname===current.pathname&&['category','member_kind','tab'].every(key=>(url.searchParams.get(key)||'')===(current.searchParams.get(key)||''));})())link.setAttribute('aria-current','page');
+   if(!window.LabAuth)await script('js/auth.js?v=14');
+   LabAuth.initNavigation(target);await script('js/search.js?v=14');
   }catch(_){target.replaceChildren();const a=document.createElement('a');a.href=new URL('index.html',root);a.textContent='智能系统实验室 · 返回首页';target.append(a);}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();

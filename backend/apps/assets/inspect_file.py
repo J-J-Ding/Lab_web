@@ -5,6 +5,10 @@ import sys
 import warnings
 
 
+class DocumentError(ValueError):
+    pass
+
+
 def clean(kind,raw):
     if kind=='avatar':
         from PIL import Image
@@ -18,8 +22,9 @@ def clean(kind,raw):
     if kind=='docx':return clean_docx(raw)
     from pypdf import PdfReader,PdfWriter
     reader=PdfReader(BytesIO(raw),strict=True)
-    if reader.is_encrypted or len(reader.pages)>100 or len(reader.pages)<1:raise ValueError()
-    forbidden={'/JS','/JavaScript','/OpenAction','/AA','/Launch','/EmbeddedFiles','/RichMedia','/AcroForm','/XFA','/Annots','/SubmitForm'}
+    if reader.is_encrypted:raise DocumentError('PDF已加密，请导出不加密的PDF后上传。')
+    if not 1<=len(reader.pages)<=100:raise DocumentError('PDF必须包含1至100页。')
+    forbidden={'/JS','/JavaScript','/OpenAction','/AA','/Launch','/EmbeddedFiles','/RichMedia','/AcroForm','/XFA','/SubmitForm'}
     seen=set();count=0
     from pypdf.generic import IndirectObject,DictionaryObject,ArrayObject
     def inspect(value,depth=0):
@@ -31,13 +36,16 @@ def clean(kind,raw):
             if key in seen:return
             seen.add(key);value=value.get_object()
         if isinstance(value,DictionaryObject):
-            if any(str(key) in forbidden for key in value):raise ValueError()
+            if any(str(key) in forbidden for key in value) or str(value.get('/S','')) in forbidden:raise DocumentError('PDF含动态表单、脚本或嵌入内容，请重新导出标准PDF。')
+            if str(value.get('/URI','')).strip().lower().startswith(('javascript:','file:','data:')):raise DocumentError('PDF包含不安全的链接动作，请重新导出标准PDF。')
             for child in value.values():inspect(child,depth+1)
         elif isinstance(value,ArrayObject):
             for child in value:inspect(child,depth+1)
     inspect(reader.trailer['/Root'])
     writer=PdfWriter()
-    for page in reader.pages:writer.add_page(page)
+    for page in reader.pages:
+        if '/Annots' in page:del page['/Annots']
+        writer.add_page(page)
     out=BytesIO();writer.write(out)
     return out.getvalue()
 
@@ -94,7 +102,10 @@ def main():
         output=clean(sys.argv[1],data)
         if len(output)>20*1024*1024:raise ValueError()
         sys.stdout.buffer.write(output)
-    except Exception:
+    except Exception as error:
+        import json
+        message=str(error) if isinstance(error,DocumentError) else '文件结构损坏、不支持或超过安全解析限制，请重新导出PDF/DOCX后上传。'
+        sys.stderr.write(json.dumps({'message':message},ensure_ascii=False))
         sys.exit(2)
 
 

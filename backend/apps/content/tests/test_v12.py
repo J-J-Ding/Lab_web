@@ -71,7 +71,8 @@ class V12Tests(TestCase):
         self.assertEqual(APIClient().get('/api/public/members/?year=2025').data['count'],0)
         graduated=c.patch('/api/members/me/profile/',{'lock_version':r.data['lock_version'],'public_member_status':'ALUMNI'},format='json')
         self.assertEqual(graduated.status_code,200,graduated.data)
-        self.assertEqual(APIClient().get(url).data['alumni']['organization'],'保留单位')
+        self.assertNotIn('alumni',APIClient().get(url).data)
+        self.assertEqual(graduated.data['alumni']['organization'],'保留单位')
 
     def test_patent_and_contact_email(self):
         c=self.client_for(self.teacher)
@@ -128,7 +129,7 @@ class V12Tests(TestCase):
         from io import BytesIO
         from xml.etree import ElementTree as ET
         c=self.client_for(self.student);p=self.profile(self.student,'自动简历姓名')
-        r=c.patch('/api/members/me/profile/',{'lock_version':p['lock_version'],'cv_private':{'skills':'Python与控制','political_status':'选填','education_note':'院系说明','internships':[{'organization':'实习单位','role':'研发','period':'2025','description':'真实工作'}],'practice':[]}},format='json')
+        r=c.patch('/api/members/me/profile/',{'lock_version':p['lock_version'],'cv_private':{'skills':'Python与控制','political_status':'群众','education_note':'院系说明','internships':[{'organization':'实习单位','role':'研发','period':'2025','description':'真实工作'}],'practice':[]}},format='json')
         self.assertEqual(r.status_code,200,r.data)
         paper=self.create(c,title='本人论文',authors=[self.student.pk],detail={'venue':'示例会议','publication_date':'2025-01-01'})
         internal=self.create(c,kind='PROJECT',title='内部项目',authors=[self.student.pk],visibility_scope='TEAM',detail={'funding_amount':'99999'})

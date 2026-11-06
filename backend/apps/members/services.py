@@ -16,7 +16,7 @@ class VersionConflict(APIException):
 
 def clone_revision(profile, actor):
     original=profile.revisions.filter(state__in=["PUBLISHED","REJECTED","WITHDRAWN"]).order_by("-number").first()
-    fields=('member_kind','public_member_status','display_name','slug','bio','public_contact_email','public_contact_enabled','avatar_asset_id')
+    fields=('member_kind','public_member_status','display_name','slug','bio','enrollment_year','public_contact_email','public_contact_enabled','avatar_asset_id')
     data={f:getattr(original,f) for f in fields} if original else {}
     if not original:
         data['display_name']=' '.join(v for v in (actor.first_name,actor.last_name) if v)
@@ -24,7 +24,7 @@ def clone_revision(profile, actor):
     rev=MemberRevision.objects.create(profile=profile,number=number,edited_by=actor,base_published_revision=profile.published_revision,**data)
     if original:
         for entry in original.education.all():
-            values={f:getattr(entry,f) for f in ('school','major','degree','start_date','end_date','is_public','position')}
+            values={f:getattr(entry,f) for f in ('school','education_level','major','degree','start_date','end_date','is_public','position')}
             EducationEntry.objects.create(revision=rev,**values)
         for link in original.research_links.all():
             MemberResearchArea.objects.create(revision=rev,area=link.area,position=link.position)

@@ -70,9 +70,9 @@ def generate(profile,items,sections):
     values={'姓名':r.display_name if r else '', '联系电话':private.phone if private else '', '联系邮箱':private.internal_contact if private else '', '政治面貌':cv.get('political_status',''),'技能简介':cv.get('skills',''),'研究方向':'、'.join(l.area.name for l in r.research_links.select_related('area')) if r else ''}
     blocks={key:[] for key in SECTIONS}
     if r:
-        for e in r.education.all():blocks['教育经历'].append({'起止时间':f'{e.start_date or ""} — {e.end_date or ""}','学校':e.school,'专业及学位':' '.join(filter(None,[e.major,e.degree])),'成绩课程及补充说明':cv.get('education_note','')})
+        for e in r.education.all():blocks['教育经历'].append({'起止时间':f'{e.start_date or ""} — {e.end_date or ""}','学校':e.school,'专业及学位':' '.join(filter(None,[e.education_level,e.major,e.degree])),'成绩课程及补充说明':cv.get('education_note','')})
     for key,source in [('实习经历','internships'),('实践经历','practice')]:
-        for e in cv.get(source,[]):blocks[key].append({'起止时间':e.get('period',''),'单位及部门':e.get('organization',''),'岗位':e.get('role',''),'项目内容':e.get('description',''),'组织与职务':' '.join([e.get('organization',''),e.get('role','')]),'工作内容及成效':e.get('description','')})
+        for e in cv.get(source,[]):blocks[key].append({'起止时间':e.get('period') or ' — '.join(filter(None,[e.get('start_date'),e.get('end_date')])),'单位及部门':e.get('organization',''),'岗位':e.get('role',''),'项目内容':e.get('description',''),'组织与职务':' '.join([e.get('organization',''),e.get('role','')]),'工作内容及成效':e.get('description','')})
     for item in items:
         rev=item.published_revision;d=getattr(rev,DETAIL_MODELS[item.kind]._meta.get_field('revision').remote_field.related_name)
         links=list(rev.contributions.filter(contributor__member_profile=profile).order_by('position','id'));link=links[0];roles=' / '.join(dict.fromkeys(l.contribution_role for l in links))

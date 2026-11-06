@@ -12,7 +12,8 @@ class StrictInteger(serializers.IntegerField):
 
 
 class EducationInput(StrictSerializer):
-    school=StrictString(max_length=200)
+    education_level=serializers.ChoiceField(choices=["","小学","初中","高中","中专","专科","本科","硕士研究生","博士研究生","其他"],required=False)
+    school=StrictString(max_length=200,allow_blank=True,required=False,default="")
     major=StrictString(max_length=200,required=False,allow_blank=True,default='')
     degree=StrictString(max_length=100,required=False,allow_blank=True,default='')
     start_date=serializers.DateField(required=False,allow_null=True,default=None)
@@ -62,9 +63,9 @@ class DraftInput(StrictSerializer):
 def draft_data(profile,revision):
     if revision is None:
         return None
-    result={f:getattr(revision,f) for f in ('number','display_name','slug','bio','member_kind','public_member_status','public_contact_email','public_contact_enabled','state')}
+    result={f:getattr(revision,f) for f in ('number','display_name','slug','bio','enrollment_year','member_kind','public_member_status','public_contact_email','public_contact_enabled','state')}
     result.update(id=str(revision.pk),lock_version=profile.lock_version,avatar_asset=str(revision.avatar_asset_id) if revision.avatar_asset_id else None)
-    result['education']=list(revision.education.values('school','major','degree','start_date','end_date','is_public','position'))
+    result['education']=list(revision.education.values('school','education_level','major','degree','start_date','end_date','is_public','position'))
     result['research_areas']=[link.area.name for link in revision.research_links.select_related('area')]
     alumni=AlumniDestination.objects.filter(revision=revision).values('graduation_year','degree','destination_type','organization','is_public').first()
     result['alumni']=alumni
@@ -75,18 +76,8 @@ def draft_data(profile,revision):
 
 
 def public_member(profile):
-    """Projection ready for V6; no public endpoint is exposed in V4."""
-    rev=profile.published_revision
-    if not profile.public_visible or not rev or rev.state!='PUBLISHED' or rev.public_member_status=='LEFT':
-        return None
-    data={'id':str(profile.pk),'display_name':rev.display_name,'slug':rev.slug,'bio':rev.bio,
-          'member_kind':rev.member_kind,'public_member_status':rev.public_member_status,
-          'research_areas':[link.area.name for link in rev.research_links.select_related('area')]}
-    if profile.contact_visible and rev.public_contact_enabled:
-        data['public_contact_email']=rev.public_contact_email
-    if profile.education_visible:
-        data['education']=list(rev.education.filter(is_public=True).values('school','major','degree','start_date','end_date'))
-    if rev.public_member_status=="ALUMNI" and profile.alumni_visible:
-        data['alumni']=AlumniDestination.objects.filter(revision=rev,is_public=True).values('graduation_year','degree','destination_type','organization').first()
-    # V4 does not expose avatar URLs or raw asset keys.
-    return data
+    """Use the same fixed projection as every public member entry point."""
+    from apps.content.public_selectors import member_queryset
+    from apps.content.public_serializers import member_data
+    if not member_queryset().filter(pk=profile.pk).exists():return None
+    return member_data(profile)

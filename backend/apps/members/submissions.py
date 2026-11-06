@@ -29,9 +29,10 @@ def receiver(actor):
 
 def snapshot(profile,actor):
     data=profile_data(profile,actor)
-    allowed=('display_name','bio','phone','internal_contact','education','research_areas','public_member_status','cv_private')
+    allowed=('display_name','bio','phone','internal_contact','education','research_areas','public_member_status','cv_private','public_contact_email')
     result={key:data[key] for key in allowed if key in data}
-    if data.get('public_member_status','cv_private')=='ALUMNI':result['alumni']=data.get('alumni')
+    if 'cv_private' in result:result['cv_private']={k:v for k,v in result['cv_private'].items() if k!='responsibilities'}
+    if data.get('public_member_status')=='ALUMNI':result['alumni']=data.get('alumni')
     return json.loads(json.dumps(result,cls=DjangoJSONEncoder))
 
 
@@ -67,7 +68,7 @@ class Submissions(BusinessAPIView):
         _,profile=get_profile(request)
         saved=snapshot(profile,actor)
         if not saved.get('display_name','').strip():raise ValidationError({'display_name':'Save your name in your profile before submitting.'})
-        row=ResumeSubmission.objects.create(owner=actor,resume=resume,asset=asset,resume_version=resume.lock_version,profile_snapshot=saved,resume_snapshot={k:v for k,v in resume_data(resume).items() if k in ('title','intention','introduction')})
+        row=ResumeSubmission.objects.create(owner=actor,resume=resume,asset=asset,resume_version=resume.lock_version,profile_snapshot=saved,resume_snapshot={k:v for k,v in resume_data(resume).items() if k in ('title','introduction')})
         recipients=User.objects.filter(is_active=True).filter(Q(is_superuser=True)|Q(role__in=['TEACHER','ADMIN']))
         SubmissionNotification.objects.bulk_create([SubmissionNotification(recipient=u,submission=row) for u in recipients])
         asset.expires_at=None;asset.save(update_fields=['expires_at'])
