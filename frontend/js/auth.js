@@ -88,9 +88,22 @@
       status.textContent = state.status === 'unavailable' ? '账号服务暂不可用' : '账号加载中…';
     });
   }
+  let noticeEpoch=0;
+  async function refreshNotices(){
+    const epoch=++noticeEpoch;document.querySelectorAll('[data-submission-notice]').forEach(n=>n.remove());
+    if(state.status!=='authenticated'||!(state.user.is_superuser||['TEACHER','ADMIN'].includes(state.user.role)))return;
+    const id=state.user.id;
+    try{const r=await fetch('/api/members/notifications/?page_size=1',{credentials:'same-origin',cache:'no-store'});if(!r.ok)return;const data=await r.json();if(epoch!==noticeEpoch||state.user?.id!==id)return;
+     const parent=document.querySelector('[data-auth-member]');if(parent){const a=document.createElement('a');a.href='/notifications.html';a.dataset.submissionNotice='';a.textContent='投递消息 '+data.unread_count;parent.prepend(a);}
+    }catch(_){}
+  }
+  document.addEventListener('lab-notifications-updated',refreshNotices);
+  const noticeTimer=setInterval(()=>{if(document.visibilityState==='visible')refreshNotices();},30000);
+  window.addEventListener('pagehide',()=>clearInterval(noticeTimer),{once:true});
   function publish(status, user = null) {
     state = { status, user };
     renderNavigation();
+    refreshNotices();
     document.querySelectorAll('[data-auth-manager]').forEach(el => { el.hidden = !(status === 'authenticated' && (user.is_superuser || ['ADMIN','TEACHER'].includes(user.role))); });
     document.dispatchEvent(new CustomEvent('lab-auth-state', {detail: {status, user}}));
     if (pageType() !== 'profile' || suspended) return;
@@ -192,7 +205,7 @@
         else input.removeAttribute('aria-describedby');
       });
       if (!form.checkValidity()) {
-        message(statusId, '请检查必填项、格式和密码长度（至少 8 个字符）。', 'error');
+        message(statusId, '请检查必填项、格式和密码长度（至少6位英文字母和数字）。', 'error');
         form.querySelectorAll(':invalid').forEach(input => markField(form, input.name, statusId));
         form.reportValidity(); return;
       }
@@ -231,6 +244,7 @@
       if (!button.dataset.bound) { button.dataset.bound = 'true'; button.addEventListener('click', () => logout(button)); }
     });
     renderNavigation();
+    refreshNotices();
     refreshUser();
   }
   async function bootstrap() {
@@ -252,6 +266,11 @@
   function initialize() {
     if (initialized) return;
     initialized = true;
+    const returnTo=new URLSearchParams(location.search).get('return_to');
+    if(returnTo&&returnTo.startsWith('/')&&!returnTo.startsWith('//')){
+      const target=new URL(returnTo,location.origin);
+      if(target.origin===location.origin&&['/profile.html','/contact.html'].includes(target.pathname))document.querySelectorAll('a[href]').forEach(a=>{const url=new URL(a.href);if(url.origin===location.origin&&['/register.html','/login.html'].includes(url.pathname)){url.searchParams.set('return_to',target.pathname+target.search+target.hash);a.href=url.href;}});
+    }
     bindForm('register-form', 'register-status', async form => {
       if (form.elements.password.value !== form.elements.confirm_password.value) { message('register-status', '两次输入的密码不一致。', 'error'); return; }
       await request('register/', { method: 'POST', data: { username: form.elements.username.value, password: form.elements.password.value } });
@@ -265,7 +284,9 @@
       channel?.postMessage('session-changed');
       const result = await refreshUser(true);
       if (result.status !== 'authenticated') throw new ApiError(503);
-      location.assign(pageURL('profile.html'));
+      const target=new URLSearchParams(location.search).get('return_to');let destination=pageURL('profile.html');
+      if(target&&target.startsWith('/')&&!target.startsWith('//')){const url=new URL(target,location.origin);if(url.origin===location.origin&&['/profile.html','/contact.html'].includes(url.pathname))destination=url.href;}
+      location.assign(destination);
     });
     bindForm('profile-form', 'profile-status', async form => {
       const data = {};

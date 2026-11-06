@@ -1,11 +1,24 @@
 from django.urls import path,re_path
 from . import direct_views as v
+from apps.members import submissions as submissions
+from apps.members import cv
 urlpatterns=[
+ path('members/me/cv-data/',cv.CVData.as_view()),path('members/me/cv.docx',cv.GenerateCV.as_view()),path('members/me/cv-template.docx',cv.BlankCV.as_view()),
+ path('members/me/resume-submissions/',submissions.Submissions.as_view()),
+ path('members/me/resume-submissions/<uuid:pk>/withdraw/',submissions.Withdraw.as_view()),
+ path('members/resume-inbox/',submissions.Inbox.as_view()),
+ path('members/resume-inbox/<uuid:pk>/',submissions.Inbox.as_view()),
+ path('members/resume-inbox/<uuid:pk>/preview/',submissions.SubmissionPreview.as_view()),
+ path('members/resume-inbox/<uuid:pk>/download/',submissions.SubmissionDownload.as_view()),
+ path('admin/resume-submissions/',submissions.Inbox.as_view()),
+ path('members/notifications/',submissions.Notifications.as_view()),
+ path('members/notifications/<uuid:pk>/read/',submissions.ReadNotification.as_view()),
  path('public/home/',v.Home.as_view()),
  path('content/capabilities/',v.Capabilities.as_view()),
  path('content/items/',v.Items.as_view()),path('content/items/<uuid:pk>/',v.Item.as_view()),
  path('content/items/<uuid:pk>/history/',v.History.as_view()),path('content/items/<uuid:pk>/restore/',v.History.as_view()),
  path('content/items/<uuid:pk>/grants/',v.Grant.as_view()),
+ path('content/items/<uuid:pk>/delete/',v.Delete.as_view()),path('content/items/<uuid:pk>/undelete/',v.Undelete.as_view()),
  path('members/directory/',v.Directory.as_view()),path('members/me/profile/',v.Profile.as_view()),
  path('members/<uuid:pk>/profile/',v.Profile.as_view()),
  path('members/me/history/',v.ProfileHistory.as_view()),path('members/me/restore/',v.ProfileHistory.as_view()),

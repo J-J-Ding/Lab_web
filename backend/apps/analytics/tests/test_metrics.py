@@ -27,7 +27,7 @@ class StatisticsTests(AccountFixtures):
         for text in ('=bad',' +bad','\tbad','@bad','-bad'):self.assertTrue(safe_cell(text).startswith("'"))
     def test_filters_and_own_private_scope(self):
         for params in ({'year_from':1900,'year_to':2026},{'year_from':'²'},{'member_id':1},{'kind':'HIDDEN'}):self.assertEqual(self.client.get('/api/public/stats/overview/',params).status_code,400)
-        self.assertEqual(login_as(self.customer).get('/api/stats/me/',{'member_id':self.teacher.pk}).status_code,400)
+        self.assertEqual(login_as(self.customer).get('/api/stats/me/',{'member_id':self.teacher.pk}).status_code,403)
     def test_shanghai_new_year_boundary_and_member_privacy(self):
         from apps.members.models import MemberProfile,MemberRevision,MemberSlug
         self.publish('ACTIVITY',{'starts_at':'2025-12-31T16:30:00Z','body':'Shanghai new year'})

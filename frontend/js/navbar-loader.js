@@ -12,16 +12,16 @@
    const toggle=target.querySelector('.mobile-toggle'),menu=target.querySelector('.site-nav');
    toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));menu.classList.toggle('is-open',open);});
    const groups=[...target.querySelectorAll('.nav-group')];
-   function close(){for(const group of groups){group.querySelector('.nav-expand').setAttribute('aria-expanded','false');group.querySelector('.nav-submenu').hidden=true;}}
-   for(const group of groups){const button=group.querySelector('.nav-expand'),sub=group.querySelector('.nav-submenu');
-    button.onclick=()=>{const open=button.getAttribute('aria-expanded')!=='true';close();button.setAttribute('aria-expanded',String(open));sub.hidden=!open;};
-    group.addEventListener('mouseenter',()=>{if(matchMedia('(min-width:1024px) and (hover:hover)').matches){close();button.setAttribute('aria-expanded','true');sub.hidden=false;}});
-    group.addEventListener('mouseleave',()=>{if(!group.contains(document.activeElement)){button.setAttribute('aria-expanded','false');sub.hidden=true;}});
-    group.addEventListener('focusout',e=>{if(!group.contains(e.relatedTarget)){button.setAttribute('aria-expanded','false');sub.hidden=true;}});
+   function close(){for(const group of groups)group.querySelector('.nav-submenu').hidden=true;}
+   for(const group of groups){const sub=group.querySelector('.nav-submenu');
+    group.addEventListener('mouseenter',()=>{if(matchMedia('(min-width:1024px) and (hover:hover)').matches){close();sub.hidden=false;}});
+    group.addEventListener('focusin',()=>{if(matchMedia('(min-width:1024px)').matches){close();sub.hidden=false;}});
+    group.addEventListener('mouseleave',()=>{if(!group.contains(document.activeElement))sub.hidden=true;});
+    group.addEventListener('focusout',e=>{if(!group.contains(e.relatedTarget))sub.hidden=true;});
    }
    target.addEventListener('keydown',e=>{if(e.key==='Escape'){close();toggle.setAttribute('aria-expanded','false');menu.classList.remove('is-open');}});
    for(const link of target.querySelectorAll('a'))if(new URL(link.href).pathname===location.pathname&&!new URL(link.href).search)link.setAttribute('aria-current','page');
-   if(!window.LabAuth)await script('js/auth.js?v=10');
+   if(!window.LabAuth)await script('js/auth.js?v=12');
    LabAuth.initNavigation(target);await script('js/search.js?v=11');
   }catch(_){target.replaceChildren();const a=document.createElement('a');a.href=new URL('index.html',root);a.textContent='智能系统实验室 · 返回首页';target.append(a);}
  }

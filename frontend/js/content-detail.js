@@ -1,7 +1,7 @@
 (() => {
  'use strict';const P=window.LabPublic;
- const labels={doi:'DOI',venue:'期刊/会议',publication_date:'发表日期',category:'分类',volume:'卷',issue:'期',pages:'页码',open_url:'公开链接',project_number:'项目编号',funder:'资助方',level:'级别',start_date:'开始日期',end_date:'结束日期',status:'项目状态',event_name:'赛事名称',award_name:'所获奖项',award_date:'获奖日期',starts_at:'开始时间',ends_at:'结束时间',location:'地点',event_date:'日期',isbn:'ISBN',publisher:'出版社',edition:'版次'};
- const enums={ACTIVE:'进行中',COMPLETED:'已结项',CANCELLED:'已取消',COMPETITION:'学科竞赛',HONOR:'荣誉奖励',RESOURCE:'学习资料'};
+ const labels={patent_number:'专利号',application_date:'申请日期',grant_date:'授权日期',abstract:'专利摘要',doi:'DOI',venue:'期刊/会议',publication_date:'发表日期',category:'分类',volume:'卷',issue:'期',pages:'页码',open_url:'公开链接',project_number:'项目编号',funder:'资助方',level:'级别',start_date:'开始日期',end_date:'结束日期',status:'项目状态',event_name:'赛事名称',award_name:'所获奖项',award_date:'获奖日期',starts_at:'开始时间',ends_at:'结束时间',location:'地点',event_date:'日期',isbn:'ISBN',publisher:'出版社',edition:'版次'};
+ const enums={ACTIVE:'进行中',COMPLETED:'已结项',CANCELLED:'已取消',COMPETITION:'学科竞赛',HONOR:'荣誉奖励',RESOURCE:'学习资料',APPLIED:'申请中',GRANTED:'已授权',EXPIRED:'已失效'};
  function section(parent,title){const s=P.node('section',undefined,'detail-section');s.append(P.node('h2',title));parent.append(s);return s;}
  async function load(){return P.run(async current=>{
   const id=new URLSearchParams(location.search).get('id');if(!/^[0-9a-f-]{36}$/.test(id||''))throw Error('内容不存在或尚未公开');

@@ -55,7 +55,7 @@ def item_data(item,actor):
             profile=c.contributor.member_profile
             if profile and profile.user_id and profile.user.is_active and profile.user.role in ('TEACHER','STUDENT'):
                 authors.append({'user_id':profile.user_id,'display_name':services.name_for(profile),'position':c.position})
-    return {'id':str(item.pk),'kind':item.kind,'created_by':item.created_by_id,'lock_version':item.lock_version,'visibility_scope':item.visibility_scope,'featured':item.featured,'cover_asset':str(cover.pk) if cover else None,'visible':item.visibility_gate,'archived':bool(item.archived_at),'can_edit':services.editable(actor,item),'revision':rev,'authors':authors,'legacy_working_revision':revision_data(item.working_revision) if services.editable(actor,item) else None}
+    return {'id':str(item.pk),'kind':item.kind,'created_by':item.created_by_id,'lock_version':item.lock_version,'visibility_scope':item.visibility_scope,'featured':item.featured,'cover_asset':str(cover.pk) if cover else None,'visible':item.visibility_gate,'deleted':bool(item.deleted_at),'archived':bool(item.archived_at),'can_edit':services.editable(actor,item),'revision':rev,'authors':authors,'legacy_working_revision':revision_data(item.working_revision) if services.editable(actor,item) else None}
 
 
 class TeamView(BusinessAPIView):
@@ -66,7 +66,9 @@ class TeamView(BusinessAPIView):
 
 class Items(TeamView):
     def get(self,request):
-        qs=services.readable(request.user).order_by('-updated_at','id')
+        scope=request.query_params.get('scope','normal')
+        if scope not in ('normal','deleted'):raise ValidationError({'scope':'Unknown scope.'})
+        qs=services.readable(request.user,deleted=scope=='deleted').order_by('-updated_at','id')
         kind=request.query_params.get('kind')
         if kind:
             if kind not in services.DETAIL_MODELS:raise ValidationError({'kind':'Unknown content kind.'})
@@ -83,7 +85,7 @@ class Items(TeamView):
 
 
 class Item(TeamView):
-    def get(self,request,pk):return Response(item_data(get_object_or_404(services.readable(request.user),pk=pk),request.user))
+    def get(self,request,pk):return Response(item_data(get_object_or_404(services.readable(request.user)|services.readable(request.user,deleted=True),pk=pk),request.user))
     def patch(self,request,pk):
         data=validated(SaveInput,request)
         if 'kind' in data:raise ValidationError({'kind':'Content type is immutable.'})
@@ -120,6 +122,10 @@ class ProfileHistory(BusinessAPIView):
 
 
 class Resumes(BusinessAPIView):
+    def initial(self,request,*args,**kwargs):
+        super().initial(request,*args,**kwargs)
+        if kwargs.get("owner_id") and request.method=="GET" and request.user.is_superuser:return
+
     def get(self,request,pk=None,owner_id=None):
         if owner_id and not request.user.is_superuser:raise PermissionDenied()
         owner=get_object_or_404(User,pk=owner_id) if owner_id else request.user
@@ -206,3 +212,18 @@ class Home(PublicView):
                 if len(slides)>=5:break
             result={'slides':slides,'schema_version':'v10.1','as_of':timezone.now(),'stats':{'members':people.count(),'papers':qs.filter(kind='PAPER').count(),'projects':qs.filter(kind='PROJECT').count(),'competitions':qs.filter(kind='AWARD',published_revision__award__category='COMPETITION').count()},'research_areas':list(MemberResearchArea.objects.filter(revision_id__in=people.values('published_revision_id')).values_list('area__name',flat=True).distinct()[:8]),'news':cards('NEWS'),'papers':cards('PAPER'),'projects':cards('PROJECT'),'competitions':cards('AWARD','COMPETITION'),'members':[member_data(p) for p in people[:6]],'resources':cards('BLOG','RESOURCE')}
             return Response(result)
+
+
+class DeleteInput(StrictSerializer):
+    lock_version=StrictInteger(min_value=0)
+
+
+class Delete(TeamView):
+    deleted=True
+    def post(self,request,pk):
+        data=validated(DeleteInput,request)
+        return Response(item_data(services.set_deleted(request,pk,data['lock_version'],self.deleted),request.user))
+
+
+class Undelete(Delete):
+    deleted=False

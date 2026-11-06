@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="css/style.css?v=10">
   <link rel="stylesheet" href="css/auth.css?v=3">
   <script defer src="js/auth.js?v=3"></script>
-  <script defer src="js/navbar-loader.js?v=11"></script>
+  <script defer src="js/navbar-loader.js?v=12"></script>
 <link rel="stylesheet" href="/css/layout-v11.css?v=11"></head>
 <body data-auth-page="register">
   <div id="navbar-container"></div>
@@ -20,8 +20,8 @@
       <button type="button" class="auth-button" data-auth-retry hidden>重试</button>
       <form id="register-form" class="auth-form" novalidate>
 <div class="auth-field"><label for="username">用户名</label><input type="text" name="username" id="username" maxlength="150" required autocomplete="username" aria-describedby="username-help"><p class="auth-help" id="username-help">最多 150 个字符，可使用字母、数字及 @ . + - _。</p></div>
-<div class="auth-field"><label for="password">密码</label><input type="password" name="password" id="password" maxlength="128" required autocomplete="new-password" minlength="8" aria-describedby="password-help"><p class="auth-help" id="password-help">至少 8 个字符，请避免常见密码、纯数字或与用户名相似的密码。</p></div>
-<div class="auth-field"><label for="confirm_password">确认密码</label><input type="password" name="confirm_password" id="confirm_password" maxlength="128" required autocomplete="new-password" minlength="8"></div>
+<div class="auth-field"><label for="password">密码</label><input type="password" name="password" id="password" maxlength="128" required autocomplete="new-password" minlength="6" pattern="(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]{6,128}" title="至少6位，仅英文字母和数字，且两者都包含" aria-describedby="password-help"><p class="auth-help" id="password-help">6至128位，仅包含英文字母和数字，且两者都包含。</p></div>
+<div class="auth-field"><label for="confirm_password">确认密码</label><input type="password" name="confirm_password" id="confirm_password" maxlength="128" required autocomplete="new-password" minlength="6" pattern="(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]{6,128}" title="至少6位，仅英文字母和数字，且两者都包含"></div>
         <button type="submit" class="auth-button" disabled>注册账号</button>
       </form>
       <p id="register-status" class="auth-message" role="status" aria-live="polite"></p>
@@ -30,5 +30,5 @@
     </section>
   </main>
   <noscript><p class="auth-main">账号功能需要启用 JavaScript，官网栏目仍可通过浏览器访问。</p></noscript>
-<script defer src="/js/layout.js?v=11"></script></body>
+<script defer src="/js/layout.js?v=12"></script></body>
 </html>

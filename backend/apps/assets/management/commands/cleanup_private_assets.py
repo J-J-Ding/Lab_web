@@ -15,7 +15,7 @@ class Command(BaseCommand):
             with transaction.atomic():
                 asset=AssetFile.objects.select_for_update().get(pk=pk)
                 # Never collect an avatar still referenced by a live/pending member version.
-                if asset.resume_set.exists() or asset.ai_import_jobs.exists() or asset.memberrevision_set.exists() or asset.revisionasset_set.exists() or asset.memberrevisionasset_set.exists() or asset.membershipapplication_set.exists():continue
+                if asset.resume_submissions.exists() or asset.resume_set.exists() or asset.ai_import_jobs.exists() or asset.memberrevision_set.exists() or asset.revisionasset_set.exists() or asset.memberrevisionasset_set.exists() or asset.membershipapplication_set.exists():continue
                 target=(root/asset.storage_key).resolve()
                 if target.parent!=root:continue
                 count+=1

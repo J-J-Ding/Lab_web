@@ -23,7 +23,7 @@ def member_data(profile):
     if profile.education_visible:
         result['education']=[{f:getattr(e,f) for f in ('school','major','degree','start_date','end_date')} for e in r.education.all() if e.is_public]
     alumni=getattr(r,'alumni',None)
-    if profile.alumni_visible and alumni and alumni.is_public:
+    if r.public_member_status=="ALUMNI" and profile.alumni_visible and alumni and alumni.is_public:
         result['alumni']={f:getattr(alumni,f) for f in ('graduation_year','degree','destination_type','organization')}
     result['avatar']=asset_data(r.avatar_asset) if r.avatar_asset_id else None
     return result

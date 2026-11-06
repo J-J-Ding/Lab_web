@@ -1,4 +1,5 @@
 """Unified business profiles and private resumes; account security is never writable here."""
+from django.core.exceptions import ValidationError as ModelValidationError
 from django.db import transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
@@ -16,7 +17,28 @@ from .services import VersionConflict
 from .permissions import require_management
 
 
+class ExperienceInput(StrictSerializer):
+    organization=StrictString(max_length=300,allow_blank=True,default='')
+    role=StrictString(max_length=200,allow_blank=True,default='')
+    period=StrictString(max_length=100,allow_blank=True,default='')
+    description=StrictString(max_length=3000,allow_blank=True,default='')
+
+
+class CVPrivateInput(StrictSerializer):
+    skills=StrictString(max_length=3000,allow_blank=True,required=False)
+    political_status=StrictString(max_length=100,allow_blank=True,required=False)
+    education_note=StrictString(max_length=3000,allow_blank=True,required=False)
+    internships=ExperienceInput(many=True,max_length=30,required=False)
+    practice=ExperienceInput(many=True,max_length=30,required=False)
+    responsibilities=serializers.DictField(child=StrictString(max_length=3000,allow_blank=True),required=False)
+
+    def validate_responsibilities(self,value):
+        if len(value)>100:raise ValidationError('At most 100 achievement responsibilities.')
+        return value
+
+
 class ProfileInput(DraftInput):
+    cv_private=CVPrivateInput(required=False)
     public_member_status=serializers.ChoiceField(choices=['ACTIVE','ALUMNI','LEFT'],required=False)
     public_visible=StrictBoolean(required=False)
     contact_visible=StrictBoolean(required=False)
@@ -40,7 +62,7 @@ def profile_data(profile,actor,revision=None):
     data.update(id=str(profile.pk),user_id=profile.user_id,**{key:getattr(profile,key) for key in ('public_visible','contact_visible','education_visible','alumni_visible')})
     if profile.user_id==actor.pk or actor.is_superuser:
         private=getattr(profile,'private_data',None)
-        data.update(phone=private.phone if private else '',internal_contact=private.internal_contact if private else '')
+        data.update(phone=private.phone if private else '',internal_contact=private.internal_contact if private else '',cv_private=private.cv_data if private else {})
     return data
 
 
@@ -67,7 +89,7 @@ def save_profile(request,data,pk=None,source_id=None):
     private_allowed=actor.pk==owner.pk or actor.is_superuser
     privacy=('public_visible','contact_visible','education_visible','alumni_visible')
     if not private_allowed:
-        if set(data)&{'phone','internal_contact'}:raise PermissionDenied()
+        if set(data)&{'phone','internal_contact','cv_private'}:raise PermissionDenied()
         if any(data.get(key,False) and not getattr(profile,key) for key in privacy):raise PermissionDenied('Only the owner or Root may expand visibility.')
         if 'public_contact_email' in data and data['public_contact_email'] != (profile.published_revision.public_contact_email if profile.published_revision else ''):raise PermissionDenied()
         if data.get('public_contact_enabled') and not (profile.published_revision and profile.published_revision.public_contact_enabled):raise PermissionDenied()
@@ -124,10 +146,19 @@ def save_profile(request,data,pk=None,source_id=None):
     if alumni:
         if not private_allowed and alumni.get('is_public') and not (source and getattr(source,'alumni',None) and source.alumni.is_public):raise PermissionDenied()
         AlumniDestination.objects.create(revision=revision,**alumni)
-    if private_allowed and set(data)&{'phone','internal_contact'}:
+    if private_allowed and set(data)&{'phone','internal_contact','cv_private'}:
         private,_=MemberPrivateData.objects.get_or_create(profile=profile)
         for key in ('phone','internal_contact'):
             if key in data:setattr(private,key,data[key])
+        if 'cv_private' in data:
+            incoming=data['cv_private']
+            if incoming.get('responsibilities'):
+                from apps.content.models import ContentItem
+                ids=incoming['responsibilities']
+                try:count=ContentItem.objects.filter(pk__in=ids,deleted_at__isnull=True,published_revision__contributions__contributor__member_profile=profile).distinct().count()
+                except (ValueError,ModelValidationError):raise ValidationError({'cv_private':'Invalid achievement ID.'})
+                if count!=len(ids):raise ValidationError({'cv_private':'Responsibilities may only describe your current contributions.'})
+            private.cv_data={**private.cv_data,**incoming}
         private.save()
     revision.state='PUBLISHED';revision.save(update_fields=['state'])
     profile.published_revision=revision;profile.lock_version+=1;profile.privacy_version+=1;profile.updated_by=actor
@@ -145,7 +176,7 @@ def resume_data(resume):
 @transaction.atomic
 def save_resume(request,data,pk=None,owner=None):
     actor,_=locked_users(request)
-    if owner and not actor.is_superuser:raise PermissionDenied()
+    if owner:raise PermissionDenied('Use the owner’s authenticated profile to upload resumes.')
     resume=get_object_or_404(Resume.objects.select_for_update(),pk=pk) if pk else Resume(owner=owner or actor)
     if resume.owner_id!=actor.pk and not actor.is_superuser:raise NotFound()
     if pk and data.get('lock_version')!=resume.lock_version:raise VersionConflict()

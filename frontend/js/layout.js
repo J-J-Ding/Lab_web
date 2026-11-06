@@ -7,7 +7,7 @@
   }
   const main=document.querySelector('main');
   const groups=[
-   [['/data/projects/index.html','科研项目'],['/data/papers/index.html','发表论文'],['/data/publications/index.html','出版成果']],
+   [['/data/projects/index.html','科研项目'],['/data/papers/index.html','发表论文'],['/data/patents/index.html','专利成果'],['/data/publications/index.html','出版成果']],
    [['/data/competitions/index.html','学科竞赛'],['/data/competitions/index.html?category=HONOR','荣誉奖励']],
    [['/data/news/index.html','团队新闻'],['/data/activities/index.html','团队活动']],
    [['/resources.html','学习资料与下载'],['/data/blogs/index.html','技术文章']]

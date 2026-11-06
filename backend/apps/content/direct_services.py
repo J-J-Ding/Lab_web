@@ -26,9 +26,12 @@ def editable(user, item):
     return team(user) and (is_manager(user) or item.created_by_id == user.pk or ContentEditGrant.objects.filter(item=item,user=user,can_edit=True,revoked_at__isnull=True).exists())
 
 
-def readable(user):
+def readable(user, deleted=False):
     if not team(user):return ContentItem.objects.none()
-    qs=ContentItem.objects.all()
+    qs=ContentItem.objects.filter(deleted_at__isnull=not deleted)
+    if deleted and not is_manager(user):
+        grants=ContentEditGrant.objects.filter(user=user,can_edit=True,revoked_at__isnull=True).values("item_id")
+        return qs.filter(Q(created_by=user)|Q(pk__in=grants))
     if is_manager(user):return qs
     grants=ContentEditGrant.objects.filter(user=user,revoked_at__isnull=True).values('item_id')
     return qs.filter(Q(published_revision__isnull=False)|Q(created_by=user)|Q(pk__in=grants))
@@ -54,9 +57,10 @@ def asset_check(actor, ids, previous=()):
 @transaction.atomic
 def save(request, data, pk=None, source_id=None):
     actor,_=locked_users(request);actor=locked_editor(actor)
-    item=get_object_or_404(readable(actor).select_for_update(),pk=pk) if pk else None
+    item=get_object_or_404(ContentItem.objects.select_for_update(),pk=pk) if pk else None
     if item and not editable(actor,item):raise PermissionDenied()
     if item and item.lock_version!=data.get('lock_version'):raise VersionConflict()
+    if item and item.deleted_at:raise VersionConflict("Restore deleted content before editing.")
     if item and item.archived_at:raise VersionConflict('Unarchive before editing.')
     source=None
     if item:
@@ -126,13 +130,33 @@ def save(request, data, pk=None, source_id=None):
     # New records without an explicit selection use their first image; explicit null clears it.
     if not source and 'cover_asset' not in data:cover=next((aid for aid in ids if assets[aid].mime_type.startswith('image/')),None)
     for position,aid in enumerate(ids,1):
-        asset=assets[aid];asset.visibility='PUBLIC' if data.get('visibility_scope',item.visibility_scope)=='PUBLIC' else 'PRIVATE';asset.expires_at=None;asset.save(update_fields=['visibility','expires_at'])
+        asset=assets[aid]
+        from .public_selectors import published_items_base
+        other_public=published_items_base().exclude(pk=item.pk).filter(published_revision__assets__asset=asset).exists()
+        asset.visibility='PUBLIC' if data.get('visibility_scope',item.visibility_scope)=='PUBLIC' or other_public else 'PRIVATE'
+        asset.expires_at=None;asset.save(update_fields=['visibility','expires_at'])
         RevisionAsset.objects.create(revision=revision,asset=asset,purpose='cover' if aid==cover else 'gallery' if asset.mime_type.startswith('image/') else asset.purpose,position=position)
     projects=data.get('project_links',list(source.project_links.values_list('target_project_id',flat=True)) if source else [])
-    if len(projects)!=len(set(projects)) or ContentItem.objects.filter(pk__in=projects,kind='PROJECT').exclude(pk=item.pk).count()!=len(projects):raise ValidationError({'project_links':'Select existing projects.'})
+    if len(projects)!=len(set(projects)) or ContentItem.objects.filter(pk__in=projects,kind='PROJECT',deleted_at__isnull=True).exclude(pk=item.pk).count()!=len(projects):raise ValidationError({'project_links':'Select existing projects.'})
     for project in projects:ContentProjectLink.objects.create(source_revision=revision,target_project_id=project)
     revision.state='PUBLISHED';revision.save(update_fields=['state'])
     item.published_revision=revision;item.visibility_scope=data.get('visibility_scope',item.visibility_scope);item.visibility_gate=True;item.featured=data.get('featured',item.featured);item.last_edited_by=actor;item.lock_version+=1;item.save()
     RevisionEditEvent.objects.create(content_revision=revision,editor=actor,editor_snapshot=actor.pk)
     record(actor,item,'content.restore' if source_id else 'content.saved',tuple(data),revision)
+    return item
+
+
+@transaction.atomic
+def set_deleted(request,pk,version,deleted):
+    actor,_=locked_users(request);actor=locked_editor(actor)
+    item=get_object_or_404(ContentItem.objects.select_for_update(),pk=pk)
+    if not editable(actor,item):raise PermissionDenied()
+    if item.lock_version!=version:raise VersionConflict()
+    if bool(item.deleted_at)==deleted:raise VersionConflict('Content already deleted.' if deleted else 'Content already restored.')
+    item.deleted_at=timezone.now() if deleted else None
+    item.deleted_by=actor if deleted else None
+    item.visibility_gate=False
+    item.lock_version+=1;item.last_edited_by=actor
+    item.save(update_fields=['deleted_at','deleted_by','visibility_gate','lock_version','last_edited_by','updated_at'])
+    record(actor,item,'content.deleted' if deleted else 'content.undeleted',('deleted_at','visibility_gate'))
     return item

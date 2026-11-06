@@ -18,6 +18,8 @@ class ContentItem(models.Model):
     visibility_gate=models.BooleanField(default=True)
     public_sort_date=models.DateField(null=True,editable=False)
     archived_at=models.DateTimeField(null=True,blank=True)
+    deleted_at=models.DateTimeField(null=True,blank=True,db_index=True)
+    deleted_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.SET_NULL,related_name="+")
     lock_version=models.PositiveBigIntegerField(default=0)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)

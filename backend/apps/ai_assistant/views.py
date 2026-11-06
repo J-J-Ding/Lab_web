@@ -77,7 +77,7 @@ class MatchesView(BusinessAPIView):
                 if value:
                     try:normalized=normalize_identifier(scheme,value)
                     except Exception:continue
-                    for identifier in ContentIdentifier.objects.filter(scheme=scheme,value=normalized).filter(Q(item__in=visible_items(request.user))|Q(item__visibility_gate=True,item__published_revision__state='PUBLISHED')).select_related('item__working_revision','item__published_revision')[:10]:
+                    for identifier in ContentIdentifier.objects.filter(scheme=scheme,value=normalized).filter(Q(item__in=visible_items(request.user))|Q(item__visibility_gate=True,item__visibility_scope='PUBLIC',item__archived_at__isnull=True,item__deleted_at__isnull=True,item__published_revision__state='PUBLISHED')).select_related('item__working_revision','item__published_revision')[:10]:
                         item=identifier.item;private=visible_items(request.user).filter(pk=item.pk).exists()
                         revision=(item.working_revision or item.published_revision) if private else item.published_revision
                         duplicates.append({'id':str(item.pk),'title':revision.title if revision else '', 'public_only':not private})

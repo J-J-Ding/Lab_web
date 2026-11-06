@@ -4,8 +4,9 @@
  const C=window.LabContent,$=s=>document.querySelector(s),mode=document.body.dataset.v10Page;
  const N=(tag,text,attrs={})=>C.node(tag,text,attrs);
  let dirty=false,user,fieldSerial=0,fillProfileCandidate=null;
- const labels={PAPER:'发表论文',PROJECT:'科研项目',AWARD:'竞赛与荣誉',NEWS:'团队新闻',ACTIVITY:'团队活动',BLOG:'文章与资源',PUBLICATION:'出版成果',LAB_PAGE:'团队介绍'};
+ const labels={PATENT:'专利',PAPER:'发表论文',PROJECT:'科研项目',AWARD:'竞赛与荣誉',NEWS:'团队新闻',ACTIVITY:'团队活动',BLOG:'文章与资源',PUBLICATION:'出版成果',LAB_PAGE:'团队介绍'};
  const schemas={
+  PATENT:[["patent_number","专利号"],["application_date","申请日期","date"],["grant_date","授权日期","date"],["status","专利状态","select",[["APPLIED","申请中"],["GRANTED","已授权"],["EXPIRED","已失效"]]],["abstract","专利摘要","textarea"]],
   PAPER:[['venue','期刊/会议'],['publication_date','发表日期','date'],['doi','DOI'],['category','论文分类'],['volume','卷'],['issue','期'],['pages','页码'],['open_url','公开链接','url']],
   PROJECT:[['project_number','项目编号'],['funder','资助方'],['level','项目级别'],['start_date','开始日期','date'],['end_date','结束日期','date'],['status','项目状态','select',[['ACTIVE','进行中'],['COMPLETED','已结项'],['CANCELLED','已取消']]],['funding_amount','经费金额（内部资料）','number']],
   AWARD:[['event_name','赛事名称'],['category','成果分类','select',[['COMPETITION','学科竞赛'],['HONOR','荣誉奖励']]],['level','级别'],['award_name','奖项'],['award_date','获奖日期','date']],
@@ -13,7 +14,7 @@
   ACTIVITY:[['starts_at','开始时间','datetime-local'],['ends_at','结束时间','datetime-local'],['location','活动地点'],['body','活动正文','textarea']],
   BLOG:[['event_date','日期','date'],['category','分类','select',[['','技术文章'],['RESOURCE','学习资料与下载']]],['body','正文','textarea']],
   PUBLICATION:[['isbn','ISBN'],['publisher','出版社'],['publication_date','出版日期','date'],['edition','版次']],
-  LAB_PAGE:[['page_key','页面','select',[['about','团队简介'],['contact','联系我们']]],['body','正文','textarea']]
+  LAB_PAGE:[['contact_email','招聘联系邮箱（仅联系页面使用）','email'],['page_key','页面','select',[['about','团队简介'],['contact','联系我们']]],['body','正文','textarea']]
  };
  function field(parent,name,label,type='text',value='',required=false,options){
   const wrap=N('div'),id='v10-'+(++fieldSerial)+'-'+name.replace(/[^a-z0-9_-]/gi,'-'),l=N('label',label+' ',{for:id});
@@ -21,6 +22,7 @@
   const input=N(type==='textarea'?'textarea':type==='select'?'select':'input',undefined,{name,id});
   if(type!=='textarea'&&type!=='select')input.type=type;
   if(type==='select')for(const [v,text] of options||[]){const o=N('option',text,{value:v});input.append(o);}
+  if(type==='password'){input.minLength=6;input.maxLength=128;input.pattern='(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]{6,128}';input.title='6至128位英文字母与数字，且两者都包含';}
   if(type==='number'){input.min='0';input.step='any';}
   if(type!=='select'||value!==undefined&&value!==null&&value!=='')input.value=value??'';input.required=required;
   if(type==='text')input.maxLength=1000;
@@ -29,6 +31,13 @@
  function check(parent,name,label,value=false){const l=N('label',undefined,{class:'check'}),input=N('input',undefined,{type:'checkbox',name});input.checked=value;l.append(input,document.createTextNode(label));parent.append(l);return input;}
  function formValue(form,name){return form.elements.namedItem(name)?.value||'';}
  function link(text,href){const a=N('a',text,{href});return a;}
+ function displayValue(key,value){
+  if(key==='research_areas')return value.join('、');
+  if(key==='education')return value.map(e=>[e.start_date,e.end_date,e.school,e.major,e.degree].filter(Boolean).join(' · ')).join('；');
+  if(key==='alumni')return [value.graduation_year,value.degree,value.organization].filter(Boolean).join(' · ');
+  if(key==='cv_private')return [value.skills,value.political_status,value.education_note,...[...(value.internships||[]),...(value.practice||[])].map(e=>[e.period,e.organization,e.role,e.description].filter(Boolean).join(' · '))].filter(Boolean).join('；');
+  return String(value??'');
+ }
  function markSaved(text='已保存，修改立即生效。'){dirty=false;C.status(text);}
  function bind(form,action){form?.addEventListener('input',()=>dirty=true);C.bind(form,action);}
  async function upload(input,purpose,status){
@@ -53,7 +62,15 @@
    field(box,'public_contact_email','公开联系邮箱','email',data.public_contact_email);
    check(box,'public_contact_enabled','允许展示上述公开联系邮箱',data.public_contact_enabled);
    if('phone' in data)field(box,'phone','私人联系电话（不公开）','tel',data.phone);
-   if('internal_contact' in data)field(box,'internal_contact','私人联系信息（不公开）','text',data.internal_contact);
+   if('internal_contact' in data)field(box,'internal_contact','私人联系邮箱或其他联系方式（不公开）','text',data.internal_contact);
+   if('cv_private' in data){
+    const cv=data.cv_private||{};field(box,'cv_skills','技能简介（私有）','textarea',cv.skills);field(box,'cv_political_status','政治面貌（私有）','text',cv.political_status);field(box,'cv_education_note','院系 / 教育补充说明（私有）','textarea',cv.education_note);
+    for(const [key,label] of [['internships','实习经历'],['practice','实践经历']]){
+     const section=N('section',undefined,{id:'cv-'+key});section.append(N('h3',label+'（私有，选填）'));const rows=N('div');section.append(rows);
+     function add(entry={}){const row=N('fieldset');for(const [name,title] of [['organization','单位 / 组织'],['role','岗位 / 职务'],['period','起止时间'],['description','工作内容及成果']])field(row,name,title,name==='description'?'textarea':'text',entry[name]);row.append(C.button('移除此条',()=>{row.remove();dirty=true;}));rows.append(row);}
+     for(const entry of cv[key]||[])add(entry);section.append(C.button('添加'+label,()=>{add();dirty=true;}));box.append(section);
+    }
+   }
    const file=field(box,'avatar_file','头像','file');file.accept='.png,.jpg,.jpeg,.webp';
    const status=N('p',avatar?'已保存头像，可上传替换。':'未设置头像',{class:'v10-file-status',role:'status'});box.append(C.button('上传头像',async()=>{const a=await upload(file,'avatar',status);avatar=a.id;}),status);
    const privacy=$('#privacy-fields');privacy.replaceChildren();
@@ -61,8 +78,14 @@
    if(user.role==='CUSTOMER'&&!user.is_superuser&&!new URLSearchParams(location.search).has('member')){privacy.hidden=true;$('#privacy-note').textContent='Customer 资料和简历默认私有，不会在官网展示。Teacher / Student 身份由 Root 授予。';}
    else $('#privacy-note').textContent='只展示你选择公开的内容。Teacher 编辑其他成员时不能替其扩大公开范围。';
    $('#education-rows').replaceChildren();for(const row of data.education||[])educationRow(row);
-   renderAlumni(data.alumni);
+   renderAlumni(data.alumni);syncAlumni();
+   f.elements.public_member_status.onchange=syncAlumni;
 
+  }
+  function syncAlumni(){
+   const visible=formValue(f,'public_member_status')==='ALUMNI';$('#alumni-fields').hidden=!visible;const permission=f.elements.alumni_visible?.closest('label');if(permission)permission.hidden=!visible;
+   document.querySelectorAll('a[href="#alumni-fields"]').forEach(a=>a.hidden=!visible);
+   $('#alumni-fields').querySelectorAll('input,select,textarea').forEach(el=>el.disabled=!visible);
   }
   function educationRow(row={}){
    const wrap=N('fieldset');wrap.append(N('legend','教育经历'));
@@ -82,7 +105,8 @@
   bind(f,async()=>{
    const payload={lock_version:data.lock_version,avatar_asset:avatar,education:[],research_areas:formValue(f,'research_areas').split(/[,，]/).map(v=>v.trim()).filter(Boolean)};
    for(const key of ['display_name','bio','public_member_status','public_contact_email','phone','internal_contact'])if(f.elements[key])payload[key]=formValue(f,key);
-   const year=formValue(f,'graduation_year');payload.alumni=year?{graduation_year:Number(year),degree:formValue(f,'alumni_degree'),destination_type:formValue(f,'destination_type'),organization:formValue(f,'organization'),is_public:f.elements.alumni_is_public.checked}:null;
+   const year=formValue(f,'graduation_year');if(formValue(f,'public_member_status')==='ALUMNI')payload.alumni=year?{graduation_year:Number(year),degree:formValue(f,'alumni_degree'),destination_type:formValue(f,'destination_type'),organization:formValue(f,'organization'),is_public:f.elements.alumni_is_public.checked}:null;
+   if('cv_private' in data){payload.cv_private={skills:formValue(f,'cv_skills'),political_status:formValue(f,'cv_political_status'),education_note:formValue(f,'cv_education_note')};for(const key of ['internships','practice'])payload.cv_private[key]=[...document.querySelectorAll('#cv-'+key+' fieldset')].map(row=>Object.fromEntries([...row.querySelectorAll('input,textarea')].map(input=>[input.name,input.value])));}
    payload.public_contact_enabled=f.elements.public_contact_enabled.checked;
    for(const key of ['public_visible','contact_visible','education_visible','alumni_visible'])if(!$('#privacy-fields').hidden)payload[key]=f.elements[key].checked;
    for(const [index,row] of [...$('#education-rows').children].entries()){
@@ -93,17 +117,33 @@
    data=await C.request(endpoint,{method:'PATCH',data:payload});render();markSaved();$('#identity-summary').textContent=(data.display_name||'姓名待完善')+' · '+user.identity;
   });
   $('#profile-history').onclick=async()=>{try{const rows=await C.request(ownURL('history'));renderHistory($('#history-list'),rows.results,async row=>{data=await C.request(ownURL('restore'),{method:'POST',data:{lock_version:data.lock_version,source_revision:row.id}});avatar=data.avatar_asset;render();});}catch(e){C.showError(e);}};
-  const editingOther=new URLSearchParams(location.search).has('member');$('#security').hidden=editingOther;
+  const editingOther=new URLSearchParams(location.search).has('member');$('#security').hidden=editingOther;$('#resume-section').hidden=editingOther;if(!editingOther){await resume();if(['TEACHER','STUDENT'].includes(user.role)&&!user.is_superuser)await teamCV();}
   if(!editingOther){$('#account-email').value=user.email||'';bind($('#account-email-form'),async form=>{await C.request('/api/auth/me/',{method:'PATCH',data:{email:formValue(form,'email')}});markSaved('联系邮箱已保存。');});}
  }
+ async function teamCV(){
+  const section=N('section',undefined,{class:'work-card',id:'team-cv'});$('#resume-section').before(section);section.append(N('h2','生成个人简历Word'),N('p','根据已保存的个人资料与本人参与的当前成果生成；先保存资料再预览。内部成果需逐项选择并确认，文件可能包含内部信息。'));
+  const preview=N('div'),controls=N('div');section.append(C.button('预览 / 刷新简历内容',load),link('下载空白模板','/api/members/me/cv-template.docx'),preview,controls);
+  async function load(){const cv=await C.request('/api/members/me/cv-data/');preview.replaceChildren(N('h3',cv.profile.display_name||'姓名待填写'));controls.replaceChildren();
+   const profile=cv.profile;for(const key of ['bio','research_areas','education','cv_private'])if(profile[key])preview.append(N('p',({bio:'个人介绍',research_areas:'研究方向',education:'教育经历',cv_private:'私有简历资料'})[key]+'：'+displayValue(key,profile[key])));
+   if(cv.missing_fields.length)preview.append(N('p','待完善：'+cv.missing_fields.join('、')));
+   const list=N('div');const ordered=[...cv.achievements];
+   function render(){list.replaceChildren();for(const [index,item] of ordered.entries()){const row=N('div',undefined,{class:'member-chip'});const checked=item.selected??item.visibility_scope==='PUBLIC';const input=check(row,'cv-item',item.title+' · 第'+item.position+'署名 · '+item.role+(item.visibility_scope==='TEAM'?' · 内部内容':''),checked);input.value=item.id;input.onchange=()=>item.selected=input.checked;
+    for(const [label,delta] of [['上移',-1],['下移',1]]){const b=C.button(label,()=>{[ordered[index],ordered[index+delta]]=[ordered[index+delta],ordered[index]];render();});b.disabled=index+delta<0||index+delta>=ordered.length;row.append(b);}const duty=field(row,'cv-duty-'+item.id,'本人职责（私有、选填）','textarea',item.duty??profile.cv_private?.responsibilities?.[item.id]??'');duty.oninput=()=>item.duty=duty.value;list.append(row);}}
+   render();preview.append(list);
+   controls.append(C.button('保存本人参与职责',async()=>{if(dirty&&!confirm('此操作将重新载入页面，请先保存表单中其他改动；仍要继续吗？'))return;const responsibilities=Object.fromEntries(ordered.map(item=>[item.id,item.duty??profile.cv_private?.responsibilities?.[item.id]??'']));await C.request('/api/members/me/profile/',{method:'PATCH',data:{lock_version:profile.lock_version,cv_private:{responsibilities}}});dirty=false;location.reload();}));const sections=N('fieldset');sections.append(N('legend','显示章节'));for(const label of ['教育经历','实习经历','项目经历','论文','专利','学科竞赛','实践经历','荣誉奖项'])check(sections,'cv-section',label,true).value=label;controls.append(sections);const team=check(controls,'include_team','我确认选入的内部成果可以用于本次简历',false);
+   controls.append(C.button('一键生成Word',async()=>{
+    const ids=[...list.querySelectorAll('input:checked')].map(i=>i.value);await LabAuth.ensureCsrf();const response=await fetch('/api/members/me/cv.docx',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRFToken':LabAuth.csrfToken()},body:JSON.stringify({item_ids:ids,sections:[...sections.querySelectorAll('input:checked')].map(i=>i.value),include_team:team.checked,template_version:cv.template_version})});if(!response.ok)throw {status:response.status,data:await response.json()};const url=URL.createObjectURL(await response.blob()),a=link('下载',url);a.download='个人简历.docx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);C.status('Word已生成，请核对下载文件。');
+   }));
+  }
+ }
  async function workspace(){
-  if(!user.capabilities.can_edit_content){C.status('Customer 可在个人资料和简历页填写信息，团队内容由 Teacher / Student 编辑。');$('#business-content').hidden=true;return;}
-  const form=$('#workspace-filter');form.classList.add('list-toolbar');const reset=N('button','重置',{type:'reset'});form.append(reset);const initial=new URLSearchParams(location.search);form.elements.mine.checked=initial.get('mine')==='1';form.elements.kind.value=initial.get('kind')||'';form.elements.q.value=initial.get('q')||'';let page=Math.max(1,Number(initial.get('page'))||1);let loadTicket=0;
+  if(!user.capabilities.can_edit_content){C.status('Customer 可在个人资料中填写信息，团队内容由 Teacher / Student 编辑。');$('#business-content').hidden=true;return;}
+  const form=$('#workspace-filter');field(form,'scope','内容目录','select','normal',false,[['normal','正常内容'],['deleted','已删除']]);form.classList.add('list-toolbar');const reset=N('button','重置',{type:'reset'});form.append(reset);const initial=new URLSearchParams(location.search);form.elements.mine.checked=initial.get('mine')==='1';form.elements.kind.value=initial.get('kind')||'';form.elements.q.value=initial.get('q')||'';form.elements.scope.value=initial.get('scope')||'normal';let page=Math.max(1,Number(initial.get('page'))||1);let loadTicket=0;
   async function load(){
-   const ticket=++loadTicket;const query=new URLSearchParams({page});for(const key of ['kind','q'])if(formValue(form,key))query.set(key,formValue(form,key));if(form.elements.mine.checked)query.set('mine','1');
+   const ticket=++loadTicket;const query=new URLSearchParams({page});for(const key of ['kind','q','scope'])if(formValue(form,key))query.set(key,formValue(form,key));if(form.elements.mine.checked)query.set('mine','1');
    history.replaceState({},'',location.pathname+'?'+query);const data=await C.request('/api/content/items/?'+query);if(ticket!==loadTicket)return;const box=$('#workspace-list');box.replaceChildren();
-   for(const row of data.results){const article=N('article'),r=row.revision;if(row.cover_asset){const img=N('img',undefined,{src:'/api/assets/'+row.cover_asset+'/download/',alt:'内容封面',class:'record-thumbnail',loading:'lazy'});article.append(img);}article.append(N('h3',r?.title||'历史工作稿'));if(r?.summary)article.append(N('p',r.summary));article.append(N('p',labels[row.kind]+' · '+(row.visibility_scope==='TEAM'?'团队可见':'公开网站')+(row.visible?'':' · 已撤下')));if(row.can_edit)article.append(link('编辑内容 →','/content-editor.html?id='+encodeURIComponent(row.id)));else if(row.visibility_scope==='PUBLIC'&&row.visible)article.append(link('查看公开详情 →','/content.html?id='+encodeURIComponent(row.id)));else article.append(C.button('查看团队内容',()=>{const details=N('div');if(r?.summary)details.append(N('p',r.summary));for(const [key,value] of Object.entries(r?.detail||{}))if(value!==null&&value!==''&&value!==undefined)details.append(N('p',(schemas[row.kind]?.find(f=>f[0]===key)?.[1]||key)+'：'+value));article.append(details);}));box.append(article);}
-   if(!data.count)box.append(N('p','暂无符合条件的内容。','empty-note'));
+   for(const row of data.results){const article=N('article'),r=row.revision;if(row.cover_asset){const img=N('img',undefined,{src:'/api/assets/'+row.cover_asset+'/download/',alt:'内容封面',class:'record-thumbnail',loading:'lazy'});article.append(img);}article.append(N('h3',r?.title||'历史工作稿'));if(r?.summary)article.append(N('p',r.summary));article.append(N('p',labels[row.kind]+' · '+(row.visibility_scope==='TEAM'?'团队可见':'公开网站')+(row.visible?'':' · 已撤下')));if(row.can_edit&&!row.deleted)article.append(link('编辑内容 →','/content-editor.html?id='+encodeURIComponent(row.id)));else if(row.visibility_scope==='PUBLIC'&&row.visible)article.append(link('查看公开详情 →','/content.html?id='+encodeURIComponent(row.id)));else article.append(C.button('查看团队内容',()=>{const details=N('div');if(r?.summary)details.append(N('p',r.summary));for(const [key,value] of Object.entries(r?.detail||{}))if(value!==null&&value!==''&&value!==undefined)details.append(N('p',(schemas[row.kind]?.find(f=>f[0]===key)?.[1]||key)+'：'+value));article.append(details);}));if(row.can_edit){if(row.deleted)article.append(C.button('恢复内容',async()=>{await C.request('/api/content/items/'+row.id+'/undelete/',{method:'POST',data:{lock_version:row.lock_version}});await load();C.status('已恢复至正常目录，默认不公开；请核对后编辑保存。');}));else article.append(C.button('移入已删除',async()=>{if(!confirm('将此内容移入已删除目录？公开页面和附件引用将撤下，历史记录保留。'))return;await C.request('/api/content/items/'+row.id+'/delete/',{method:'POST',data:{lock_version:row.lock_version}});await load();}));}box.append(article);}
+   if(!data.count)box.append(N('p','暂无符合条件的内容。',{class:'empty-note'}));
    $('#workspace-pages').replaceChildren();for(const [text,exists,delta] of [['上一页',data.previous,-1],['下一页',data.next,1]]){const b=C.button(text,async()=>{page+=delta;await load();});b.disabled=!exists;$('#workspace-pages').append(b);}
    C.status('共 '+data.count+' 条内容');
   }
@@ -112,12 +152,15 @@
  async function editor(){
   if(!user.capabilities.can_edit_content){$('#business-content').hidden=true;C.status('仅 Teacher / Student 可以编辑团队内容。',true);return;}
   const params=new URLSearchParams(location.search),id=params.get('id'),form=$('#direct-content-form');let item=id?await C.request('/api/content/items/'+encodeURIComponent(id)+'/'):null,authors=[],ordered=false,attachments=[],directory=[],cover=null;
-  if(item&&!item.can_edit){$('#business-content').hidden=true;C.status('你可以查看该内容，但没有编辑授权。',true);return;}
+  if(item&&(item.deleted||!item.can_edit)){$('#business-content').hidden=true;C.status('你可以查看该内容，但没有编辑授权。',true);return;}
   const source=item?.revision;
   if(item){form.elements.kind.value=item.kind;form.elements.kind.disabled=true;form.elements.title.value=source?.title||'';form.elements.summary.value=source?.summary||'';form.elements.visibility_scope.value=item.visibility_scope;form.elements.featured.checked=item.featured;authors=[...item.authors];attachments=(source?.assets||[]).map(id=>source.asset_details?.find(a=>a.id===id)||({id,name:'已保存附件'}));cover=item.cover_asset||null;$('#content-history').hidden=false;}
   else if(params.get('kind')&&schemas[params.get('kind')])form.elements.kind.value=params.get('kind');
   function details(values={}){const box=$('#detail-fields');box.replaceChildren();for(const [key,label,type='text',options] of schemas[form.elements.kind.value]){let value=values[key];if(type==='datetime-local'&&value){const d=new Date(value);value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}field(box,'detail_'+key,label,type,value,false,options);}$('#author-fieldset').hidden=form.elements.kind.value==='LAB_PAGE';}
-  details(source?.detail);form.elements.kind.onchange=()=>{details();authors=[];renderAuthors();dirty=true;};
+  details(source?.detail||{page_key:params.get('page_key')||'about'});
+  if(!item&&params.get('page_key')==='contact'){
+   const pages=await C.request('/api/content/items/?kind=LAB_PAGE&page_size=100');const existing=pages.results.find(p=>p.revision?.detail?.page_key==='contact');if(existing){location.replace('/content-editor.html?id='+existing.id);return;}form.elements.title.value='联系我们';
+  }form.elements.kind.onchange=()=>{details();authors=[];renderAuthors();dirty=true;};
   async function loadDirectory(q=''){const data=await C.request('/api/members/directory/?page_size=100&q='+encodeURIComponent(q));directory=data.results;const select=$('#author-choice');select.replaceChildren(N('option','选择团队成员',{value:''}));for(const p of directory){const o=N('option',(p.display_name||'姓名待完善')+' · '+p.identity,{value:String(p.user_id)});o.disabled=!p.selectable;select.append(o);}const grants=$('#grant-user');grants.replaceChildren(...[...select.options].map(o=>o.cloneNode(true)));}
   let timer;$('#member-search').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>loadDirectory($('#member-search').value).catch(C.showError),250);});await loadDirectory();
   function renderAuthors(){const box=$('#author-selected');box.replaceChildren();for(const [index,p] of authors.entries()){const row=N('div',undefined,{class:'member-chip'});row.append(N('strong',p.display_name));for(const [text,delta] of [['上移',-1],['下移',1]]){const b=C.button(text,()=>{const next=index+delta;[authors[index],authors[next]]=[authors[next],authors[index]];ordered=true;dirty=true;renderAuthors();});b.disabled=index+delta<0||index+delta>=authors.length;row.append(b);}row.append(C.button('移除',()=>{authors=authors.filter(a=>a.user_id!==p.user_id);dirty=true;renderAuthors();}));box.append(row);}}
@@ -144,14 +187,23 @@
   bind($('#grant-form'),async f=>{if(!item)throw {status:400,data:{detail:'先保存内容。'}};item=await C.request('/api/content/items/'+item.id+'/grants/',{method:'POST',data:{lock_version:item.lock_version,user_id:Number(formValue(f,'user_id')),revoke:f.elements.revoke.checked,can_edit:true}});markSaved('协作权限已更新。');});
  }
  async function resume(){
-  let current=null,asset=null;const form=$('#resume-form');
+  let current=null,asset=null;const form=$('#resume-form');const customer=user.role==='CUSTOMER'&&!user.is_superuser;
+  const submissions=N('div',undefined,{id:'resume-submissions',class:'v10-list'});form.after(submissions);if(customer)form.before(N('p','投递后，团队老师和Root可以查看本次简历和随投递提交的个人资料。请先保存资料并核对共享预览。',{id:'resume-submit-note'}));
+  async function loadSubmissions(){if(!customer)return;const rows=await C.request('/api/members/me/resume-submissions/');submissions.replaceChildren(N('h3','我的投递记录'));for(const row of rows.results){const article=N('article');article.append(N('p',row.title+' · '+(row.state==='SUBMITTED'?'已投递':'已撤回')));if(row.state==='SUBMITTED')article.append(C.button('撤回投递',async()=>{if(!confirm('撤回后老师将不能继续查看本次投递，是否继续？'))return;await C.request('/api/members/me/resume-submissions/'+row.id+'/withdraw/',{method:'POST',data:{}});await loadSubmissions();}));submissions.append(article);}}
   function reset(){current=null;asset=null;form.reset();$('#resume-file-status').textContent='未选择简历文件。';dirty=false;}
-  async function load(){const data=await C.request('/api/members/me/resumes/'),box=$('#resume-list');box.replaceChildren();for(const r of data.results){const article=N('article');article.append(N('h3',r.title));if(r.intention)article.append(N('p',r.intention));article.append(C.button('编辑简历',()=>{current=r;asset=r.asset;for(const key of ['title','intention','introduction'])form.elements[key].value=r[key]||'';$('#resume-file-status').textContent=r.asset?'已保存简历文件，可上传替换。':'未设置简历文件。';dirty=false;form.scrollIntoView({behavior:'smooth',block:'start'});}));if(r.download_url)article.append(link(' 下载简历文件',r.download_url));box.append(article);}if(!data.count)box.append(N('p','还没有简历，可以在下方新建。'));}
+  async function load(){const data=await C.request('/api/members/me/resumes/'),box=$('#resume-list');box.replaceChildren();for(const r of data.results){const article=N('article');article.append(N('h3',r.title));if(r.intention)article.append(N('p',r.intention));article.append(C.button('编辑简历',()=>{current=r;asset=r.asset;for(const key of ['title','intention','introduction'])form.elements[key].value=r[key]||'';$('#resume-file-status').textContent=r.asset?'已保存简历文件，可上传替换。':'未设置简历文件。';dirty=false;form.scrollIntoView({behavior:'smooth',block:'start'});}));if(r.download_url)article.append(link(' 下载简历文件',r.download_url));if(customer)article.append(C.button('预览并投递简历',async()=>{
+    const saved=await C.request('/api/members/me/profile/');const preview=N('section',undefined,{class:'work-card'});preview.append(N('h3','本次共享资料预览'));
+    for(const [key,label] of Object.entries({display_name:'姓名',bio:'个人介绍',phone:'私人联系电话',internal_contact:'私人联系信息',education:'教育经历',research_areas:'研究方向',cv_private:'私有简历资料'})){const value=saved[key];if(value&&(!Array.isArray(value)||value.length))preview.append(N('p',label+'：'+displayValue(key,value)));}
+    if(saved.public_member_status==='ALUMNI'&&saved.alumni)preview.append(N('p','毕业去向：'+displayValue('alumni',saved.alumni)));
+    preview.append(N('p','简历：'+r.title+'。确认后，团队老师和Root可查看以上已保存资料及本次文件。未保存输入不包含在此次投递中。'));
+    preview.append(C.button('确认共享并投递',async()=>{await C.request('/api/members/me/resume-submissions/',{method:'POST',data:{resume_id:r.id,consent:true}});preview.remove();markSaved('已投递，老师端可查看站内通知。');await loadSubmissions();}),C.button('取消',()=>preview.remove()));article.append(preview);
+   }));box.append(article);}if(!data.count)box.append(N('p','还没有简历，可以在下方新建。'));}
   $('#resume-new').onclick=reset;$('#upload-resume').onclick=async()=>{try{asset=(await upload($('#resume-file'),'resume',$('#resume-file-status'))).id;}catch(e){C.showError(e);}};
-  bind(form,async()=>{const payload={title:formValue(form,'title'),intention:formValue(form,'intention'),introduction:formValue(form,'introduction'),asset};if(current)payload.lock_version=current.lock_version;current=await C.request('/api/members/me/resumes/'+(current?current.id+'/':''),{method:current?'PATCH':'POST',data:payload});markSaved('简历已私密保存。');await load();});await load();
+  bind(form,async()=>{const payload={title:formValue(form,'title'),intention:formValue(form,'intention'),introduction:formValue(form,'introduction'),asset};if(current)payload.lock_version=current.lock_version;current=await C.request('/api/members/me/resumes/'+(current?current.id+'/':''),{method:current?'PATCH':'POST',data:payload});markSaved('简历已私密保存。');await load();});await load();await loadSubmissions();
  }
  async function management(){
   if(!user.capabilities.can_manage_team){$('#business-content').hidden=true;C.status('仅 Teacher / Root 可以管理团队业务资料。',true);return;}
+  $('#business-content').prepend(link('编辑联系信息','/content-editor.html?kind=LAB_PAGE&page_key=contact'));
   let directoryTicket=0;
   async function directory(q=''){
    const ticket=++directoryTicket;const data=await C.request('/api/members/directory/?page_size=100&q='+encodeURIComponent(q));if(ticket!==directoryTicket)return;$('#directory-list').replaceChildren();for(const p of data.results){const article=N('article');article.append(N('h3',p.display_name||'姓名待完善'),N('p',p.identity),link('编辑业务资料 →','/profile.html?member='+encodeURIComponent(p.profile_id)));$('#directory-list').append(article);}

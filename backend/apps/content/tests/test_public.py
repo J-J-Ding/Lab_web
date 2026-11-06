@@ -35,7 +35,7 @@ class PublicTests(TestCase):
         self.assertEqual(response.json()['count'],1)
         self.assertNotIn('funding_amount',str(response.json()))
         self.assertEqual(self.client.get('/api/public/content/',{'q':'PRIVATE'}).json()['count'],0)
-        self.assertEqual(self.client.get('/api/public/content/',{'q':'x'}).status_code,400)
+        self.assertEqual(self.client.get('/api/public/content/',{'q':'x'}).status_code,200)
         self.assertEqual(self.client.get('/api/public/content/',{'include_private':'true'}).status_code,400)
         self.assertEqual(self.client.get('/api/public/content/',{'year':'bad'}).status_code,400)
         self.assertEqual(self.client.post('/api/public/content/',{},format='json').status_code,405)
@@ -105,24 +105,26 @@ class PublicWorkflowIntegrationTests(AccountFixtures):
     def test_approved_paper_three_profiles_project_and_pending_isolation(self):
         author=login_as(self.teacher);reviewer=login_as(self.root)
         people=[self.member('linked-'+str(i)) for i in range(3)]
-        contributors=[Contributor.objects.create(member_profile=p,display_name='Approved author '+str(i)) for i,p in enumerate(people)]
+        contributors=[]
+        for index,p in enumerate(people):
+            user=User.objects.create(username='current-author-'+str(index),role='STUDENT')
+            p.user=user;p.save(update_fields=['user'])
+            contributors.append(Contributor.objects.create(member_profile=p,display_name='Approved author '+str(index)))
         def draft(kind,title,detail,links):
-            r=write(author,'post','/api/content/items/',{'kind':kind,'title':title,'detail':detail,'contributions':links});self.assertEqual(r.status_code,201,r.content);return r.json()
+            authors=[next(c.member_profile.user_id for c in contributors if str(c.pk)==link['contributor']) for link in links]
+            r=write(author,'post','/api/content/items/',{'kind':kind,'title':title,'detail':detail,'authors':authors,'authors_ordered':True});self.assertEqual(r.status_code,201,r.content);return r.json()
         def approve(item):
-            for link in item['working_revision']['contributions']:
-                r=write(reviewer,'post',f"/api/review/contributions/{link['id']}/confirm/",{'decision':'CONFIRMED','reason':'Explicit example evidence'});self.assertEqual(r.status_code,200,r.content)
-            item=author.get(f"/api/content/items/{item['id']}/").json()
-            r=write(author,'post',f"/api/content/revisions/{item['working_revision']['id']}/submit/",{'lock_version':item['lock_version']});self.assertEqual(r.status_code,200,r.content);item=r.json()
-            r=write(reviewer,'post',f"/api/review/revisions/{item['working_revision']['id']}/decision/",{'decision':'APPROVE','reason':'Independent review','lock_version':item['lock_version']});self.assertEqual(r.status_code,200,r.content);return r.json()
+            self.assertEqual(item['revision']['state'],'PUBLISHED')
+            return item
         project=approve(draft('PROJECT','Shared project',{'funder':'Example fund','start_date':'2026-01-01'},[{'contributor':str(contributors[0].pk),'position':1,'contribution_role':'LEAD'}]))
         paper=draft('PAPER','Shared publication',{'venue':'Example journal','publication_date':'2026-01-01'},[{'contributor':str(c.pk),'position':i,'contribution_role':'AUTHOR'} for i,c in enumerate(contributors,1)])
-        r=write(author,'patch',f"/api/content/revisions/{paper['working_revision']['id']}/",{'lock_version':paper['lock_version'],'project_links':[project['id']]});self.assertEqual(r.status_code,200,r.content)
+        r=write(author,'patch',f"/api/content/items/{paper['id']}/",{'lock_version':paper['lock_version'],'project_links':[project['id']]});self.assertEqual(r.status_code,200,r.content)
         paper=approve(r.json());anonymous=APIClient()
         for p in people:
             rows=anonymous.get(f'/api/public/members/{p.published_revision.slug}/achievements/',{'kind':'PAPER'}).json()['results'];self.assertEqual([x['id'] for x in rows],[paper['id']])
         self.assertEqual(anonymous.get(f"/api/public/projects/{project['id']}/outputs/").json()['results'][0]['id'],paper['id'])
-        r=write(author,'post',f"/api/content/items/{paper['id']}/revisions/",{'lock_version':paper['lock_version']});self.assertEqual(r.status_code,201);pending=r.json()
-        r=write(author,'patch',f"/api/content/revisions/{pending['working_revision']['id']}/",{'lock_version':pending['lock_version'],'title':'SECRET PENDING B'});self.assertEqual(r.status_code,200)
+        r=write(author,'post',f"/api/content/items/{paper['id']}/revisions/",{'lock_version':paper['lock_version']});self.assertEqual(r.status_code,410)
+        create_content(self.teacher,'PAPER','SECRET PENDING B',{})
         self.assertEqual(anonymous.get(f"/api/public/content/{paper['id']}/").json()['title'],'Shared publication')
         self.assertEqual(anonymous.get('/api/public/content/',{'q':'SECRET'}).json()['count'],0)
 

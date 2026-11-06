@@ -9,7 +9,7 @@ from apps.content.public_selectors import content_queryset,member_queryset,publi
 from apps.content.models import ContentItem
 
 VERSION='v8.1'
-DATES={'PAPER':'published_revision__paper__publication_date','PROJECT':'published_revision__project__start_date','AWARD':'published_revision__award__award_date','ACTIVITY':'published_revision__activity__starts_at','NEWS':'published_revision__news__event_date','BLOG':'published_revision__blog__event_date','PUBLICATION':'published_revision__publication__publication_date'}
+DATES={'PATENT':'published_revision__patent__application_date','PAPER':'published_revision__paper__publication_date','PROJECT':'published_revision__project__start_date','AWARD':'published_revision__award__award_date','ACTIVITY':'published_revision__activity__starts_at','NEWS':'published_revision__news__event_date','BLOG':'published_revision__blog__event_date','PUBLICATION':'published_revision__publication__publication_date'}
 def filters(request):
     p=request.query_params
     if set(p)-{'year_from','year_to','kind','category'}:raise ValidationError('Unsupported statistics filter.')
@@ -47,7 +47,14 @@ def annual(f):
         counts={r['year']:r['count'] for r in grouped}
         series=[{'year':year,'count':counts.get(year,0)} for year in range(f['year_from'],f['year_to']+1)]
         base=counts.get(f['year_to']-1,0);current=counts.get(f['year_to'],0)
-        data.append({'kind':kind,'total':sum(counts.values()),'unknown_date':counts.get(None,0),'series':series,'growth_rate':(current-base)/base if base else None})
+        entry={'kind':kind,'total':sum(counts.values()),'unknown_date':counts.get(None,0),'series':series,'growth_rate':(current-base)/base if base else None}
+        if kind=='AWARD':
+            entry['categories']=[]
+            for category in ('COMPETITION','HONOR'):
+                grouped_category=rows.filter(published_revision__award__category=category).annotate(year=ExtractYear(field)).values('year').annotate(count=Count('pk',distinct=True))
+                values={r['year']:r['count'] for r in grouped_category}
+                entry['categories'].append({'kind':category,'total':sum(values.values()),'unknown_date':values.get(None,0),'series':[{'year':year,'count':values.get(year,0)} for year in range(f['year_from'],f['year_to']+1)],'growth_rate':None})
+        data.append(entry)
     return data
 
 def overview(f):

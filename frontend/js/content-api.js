@@ -177,11 +177,16 @@
       await LabAuth.ensureCsrf();
       const result = await LabAuth.refreshUser(true);
       if (result.status !== 'authenticated') {
-        if (result.status === 'anonymous') location.replace(new URL('login.html',root));
+        if (result.status === 'anonymous') {if(location.pathname.endsWith('/ai-import.html'))status('请登录后使用AI辅助填写，可先阅读流程说明。',true);else location.replace(new URL('login.html',root));}
         else status('账号服务暂不可用，请刷新重试。',true);
         return null;
       }
       user = result.user;
+      document.querySelectorAll('.work-nav a').forEach(a=>{
+        const path=new URL(a.href).pathname;
+        if(path==='/resume.html')a.remove();
+        if(['/workspace.html','/statistics.html','/manage/statistics.html'].includes(path)&&!user.capabilities.can_edit_content)a.hidden=true;
+      });
       try { capabilities=await request("/api/content/capabilities/"); } catch(error) { if(error.status===404){status("协同功能尚未部署，请稍后重试。",true);return null;}throw error; }
       if (management && !manager(user)) {
         status('无管理权限。',true);
@@ -213,7 +218,7 @@
       generation += 1;
       $('#business-content')?.replaceChildren();
       if ($('#business-content')) $('#business-content').hidden = true;
-      if (result.status === 'anonymous') location.replace(new URL('login.html',root));
+      if (result.status === 'anonymous') {if(location.pathname.endsWith('/ai-import.html'))status('请登录后使用AI辅助填写，可先阅读流程说明。',true);else location.replace(new URL('login.html',root));}
       else if (result.status === 'authenticated') location.reload();
       else status('账号服务暂不可用，请刷新重试。',true);
     }

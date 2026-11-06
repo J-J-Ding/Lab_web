@@ -1,8 +1,8 @@
 (function(){
   'use strict';
   const C=window.LabContent,$=s=>document.querySelector(s);
-  const names={MEMBER:'个人资料 / 简历',PAPER:'论文',PROJECT:'项目',AWARD:'竞赛 / 文本证书',ACTIVITY:'活动',NEWS:'新闻',BLOG:'博客',PUBLICATION:'出版刊物',LAB_PAGE:'实验室介绍'};
-  const roles={PAPER:['AUTHOR'],PROJECT:['LEAD','PARTICIPANT'],AWARD:['WINNER','ADVISOR'],ACTIVITY:['ORGANIZER','PARTICIPANT'],NEWS:['AUTHOR'],BLOG:['AUTHOR'],PUBLICATION:['AUTHOR','EDITOR'],LAB_PAGE:[]};
+  const names={PATENT:'专利',MEMBER:'个人资料 / 简历',PAPER:'论文',PROJECT:'项目',AWARD:'竞赛 / 文本证书',ACTIVITY:'活动',NEWS:'新闻',BLOG:'博客',PUBLICATION:'出版刊物',LAB_PAGE:'实验室介绍'};
+  const roles={PATENT:['INVENTOR'],PAPER:['AUTHOR'],PROJECT:['LEAD','PARTICIPANT'],AWARD:['WINNER','ADVISOR'],ACTIVITY:['ORGANIZER','PARTICIPANT'],NEWS:['AUTHOR'],BLOG:['AUTHOR'],PUBLICATION:['AUTHOR','EDITOR'],LAB_PAGE:[]};
   let job=null,quota=null,timer=null,backoff=2000,version=0,matches=[],candidateDirty=false;
   function stop(){clearTimeout(timer);timer=null;}
   function localError(message){return {status:400,data:{detail:message}};}
@@ -106,8 +106,8 @@
   }
   document.addEventListener('DOMContentLoaded',async()=>{
     for(const form of [$('#ai-upload-form'),$('#ai-summary-form')])form.querySelectorAll('input,select,textarea,button').forEach(el=>el.disabled=true);
-    if(!await C.boot())return;
-    try{await loadQuota();await list();}catch(error){if(error.status===404)C.status('AI 后端尚未部署，请稍后重试。',true);else C.showError(error);}
+    if(!await C.boot()){$('#ai-quota').textContent='请登录后读取额度并使用AI辅助填写。';return;}
+    try{await loadQuota();await list();}catch(error){$('#ai-quota').textContent='额度或任务读取失败，AI操作保持禁用；可以返回手工填写。';if(error.status===404)C.status('AI 后端尚未部署，请稍后重试。',true);else C.showError(error);}
     C.bind($('#ai-upload-form'),async()=>{
       const file=$('#ai-file').files[0];if(!file)throw localError('请选择 PDF 或 DOCX。');
       const upload=new FormData();upload.append('purpose','ai_source');upload.append('file',file);
@@ -144,5 +144,5 @@
     $('#ai-delete').addEventListener('click',async()=>{try{stop();await C.request(`/api/ai/imports/${job.id}/`,{method:'DELETE'});version++;job=null;$('#ai-current').hidden=true;$('#ai-candidate-section').hidden=true;await list();C.status('候选已移除，业务草稿保留；原件按清理策略处理。');}catch(error){C.showError(error);}});
   });
   addEventListener('pagehide',()=>{version++;stop();job=null;});
-  document.addEventListener('lab-auth-state',()=>{if(!C.user){version++;stop();job=null;}});
+  document.addEventListener('lab-auth-state',event=>{if(event.detail.status!=='authenticated'){version++;stop();job=null;if($('#ai-quota'))$('#ai-quota').textContent='请重新登录后读取额度。';}});
 })();

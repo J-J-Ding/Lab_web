@@ -20,10 +20,13 @@ class PublicAnnual(PublicView):
         f=metrics.filters(request);return Response(metrics.envelope(f,metrics.annual(f)))
 class Me(BusinessAPIView):
     def get(self,request):
+        if not request.user.is_superuser and request.user.role=='CUSTOMER':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied()
         if request.query_params:raise ValidationError('No member_id or other private selectors accepted.')
         from apps.members.selectors import own_profile
         from apps.content.selectors import published_for_member
-        p=own_profile(request.user);items=ContentItem.objects.filter(created_by=request.user)
+        p=own_profile(request.user);items=ContentItem.objects.filter(created_by=request.user,deleted_at__isnull=True)
         return Response(metrics.envelope({}, {'own_items':items.count(),'own_drafts':items.filter(working_revision__state='DRAFT').count(),'own_submitted':items.filter(working_revision__state='SUBMITTED').count(),'own_published':items.filter(published_revision__isnull=False,visibility_gate=True,visibility_scope='PUBLIC',archived_at__isnull=True).count(),'participating_public':published_for_member(p).count()}))
 class AdminOverview(BusinessAPIView):
     permission_classes=[IsManager]

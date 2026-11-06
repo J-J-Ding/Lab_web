@@ -3,8 +3,8 @@ from django.contrib.auth.hashers import make_password
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-PASSWORD = 'Only-for-tests!7nK4zQ9'
-NEW_PASSWORD = 'Changed-for-tests!9wT5mP2'
+PASSWORD = 'OnlyForTests7nK4zQ9'
+NEW_PASSWORD = 'ChangedForTests9wT5mP2'
 
 
 def csrf_client():

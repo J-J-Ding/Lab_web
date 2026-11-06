@@ -138,7 +138,7 @@ def edit(request,revision_id,data):
         ids=set(data['project_links'])
         # Only publicly known projects or projects already privately visible to this actor.
         from .permissions import visible_items
-        allowed=ContentItem.objects.filter(kind='PROJECT').filter(Q(published_revision__state='PUBLISHED',visibility_gate=True)|Q(pk__in=visible_items(actor).values('pk')))
+        allowed=ContentItem.objects.filter(kind='PROJECT',deleted_at__isnull=True).filter(Q(published_revision__state='PUBLISHED',visibility_gate=True)|Q(pk__in=visible_items(actor).values('pk')))
         existing=set(revision.project_links.values_list('target_project_id',flat=True))
         new_ids=ids-existing
         if len(new_ids)!=allowed.filter(pk__in=new_ids).exclude(pk=item.pk).count():raise ValidationError({'project_links':'Project unavailable.'})
@@ -281,7 +281,7 @@ def confirm(request,contribution_id,data,proxy=False):
 @transaction.atomic
 def correction(request,item_id,reason):
     actor=actor_for(request)
-    item=get_object_or_404(ContentItem,pk=item_id,published_revision__state='PUBLISHED',visibility_gate=True)
+    item=get_object_or_404(ContentItem,pk=item_id,deleted_at__isnull=True,published_revision__state='PUBLISHED',visibility_gate=True)
     from .permissions import can_submit
     if not can_submit(actor) and not item.published_revision.contributions.filter(contributor__member_profile__user=actor).exists():raise PermissionDenied()
     if CorrectionRequest.objects.filter(requester=actor,created_at__gte=timezone.now()-timezone.timedelta(hours=1)).count()>=10:

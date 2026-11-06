@@ -61,6 +61,7 @@ class MemberPrivateData(models.Model):
     profile=models.OneToOneField(MemberProfile,on_delete=models.CASCADE,related_name='private_data')
     phone=models.CharField(max_length=40,blank=True)
     internal_contact=models.CharField(max_length=254,blank=True)
+    cv_data=models.JSONField(default=dict,blank=True)
     management_note=models.TextField(blank=True,max_length=5000)
 
 
@@ -138,3 +139,29 @@ class Resume(models.Model):
     lock_version=models.PositiveBigIntegerField(default=0)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
+
+
+class ResumeSubmission(models.Model):
+    id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    owner=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,related_name='resume_submissions')
+    resume=models.ForeignKey(Resume,on_delete=models.PROTECT,related_name='submissions')
+    asset=models.ForeignKey('assets.AssetFile',on_delete=models.PROTECT,related_name='resume_submissions')
+    resume_version=models.PositiveBigIntegerField()
+    profile_snapshot=models.JSONField(default=dict)
+    resume_snapshot=models.JSONField(default=dict)
+    state=models.CharField(max_length=12,default='SUBMITTED',choices=[('SUBMITTED','已投递'),('WITHDRAWN','已撤回')])
+    created_at=models.DateTimeField(auto_now_add=True)
+    withdrawn_at=models.DateTimeField(null=True,blank=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['owner','resume'],condition=Q(state='SUBMITTED'),name='one_active_resume_submission'),models.CheckConstraint(condition=Q(state__in=['SUBMITTED','WITHDRAWN']),name='resume_submission_state_valid')]
+
+
+class SubmissionNotification(models.Model):
+    id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    recipient=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='submission_notifications')
+    submission=models.ForeignKey(ResumeSubmission,on_delete=models.PROTECT,related_name='notifications')
+    created_at=models.DateTimeField(auto_now_add=True)
+    read_at=models.DateTimeField(null=True,blank=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=['recipient','submission'],name='submission_notice_recipient_unique')]
+        indexes=[models.Index(fields=['recipient','read_at'])]

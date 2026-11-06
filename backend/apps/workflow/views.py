@@ -298,7 +298,7 @@ class ProjectChoicesView(AccountAPIView):
         filters(request,{'q'})
         if not can_submit(request.user):return page(request,ContentItem.objects.none(),lambda x:{})
         visible=visible_items(request.user).values('pk')
-        qs=ContentItem.objects.filter(kind='PROJECT').filter(Q(pk__in=visible)|Q(published_revision__state='PUBLISHED',visibility_gate=True)).select_related('working_revision','published_revision')
+        qs=ContentItem.objects.filter(kind='PROJECT',deleted_at__isnull=True).filter(Q(pk__in=visible)|Q(published_revision__state='PUBLISHED',visibility_gate=True)).select_related('working_revision','published_revision')
         q=request.query_params.get('q','')
         if len(q)>100:raise ValidationError({'q':'Query too long.'})
         # Search only the title that this actor may see; unpublished project titles

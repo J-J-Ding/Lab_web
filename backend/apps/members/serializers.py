@@ -86,7 +86,7 @@ def public_member(profile):
         data['public_contact_email']=rev.public_contact_email
     if profile.education_visible:
         data['education']=list(rev.education.filter(is_public=True).values('school','major','degree','start_date','end_date'))
-    if profile.alumni_visible:
+    if rev.public_member_status=="ALUMNI" and profile.alumni_visible:
         data['alumni']=AlumniDestination.objects.filter(revision=rev,is_public=True).values('graduation_year','degree','destination_type','organization').first()
     # V4 does not expose avatar URLs or raw asset keys.
     return data

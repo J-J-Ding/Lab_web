@@ -75,8 +75,20 @@ class LabPageDetail(models.Model):
     revision=models.OneToOneField(ContentRevision,on_delete=models.CASCADE,primary_key=True,related_name='lab_page')
     page_key=models.CharField(max_length=8,choices=[('home','home'),('about','about'),('contact','contact')])
     body=models.TextField(blank=True,max_length=50000)
+    contact_email=models.EmailField(blank=True)
     class Meta:
         constraints=[models.CheckConstraint(condition=Q(page_key__in=['home','about','contact']),name='lab_page_key_valid')]
 
 
-DETAIL_MODELS={'PAPER':PaperDetail,'PROJECT':ProjectDetail,'AWARD':AwardDetail,'ACTIVITY':ActivityDetail,'NEWS':NewsDetail,'BLOG':BlogDetail,'PUBLICATION':PublicationDetail,'LAB_PAGE':LabPageDetail}
+class PatentDetail(models.Model):
+    revision=models.OneToOneField(ContentRevision,on_delete=models.CASCADE,primary_key=True,related_name='patent')
+    patent_number=models.CharField(max_length=100,blank=True)
+    application_date=models.DateField(null=True,blank=True)
+    grant_date=models.DateField(null=True,blank=True)
+    status=models.CharField(max_length=16,choices=[('APPLIED','申请中'),('GRANTED','已授权'),('EXPIRED','已失效')],default='APPLIED')
+    abstract=models.TextField(blank=True,max_length=10000)
+    class Meta:
+        constraints=[models.CheckConstraint(condition=Q(status__in=['APPLIED','GRANTED','EXPIRED']),name='patent_status_valid'),models.CheckConstraint(condition=Q(application_date__isnull=True)|Q(grant_date__isnull=True)|Q(grant_date__gte=F('application_date')),name='patent_date_order')]
+
+
+DETAIL_MODELS={'PATENT':PatentDetail,'PAPER' :PaperDetail,'PROJECT':ProjectDetail,'AWARD':AwardDetail,'ACTIVITY':ActivityDetail,'NEWS':NewsDetail,'BLOG':BlogDetail,'PUBLICATION':PublicationDetail,'LAB_PAGE':LabPageDetail}
