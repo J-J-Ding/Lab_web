@@ -36,6 +36,7 @@ class ContentRevision(models.Model):
     base_published_revision=models.ForeignKey('self',null=True,blank=True,on_delete=models.PROTECT)
     title=models.CharField(max_length=500)
     summary=models.TextField(blank=True,max_length=10000)
+    rich_body=models.JSONField(null=True,blank=True)
     edited_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,on_delete=models.SET_NULL)
     submitted_at=models.DateTimeField(null=True,blank=True)
     created_at=models.DateTimeField(auto_now_add=True)

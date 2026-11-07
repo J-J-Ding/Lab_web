@@ -40,7 +40,7 @@ def content_data(item):
         people.append({'name':name,'affiliation':c.approved_affiliation,'position':c.position,
             'role':c.contribution_role,'is_corresponding':c.is_corresponding,'member_slug':p.published_revision.slug if public else None})
     cover=cover_for_revision(r)
-    return {'cover':asset_data(cover) if cover else None,'id':str(item.pk),'kind':item.kind,'revision':str(r.pk),'title':r.title,'summary':r.summary,
+    return {'cover':asset_data(cover) if cover else None,'id':str(item.pk),'kind':item.kind,'revision':str(r.pk),'title':r.title,'summary':r.summary,'rich_body':r.rich_body,
         'date':item.public_date,'detail':data,'contributions':people,
         'projects':[{'id':str(l.target_project_id),'title':l.target_project.published_revision.title} for l in r.project_links.all()],
         'assets':[d for link in r.assets.all() if (d:=asset_data(link.asset))]}

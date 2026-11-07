@@ -90,7 +90,9 @@ def save(request, data, pk=None, source_id=None):
         # Legacy APPROVED is retained; the partial working constraint requires settling it.
         elif old.state=='APPROVED':old.state='WITHDRAWN';old.save(update_fields=['state'])
         item.working_revision=None
-    revision=ContentRevision.objects.create(item=item,number=(item.revisions.aggregate(n=Max('number'))['n'] or 0)+1,title=title,summary=data.get('summary',source.summary if source else ''),edited_by=actor,base_published_revision=item.published_revision)
+    from .rich_content import validate_document,image_ids
+    rich_body=validate_document(data.get('rich_body',source.rich_body if source else None))
+    revision=ContentRevision.objects.create(rich_body=rich_body,item=item,number=(item.revisions.aggregate(n=Max('number'))['n'] or 0)+1,title=title,summary=data.get('summary',source.summary if source else ''),edited_by=actor,base_published_revision=item.published_revision)
     mapping={'PAPER':('DOI','doi'),'PROJECT':('PROJECT','project_number'),'PUBLICATION':('ISBN','isbn'),'LAB_PAGE':('PAGE','page_key')}
     if kind in mapping:
         scheme,field=mapping[kind];value=detail.get(field)
@@ -128,7 +130,14 @@ def save(request, data, pk=None, source_id=None):
         for link in source.contributions.all():
             RevisionContribution.objects.create(revision=revision,**{f:getattr(link,f) for f in ('contributor_id','contribution_role','position','is_corresponding','approved_display_name','approved_affiliation')})
     previous=list(source.assets.values_list('asset_id',flat=True)) if source else []
-    ids=data.get('assets',previous);assets=asset_check(actor,ids,previous)
+    ids=list(data.get('assets',previous))
+    for aid in sorted(image_ids(rich_body)):
+        from uuid import UUID
+        if UUID(aid) not in ids:ids.append(UUID(aid))
+    if len(ids)>60:raise ValidationError({'assets':'正文图片与附件总数不能超过60。'})
+    assets=asset_check(actor,ids,previous)
+    if any(not assets[aid].mime_type.startswith('image/') for aid in assets if str(aid) in image_ids(rich_body)):
+        raise ValidationError({'rich_body':'正文只能插入图片资产。'})
     from .public_serializers import cover_for_revision
     previous_cover=cover_for_revision(source) if source else None
     cover=data.get('cover_asset',previous_cover.pk if previous_cover else None)
@@ -142,7 +151,7 @@ def save(request, data, pk=None, source_id=None):
         other_public=published_items_base().exclude(pk=item.pk).filter(published_revision__assets__asset=asset).exists()
         asset.visibility='PUBLIC' if data.get('visibility_scope',item.visibility_scope)=='PUBLIC' or other_public else 'PRIVATE'
         asset.expires_at=None;asset.save(update_fields=['visibility','expires_at'])
-        RevisionAsset.objects.create(revision=revision,asset=asset,purpose='cover' if aid==cover else 'gallery' if asset.mime_type.startswith('image/') else asset.purpose,position=position)
+        RevisionAsset.objects.create(revision=revision,asset=asset,purpose='cover' if aid==cover else 'body' if str(aid) in image_ids(rich_body) else 'gallery' if asset.mime_type.startswith('image/') else asset.purpose,position=position)
     projects=data.get('project_links',list(source.project_links.values_list('target_project_id',flat=True)) if source else [])
     if len(projects)!=len(set(projects)) or ContentItem.objects.filter(pk__in=projects,kind='PROJECT',deleted_at__isnull=True).exclude(pk=item.pk).count()!=len(projects):raise ValidationError({'project_links':'Select existing projects.'})
     for project in projects:ContentProjectLink.objects.create(source_revision=revision,target_project_id=project)

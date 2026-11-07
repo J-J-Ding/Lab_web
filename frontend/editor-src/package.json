@@ -1,0 +1,16 @@
+{
+  "name": "lab-rich-editor",
+  "private": true,
+  "scripts": {
+    "build": "esbuild editor.js --bundle --minify --format=iife --outfile=../vendor/lab-editor.js --legal-comments=eof"
+  },
+  "dependencies": {
+    "@tiptap/core": "3.33.0",
+    "@tiptap/starter-kit": "3.33.0",
+    "@tiptap/extension-table": "3.33.0",
+    "@tiptap/extension-text-align": "3.33.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

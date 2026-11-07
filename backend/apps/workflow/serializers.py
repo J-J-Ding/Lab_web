@@ -77,7 +77,7 @@ def revision_data(revision):
     detail=getattr(revision,DETAIL_MODELS[revision.item.kind]._meta.get_field('revision').remote_field.related_name)
     data={f.name:getattr(detail,f.name) for f in detail._meta.fields if f.name!='revision'}
     return {'id':str(revision.pk),'number':revision.number,'state':revision.state,'title':revision.title,
-            'summary':revision.summary,'base_published_revision':str(revision.base_published_revision_id) if revision.base_published_revision_id else None,
+            'summary':revision.summary,'rich_body':revision.rich_body,'base_published_revision':str(revision.base_published_revision_id) if revision.base_published_revision_id else None,
             'detail':data,'assets':[str(x.asset_id) for x in revision.assets.all()],'project_links':[str(x) for x in revision.project_links.values_list('target_project_id',flat=True)],
             'contributions':[{'id':str(c.pk),'contributor':str(c.contributor_id),'name':c.approved_display_name,'affiliation':c.approved_affiliation,'contribution_role':c.contribution_role,'position':c.position,'is_corresponding':c.is_corresponding,**confirmation_info(c)} for c in revision.contributions.all()]}
 

@@ -27,11 +27,12 @@ class SaveInput(StrictSerializer):
     title=StrictString(max_length=500,required=False)
     summary=StrictString(max_length=10000,allow_blank=True,required=False)
     detail=serializers.DictField(required=False)
+    rich_body=serializers.JSONField(required=False,allow_null=True)
     lock_version=StrictInteger(min_value=0,required=False)
     authors=serializers.ListField(child=StrictInteger(min_value=1),max_length=100,required=False)
     authors_ordered=StrictBoolean(default=False)
     cover_asset=serializers.UUIDField(allow_null=True,required=False)
-    assets=serializers.ListField(child=serializers.UUIDField(),max_length=30,required=False)
+    assets=serializers.ListField(child=serializers.UUIDField(),max_length=60,required=False)
     project_links=serializers.ListField(child=serializers.UUIDField(),max_length=30,required=False)
     visibility_scope=serializers.ChoiceField(choices=['PUBLIC','TEAM'],required=False)
     featured=StrictBoolean(required=False)
@@ -47,7 +48,7 @@ def item_data(item,actor):
     if rev is not None:
         from .public_serializers import cover_for_revision
         cover=cover_for_revision(r)
-        rev['asset_details']=[{'id':str(link.asset_id),'name':link.asset.original_filename,'mime_type':link.asset.mime_type,'download_url':f'/api/assets/{link.asset_id}/download/'} for link in r.assets.select_related('asset').order_by('position')]
+        rev['asset_details']=[{'id':str(link.asset_id),'name':link.asset.original_filename,'mime_type':link.asset.mime_type,'purpose':link.purpose,'download_url':f'/api/assets/{link.asset_id}/download/'} for link in r.assets.select_related('asset').order_by('position')]
     else:cover=None
     authors=[]
     if r:
@@ -183,7 +184,7 @@ class Capabilities(BusinessAPIView):
     def get(self,request):
         from apps.accounts.serializers import UserSerializer
         data=UserSerializer(request.user).data
-        return Response({**data['capabilities'],'can_submit':False,'can_review':False,'identity':data['identity']})
+        return Response({**data['capabilities'],'can_submit':False,'can_review':False,'rich_content':True,'identity':data['identity']})
 
 
 class Gone(BusinessAPIView):

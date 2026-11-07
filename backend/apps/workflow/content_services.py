@@ -158,7 +158,7 @@ def clone(request,item_id,data):
     source=get_object_or_404(ContentRevision,item=item,pk=source_id)
     if source.state not in ('PUBLISHED','REJECTED','WITHDRAWN'):raise VersionConflict('Select a historical revision.')
     number=(item.revisions.aggregate(n=Max('number'))['n'] or 0)+1
-    revision=ContentRevision.objects.create(item=item,number=number,title=source.title,summary=source.summary,edited_by=actor,base_published_revision=item.published_revision)
+    revision=ContentRevision.objects.create(item=item,number=number,title=source.title,summary=source.summary,rich_body=source.rich_body,edited_by=actor,base_published_revision=item.published_revision)
     original=DETAIL_MODELS[item.kind].objects.get(revision=source)
     DETAIL_MODELS[item.kind].objects.create(revision=revision,**{f.name:getattr(original,f.name) for f in original._meta.fields if f.name!='revision'})
     for link in source.contributions.all():

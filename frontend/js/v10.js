@@ -5,7 +5,7 @@
  const N=(tag,text,attrs={})=>C.node(tag,text,attrs);
  if(mode==='profile'){const redirectSecurity=()=>{if(location.hash==='#security')location.replace('/account-security.html');};addEventListener('hashchange',redirectSecurity);if(location.hash==='#security'){redirectSecurity();return;}}
  let updateProfileNav=()=>{};
- let dirty=false,profileDirty=false,user,fieldSerial=0,fillProfileCandidate=null;
+ let dirty=false,profileDirty=false,user,fieldSerial=0,fillProfileCandidate=null,richEditor=null;
  const labels={PATENT:'专利',PAPER:'发表论文',PROJECT:'科研项目',AWARD:'竞赛与荣誉',NEWS:'团队新闻',ACTIVITY:'团队活动',BLOG:'文章与资源',PUBLICATION:'出版成果',LAB_PAGE:'团队介绍'};
  const schemas={
   PATENT:[["patent_number","专利号"],["application_date","申请日期","date"],["grant_date","授权日期","date"],["status","专利状态","select",[["APPLIED","申请中"],["GRANTED","已授权"],["EXPIRED","已失效"]]],["abstract","专利摘要","textarea"]],
@@ -14,7 +14,7 @@
   AWARD:[['event_name','赛事名称'],['category','成果分类','select',[['COMPETITION','学科竞赛'],['HONOR','荣誉奖励']]],['level','级别'],['award_name','奖项'],['award_date','获奖日期','date']],
   NEWS:[['event_date','新闻日期','date'],['category','分类'],['body','新闻正文','textarea']],
   ACTIVITY:[['starts_at','开始时间','datetime-local'],['ends_at','结束时间','datetime-local'],['location','活动地点'],['body','活动正文','textarea']],
-  BLOG:[['event_date','日期','date'],['category','分类','select',[['','技术文章'],['RESOURCE','学习资料与下载']]],['body','正文','textarea']],
+  BLOG:[['event_date','日期','date'],['category','分类','select',[['','技术博客'],['RESOURCE','学习资料与下载']]],['body','正文','textarea']],
   PUBLICATION:[['isbn','ISBN'],['publisher','出版社'],['publication_date','出版日期','date'],['edition','版次']],
   LAB_PAGE:[['contact_email','招聘联系邮箱（仅联系页面使用）','email'],['page_key','页面','select',[['about','团队简介'],['contact','联系我们']]],['body','正文','textarea']]
  };
@@ -166,7 +166,7 @@
   async function load(){
    const ticket=++loadTicket;const query=new URLSearchParams({page});for(const key of ['kind','q','scope'])if(formValue(form,key))query.set(key,formValue(form,key));if(form.elements.mine.checked)query.set('mine','1');
    history.replaceState({},'',location.pathname+'?'+query);let data;try{data=await C.request('/api/content/items/?'+query);}catch(e){if(e.status===404&&page>1){page--;return load();}throw e;}if(ticket!==loadTicket)return;const box=$('#workspace-list');box.replaceChildren();
-   for(const row of data.results){const article=N('article'),r=row.revision;if(row.cover_asset){const img=N('img',undefined,{src:'/api/assets/'+row.cover_asset+'/download/',alt:'内容封面',class:'record-thumbnail',loading:'lazy'});article.append(img);}article.append(N('h3',r?.title||'历史工作稿'));if(r?.summary)article.append(N('p',r.summary));article.append(N('p',labels[row.kind]+' · '+(row.visibility_scope==='TEAM'?'团队可见':'公开网站')+(row.visible?'':' · 已撤下')));if(row.can_edit&&!row.deleted)article.append(link('编辑内容 →','/content-editor.html?id='+encodeURIComponent(row.id)));else if(row.visibility_scope==='PUBLIC'&&row.visible)article.append(link('查看公开详情 →','/content.html?id='+encodeURIComponent(row.id)));else article.append(C.button('查看团队内容',()=>{const details=N('div');if(r?.summary)details.append(N('p',r.summary));for(const [key,value] of Object.entries(r?.detail||{}))if(value!==null&&value!==''&&value!==undefined)details.append(N('p',(schemas[row.kind]?.find(f=>f[0]===key)?.[1]||key)+'：'+value));article.append(details);}));if(row.can_edit){if(row.deleted)article.append(C.button('恢复内容',async()=>{await C.request('/api/content/items/'+row.id+'/undelete/',{method:'POST',data:{lock_version:row.lock_version}});await load();C.status('已恢复至正常目录，默认不公开；请核对后编辑保存。');}));else article.append(C.button('移入已删除',async()=>{if(!confirm('将此内容移入已删除目录？公开页面和附件引用将撤下，历史记录保留。'))return;await C.request('/api/content/items/'+row.id+'/delete/',{method:'POST',data:{lock_version:row.lock_version}});await load();}));}box.append(article);}
+   for(const row of data.results){const article=N('article'),r=row.revision;if(row.cover_asset){const img=N('img',undefined,{src:'/api/assets/'+row.cover_asset+'/download/',alt:'内容封面',class:'record-thumbnail',loading:'lazy'});article.append(img);}article.append(N('h3',r?.title||'历史工作稿'));if(r?.summary)article.append(N('p',r.summary));article.append(N('p',labels[row.kind]+' · '+(row.visibility_scope==='TEAM'?'团队可见':'公开网站')+(row.visible?'':' · 已撤下')));if(row.can_edit&&!row.deleted)article.append(link('编辑内容 →','/content-editor.html?id='+encodeURIComponent(row.id)));else if(row.visibility_scope==='PUBLIC'&&row.visible)article.append(link('查看公开详情 →','/content.html?id='+encodeURIComponent(row.id)));else article.append(C.button('查看团队内容',()=>{const details=N('div');if(r?.summary)details.append(N('p',r.summary));for(const [key,value] of Object.entries(r?.detail||{}))if(value!==null&&value!==''&&value!==undefined&&!(key==='body'&&r?.rich_body))details.append(N('p',(schemas[row.kind]?.find(f=>f[0]===key)?.[1]||key)+'：'+value));if(r?.rich_body)LabRich.render(r.rich_body,r.asset_details||[],details);article.append(details);}));if(row.can_edit){if(row.deleted)article.append(C.button('恢复内容',async()=>{await C.request('/api/content/items/'+row.id+'/undelete/',{method:'POST',data:{lock_version:row.lock_version}});await load();C.status('已恢复至正常目录，默认不公开；请核对后编辑保存。');}));else article.append(C.button('移入已删除',async()=>{if(!confirm('将此内容移入已删除目录？公开页面和附件引用将撤下，历史记录保留。'))return;await C.request('/api/content/items/'+row.id+'/delete/',{method:'POST',data:{lock_version:row.lock_version}});await load();}));}box.append(article);}
    if(!data.count)box.append(N('p','暂无符合条件的内容。',{class:'empty-note'}));
    $('#workspace-pages').replaceChildren();for(const [text,exists,delta] of [['上一页',data.previous,-1],['下一页',data.next,1]]){const b=C.button(text,async()=>{page+=delta;await load();});b.disabled=!exists;$('#workspace-pages').append(b);}
    C.status('共 '+data.count+' 条内容');
@@ -183,9 +183,13 @@
   const params=new URLSearchParams(location.search),id=params.get('id'),form=$('#direct-content-form');let item=id?await C.request('/api/content/items/'+encodeURIComponent(id)+'/'):null,authors=[],ordered=false,attachments=[],directory=[],cover=null;
   if(item&&(item.deleted||!item.can_edit)){$('#business-content').hidden=true;C.status('你可以查看该内容，但没有编辑授权。',true);return;}
   const source=item?.revision;
-  if(item){form.elements.kind.value=item.kind;form.elements.kind.disabled=true;form.elements.title.value=source?.title||'';form.elements.summary.value=source?.summary||'';form.elements.visibility_scope.value=item.visibility_scope;form.elements.featured.checked=item.featured;authors=[...item.authors];attachments=(source?.assets||[]).map(id=>source.asset_details?.find(a=>a.id===id)||({id,name:'已保存附件'}));cover=item.cover_asset||null;$('#content-history').hidden=false;}
+  if(item){form.elements.kind.value=item.kind;form.elements.kind.disabled=true;form.elements.title.value=source?.title||'';form.elements.summary.value=source?.summary||'';form.elements.visibility_scope.value=item.visibility_scope;form.elements.featured.checked=item.featured;authors=[...item.authors];attachments=(source?.assets||[]).filter(id=>!LabRich.imageIDs(source?.rich_body).has(id)||id===item.cover_asset).map(id=>source.asset_details?.find(a=>a.id===id)||({id,name:'已保存附件'}));cover=item.cover_asset||null;$('#content-history').hidden=false;}
   else if(params.get('kind')&&schemas[params.get('kind')])form.elements.kind.value=params.get('kind');
-  function details(values={}){const box=$('#detail-fields');box.replaceChildren();for(const [key,label,type='text',options] of schemas[form.elements.kind.value]){let value=values[key];if(type==='datetime-local'&&value){const d=new Date(value);value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}field(box,'detail_'+key,label,type,value,false,options);}$('#author-fieldset').hidden=form.elements.kind.value==='LAB_PAGE';}
+  const richEnabled=!!C.capabilities.rich_content;
+  const richBox=N('div',undefined,{id:'rich-body-editor'});
+  $('#detail-fields').after(richBox);
+  if(richEnabled)richEditor=LabRich.mount(richBox,{document:source?.rich_body,text:source?.detail?.body||'',onChange:()=>{dirty=true;},upload:async(input,status)=>{const asset=await upload(input,'image',status);return asset;}});
+  function details(values={}){const box=$('#detail-fields');box.replaceChildren();for(const [key,label,type='text',options] of schemas[form.elements.kind.value]){if(key==='body'&&richEnabled)continue;let value=values[key];if(type==='datetime-local'&&value){const d=new Date(value);value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}field(box,'detail_'+key,label,type,value,false,options);}$('#author-fieldset').hidden=form.elements.kind.value==='LAB_PAGE';}
   details(source?.detail||{page_key:params.get('page_key')||'about'});
   if(!item&&params.get('page_key')==='contact'){
    const pages=await C.request('/api/content/items/?kind=LAB_PAGE&page_size=100');const existing=pages.results.find(p=>p.revision?.detail?.page_key==='contact');if(existing){location.replace('/content-editor.html?id='+existing.id);return;}form.elements.title.value='联系我们';
@@ -205,7 +209,10 @@
   const projects=await C.request('/api/content/items/?kind=PROJECT&page_size=100');for(const p of projects.results){if(p.id===id)continue;const option=N('option',p.revision?.title||'项目',{value:p.id});option.selected=(source?.project_links||[]).includes(p.id);$('#project-choice').append(option);}
   bind(form,async()=>{
    const detail={};for(const [key,,type='text'] of schemas[form.elements.kind.value]){const value=formValue(form,'detail_'+key);detail[key]=type==='date'||type==='datetime-local'||type==='number'?(value?(type==='datetime-local'?new Date(value).toISOString():type==='number'?value:value):null):value;}
+   if(richEditor?.busy)throw {status:400,data:{detail:'正文图片正在上传，请等待上传结束后保存。'}};
+   if(richEditor&&schemas[form.elements.kind.value].some(f=>f[0]==='body'))detail.body=richEditor.getText();
    const payload={title:formValue(form,'title'),summary:formValue(form,'summary'),detail,visibility_scope:formValue(form,'visibility_scope'),authors:authors.map(p=>p.user_id),authors_ordered:ordered,assets:attachments.map(a=>a.id),cover_asset:cover,project_links:[...$('#project-choice').selectedOptions].map(o=>o.value)};
+   if(richEditor)payload.rich_body=richEditor.getDocument();
    if(user.capabilities.can_manage_team)payload.featured=form.elements.featured.checked;
    if(item)payload.lock_version=item.lock_version;else payload.kind=form.elements.kind.value;
    item=await C.request(item?'/api/content/items/'+item.id+'/':'/api/content/items/',{method:item?'PATCH':'POST',data:payload});markSaved();
@@ -318,8 +325,8 @@
     if(mode==='profile'&&fillProfileCandidate)fillProfileCandidate(fields,selected);
     for(const key of selected){
      if(['authors','education','alumni'].includes(key))continue;
-     if(key.startsWith('detail.')){const name=key.slice(7);if(schemas[document.querySelector('[name=kind]')?.value]?.some(row=>row[0]===name)){const el=document.querySelector('[name=detail_'+name+']');if(el)el.value=fields.detail?.[name]??'';}continue;}
-     if(key==='detail'){for(const [name,value] of Object.entries(fields.detail||{})){const el=document.querySelector('[name="detail_'+name+'"]');if(el)el.value=value??'';}}
+     if(key.startsWith('detail.')){const name=key.slice(7);if(schemas[document.querySelector('[name=kind]')?.value]?.some(row=>row[0]===name)){const el=document.querySelector('[name=detail_'+name+']');if(name==='body'&&richEditor)richEditor.setText(fields.detail?.[name]??'');else if(el)el.value=fields.detail?.[name]??'';}continue;}
+     if(key==='detail'){for(const [name,value] of Object.entries(fields.detail||{})){const el=document.querySelector('[name="detail_'+name+'"]');if(name==='body'&&richEditor)richEditor.setText(value??'');else if(el)el.value=value??'';}}
      else {const el=document.querySelector('[name="'+key+'"]');if(el)el.value=Array.isArray(fields[key])?fields[key].join('，'):fields[key]??'';}
     }
     dirty=true;C.status('候选已填入表单，请核对、选择关联成员与公开范围后保存。');
