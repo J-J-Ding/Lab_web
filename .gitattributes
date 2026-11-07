@@ -1,3 +1,6 @@
 # Keep archived source snapshots byte-for-byte, including original trailing spaces.
 legacy_samples/originals/** whitespace=-blank-at-eol
 *.pdf binary
+
+# Bundled upstream markdown templates contain meaningful trailing spaces.
+frontend/vendor/lab-editor.js -whitespace
