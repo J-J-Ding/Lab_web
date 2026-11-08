@@ -136,3 +136,6 @@ CLAMAV_SOCKET = env('CLAMAV_SOCKET', default='')
 
 # Root-created accounts only; configured privately on the deployment host.
 INITIAL_ACCOUNT_PASSWORD = env('INITIAL_ACCOUNT_PASSWORD', default='')
+
+ACCOUNT_IMPORT_KEY = env('ACCOUNT_IMPORT_KEY', default='')
+ACCOUNT_IMPORT_ROOT = BASE_DIR / 'private_media' / 'account_imports'

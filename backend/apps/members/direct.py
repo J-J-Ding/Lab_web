@@ -59,6 +59,26 @@ class ProfileInput(DraftInput):
     internal_contact=StrictString(max_length=254,allow_blank=True,required=False)
 
 
+class RootCVPrivateInput(CVPrivateInput):
+    gender=serializers.ChoiceField(choices=['',*GENDERS],required=False)
+    political_status=StrictString(max_length=100,allow_blank=True,required=False)
+
+
+class RootAlumniInput(StrictSerializer):
+    graduation_year=StrictInteger(min_value=1900,max_value=2200,allow_null=True,required=False)
+    degree=StrictString(max_length=100,allow_blank=True,required=False)
+    destination_type=serializers.ChoiceField(choices=['WORK','STUDY','OTHER'],required=False)
+    organization=StrictString(max_length=200,allow_blank=True,required=False)
+    is_public=StrictBoolean(required=False)
+
+
+class RootProfileInput(ProfileInput):
+    public_contact_email=serializers.EmailField(max_length=254,allow_blank=True,required=False)
+    phone=StrictString(max_length=40,allow_blank=True,required=False)
+    cv_private=RootCVPrivateInput(required=False)
+    alumni=RootAlumniInput(allow_null=True,required=False)
+
+
 class ResumeInput(StrictSerializer):
     lock_version=StrictInteger(min_value=0,required=False)
     title=StrictString(max_length=200,required=False)
@@ -164,6 +184,9 @@ def save_profile(request,data,pk=None,source_id=None):
     if alumni and source_id:
         baseline=getattr(current,'alumni',None) if current else None
         alumni={**alumni,'is_public':bool(baseline and baseline.is_public and all(getattr(baseline,k)==alumni.get(k) for k in ('graduation_year','degree','destination_type','organization')))}
+    if alumni and actor.is_superuser:
+        baseline=getattr(source,'alumni',None) if source else None
+        alumni={**({f:getattr(baseline,f) for f in ('graduation_year','degree','destination_type','organization','is_public')} if baseline else {'graduation_year':None,'degree':'','destination_type':'OTHER','organization':'','is_public':False}),**alumni}
     if alumni:
         if not private_allowed and alumni.get('is_public') and not (source and getattr(source,'alumni',None) and source.alumni.is_public):raise PermissionDenied()
         AlumniDestination.objects.create(revision=revision,**alumni)

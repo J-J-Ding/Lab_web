@@ -97,7 +97,7 @@ class MemberResearchArea(models.Model):
 
 class AlumniDestination(models.Model):
     revision=models.OneToOneField(MemberRevision,on_delete=models.CASCADE,related_name='alumni')
-    graduation_year=models.PositiveIntegerField()
+    graduation_year=models.PositiveIntegerField(null=True,blank=True)
     degree=models.CharField(max_length=100,blank=True)
     destination_type=models.CharField(max_length=16,choices=[('WORK','WORK'),('STUDY','STUDY'),('OTHER','OTHER')])
     organization=models.CharField(max_length=200,blank=True)

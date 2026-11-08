@@ -25,12 +25,13 @@ services:
     restart: unless-stopped
 
   backend:
-    image: lab-web-backend:v17-20261108-01
+    image: lab-web-backend:v18-20261108-01
     command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "30", "--access-logfile", "-", "--access-logformat", "request_id=%({x-request-id}o)s method=%(m)s status=%(s)s duration=%(L)s", "--error-logfile", "-"]
     build:
       context: .
       dockerfile: deploy/docker/backend.Dockerfile
     environment: &backend_environment
+      ACCOUNT_IMPORT_KEY: ${ACCOUNT_IMPORT_KEY:-}
       INITIAL_ACCOUNT_PASSWORD: ${INITIAL_ACCOUNT_PASSWORD:-}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
@@ -93,7 +94,7 @@ services:
     restart: unless-stopped
 
   migrate:
-    image: lab-web-backend:v17-20261108-01
+    image: lab-web-backend:v18-20261108-01
     profiles: ["maintenance"]
     command: ["python", "manage.py", "migrate", "--noinput"]
     environment:
@@ -107,8 +108,34 @@ services:
       db:
         condition: service_healthy
 
+  account-import-worker:
+    image: lab-web-backend:v18-20261108-01
+    command: ["python", "manage.py", "run_account_imports"]
+    environment: *backend_environment
+    volumes:
+      - private_media:/app/private_media
+    networks: [backend]
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "python", "-c", "import time; assert time.time()-__import__('os').stat('/tmp/account-import-heartbeat').st_mtime < 600"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   worker:
-    image: lab-web-backend:v17-20261108-01
+    image: lab-web-backend:v18-20261108-01
     profiles: ["ai"]
     command: ["python", "manage.py", "run_ai_worker"]
     environment: *backend_environment

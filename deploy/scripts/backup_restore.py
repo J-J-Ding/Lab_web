@@ -17,7 +17,7 @@ def backup(destination):
  target.parent.mkdir(parents=True,exist_ok=True,mode=0o700);stage=Path(tempfile.mkdtemp(prefix='.lab-backup-',dir=target.parent));services=[]
  try:
   ps=output(BASE+['--profile','ai','ps','--services','--status','running']).splitlines()
-  services=[s for s in ('worker','backend') if s in ps]
+  services=[s for s in ('account-import-worker','worker','backend') if s in ps]
   if services:run(BASE+['--profile','ai','stop',*services])
   image=output(['sudo','-n','docker','inspect','lab-web-backend-1','--format','{{.Config.Image}}'])
   with (stage/'database.dump').open('wb') as f:run(BASE+['exec','-T','db','sh','-c','pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc'],stdout=f)

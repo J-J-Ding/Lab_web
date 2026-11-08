@@ -108,7 +108,7 @@ class Profile(BusinessAPIView):
             actor,profile=profiles.get_profile(request,pk)
             return Response(profiles.profile_data(profile,actor))
     def patch(self,request,pk=None):
-        profile=profiles.save_profile(request,validated(profiles.ProfileInput,request),pk)
+        profile=profiles.save_profile(request,validated(profiles.RootProfileInput if request.user.is_superuser else profiles.ProfileInput,request),pk)
         return Response(profiles.profile_data(profile,request.user))
 
 

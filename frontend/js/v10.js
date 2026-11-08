@@ -20,6 +20,7 @@
  };
  function field(parent,name,label,type='text',value='',required=false,options){
   const wrap=N('div'),id='v10-'+(++fieldSerial)+'-'+name.replace(/[^a-z0-9_-]/gi,'-'),l=N('label',label+' ',{for:id});
+  if(mode==='profile'&&user?.is_superuser)required=false;
   if(required)l.append(N('span','*',{class:'required'}));
   const input=N(type==='textarea'?'textarea':type==='select'?'select':'input',undefined,{name,id});
   if(type!=='textarea'&&type!=='select')input.type=type;
@@ -121,7 +122,7 @@
   bind(f,async()=>{
    const payload={lock_version:data.lock_version,avatar_asset:avatar,education:[],research_areas:formValue(f,'research_areas').split(/[,，]/).map(v=>v.trim()).filter(Boolean)};
    for(const key of ['display_name','bio','public_member_status','highest_education','public_contact_email','phone','internal_contact'])if(f.elements[key])payload[key]=formValue(f,key);
-   const year=formValue(f,'graduation_year');if(formValue(f,'public_member_status')==='ALUMNI')payload.alumni=year?{graduation_year:Number(year),degree:formValue(f,'alumni_degree'),destination_type:formValue(f,'destination_type'),organization:formValue(f,'organization'),is_public:false}:null;
+   const year=formValue(f,'graduation_year');if(formValue(f,'public_member_status')==='ALUMNI')payload.alumni=(year||user.is_superuser)?{graduation_year:year?Number(year):null,degree:formValue(f,'alumni_degree'),destination_type:formValue(f,'destination_type'),organization:formValue(f,'organization'),is_public:false}:null;
    if('cv_private' in data){payload.cv_private={skills:formValue(f,'cv_skills'),political_status:formValue(f,'cv_political_status'),gender:formValue(f,'cv_gender'),native_region:{province:formValue(f,'native_province'),city:formValue(f,'native_city'),district:formValue(f,'native_district'),country:formValue(f,'native_country'),note:formValue(f,'native_note')}};for(const key of ['internships','practice'])payload.cv_private[key]=[...document.querySelectorAll('#cv-'+key+' fieldset')].map(row=>Object.fromEntries([...row.querySelectorAll('input,textarea')].map(input=>[input.name,input.type==='date'?(input.value||null):input.value])));}
    payload.enrollment_year=formValue(f,'enrollment_year')?Number(formValue(f,'enrollment_year')):null;
    for(const [index,row] of [...$('#education-rows').children].entries()){

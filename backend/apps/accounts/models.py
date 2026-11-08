@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -44,3 +45,17 @@ class LoginThrottleBucket(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['scope', 'key_digest'], name='unique_login_throttle_bucket')]
+
+
+class AccountImportBatch(models.Model):
+    id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
+    owner=models.ForeignKey(User,on_delete=models.PROTECT,related_name='account_imports')
+    state=models.CharField(max_length=8,default='PREVIEW',choices=[(s,s) for s in ('PREVIEW','QUEUED','RUNNING','DONE','FAILED','EXPIRED')])
+    storage_key=models.CharField(max_length=80,blank=True)
+    rows=models.JSONField(default=list)
+    errors=models.JSONField(default=list)
+    created_ids=models.JSONField(default=list)
+    expires_at=models.DateTimeField()
+    started_at=models.DateTimeField(null=True)
+    finished_at=models.DateTimeField(null=True)
+    created_at=models.DateTimeField(auto_now_add=True)

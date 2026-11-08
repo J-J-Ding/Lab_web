@@ -12,3 +12,11 @@ typing_extensions==4.16.0
 # V5 bounded image/PDF validation (no remote file services).
 Pillow==13.0.0
 pypdf==6.21.4
+
+# V18 local bounded XLSX parsing and encrypted short-lived import payloads.
+openpyxl==3.1.5
+et-xmlfile==2.0.0
+defusedxml==0.7.1
+cryptography==50.0.2
+cffi==2.1.1
+pycparser==3.12

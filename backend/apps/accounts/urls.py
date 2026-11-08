@@ -1,8 +1,12 @@
 from django.urls import path
 
-from . import views
+from . import views,import_views
 
 urlpatterns = [
+    path('admin/account-imports/template/',import_views.Template.as_view()),
+    path('admin/account-imports/',import_views.Preview.as_view()),
+    path('admin/account-imports/<uuid:pk>/',import_views.Batch.as_view()),
+    path('admin/account-imports/<uuid:pk>/errors/',import_views.Errors.as_view()),
     path('auth/csrf/', views.CsrfView.as_view()),
     path('auth/register/', views.RegisterView.as_view()),
     path('auth/login/', views.LoginView.as_view()),
