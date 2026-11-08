@@ -33,6 +33,6 @@
   const start=()=>{box.classList.add('is-visible');const begin=performance.now();function frame(now){if(ticket!==animationTicket)return;const ratio=reduced?1:Math.min(1,(now-begin)/1100),eased=1-Math.pow(1-ratio,3);for(const n of numbers)n.textContent=String(Math.round(Number(n.dataset.target)*eased));if(ratio<1)requestAnimationFrame(frame);}requestAnimationFrame(frame);};
   if(reduced)start();else {box.classList.remove('is-visible');const observer=new IntersectionObserver(rows=>{if(rows.some(r=>r.isIntersecting)){observer.disconnect();if(ticket===animationTicket)start();}},{threshold:.15});observer.observe(box);}
  }
- document.addEventListener('site-access-changed',()=>{animationTicket++;window.mountTeamCarousel?.($('home-visual'),[]);load();});
+ document.addEventListener('site-access-changed',()=>{animationTicket++;window.mountTeamCarousel?.($('home-visual'),null);load();});
  $('home-retry').addEventListener('click',load);load();
 })();
