@@ -12,12 +12,12 @@
    research.append(tags);P.content.append(intro,research);if(about.status==='rejected'&&home.status==='rejected')throw Error('公开服务暂不可用，请重试。');P.ready();
   }else{let row;try{row=await P.get('/api/public/pages/'+key+'/');}catch(e){if(key!=='contact'||e.status!==404)throw e;row=null;}if(!current())return;
    if(key==='contact'){
-    const apply=document.getElementById('contact-apply');const auth=await window.LabAuth?.refreshUser();if(!current())return;
+    const apply=document.getElementById('contact-apply');apply.replaceChildren();const auth=await window.LabAuth?.refreshUser();if(!current())return;
     const user=auth?.user;if(user&&(user.is_superuser||['TEACHER','STUDENT','ADMIN'].includes(user.role)))apply.append(P.link('团队成员请在个人资料生成Word','/profile.html#team-cv'));else apply.append(P.link(user?'完善个人资料并投递简历':'注册 / 登录后投递简历',user?'/profile.html#resume-section':'/login.html?return_to='+encodeURIComponent('/profile.html#resume-section')));
     if(user&&(user.is_superuser||['TEACHER','ADMIN'].includes(user.role)))apply.append(P.link(' 编辑联系信息','/content-editor.html?kind=LAB_PAGE&page_key=contact'));
     if(!row){P.content.append(P.node('p','联系信息暂未填写。'));P.ready();return;}
-    if(row.detail.contact_email){const a=P.node('a',row.detail.contact_email);a.href='mailto:'+row.detail.contact_email;P.content.append(a);}
+    if(row.detail.contact_email){const label=P.node('p','团队联系邮箱','join-email-label'),a=P.node('a',row.detail.contact_email,'join-email');a.href='mailto:'+row.detail.contact_email;P.content.append(label,a);}
    }
-   P.content.append(P.node('h2',row.title));if(row.rich_body)LabRich.render(row.rich_body,row.assets,P.content);else if(row.detail.body)P.content.append(P.node('p',row.detail.body,'section-copy'));window.renderPublicAssets(row.assets.filter(a=>!LabRich.imageIDs(row.rich_body).has(a.id)),P.content);P.ready();}
+   if(key!=='contact')P.content.append(P.node('h2',row.title));if(row.rich_body)LabRich.render(row.rich_body,row.assets,P.content);else if(row.detail.body)P.content.append(P.node('p',row.detail.body,'section-copy'));window.renderPublicAssets(row.assets.filter(a=>!LabRich.imageIDs(row.rich_body).has(a.id)),P.content);P.ready();}
  });}document.getElementById('public-retry').onclick=load;load();
 })();
