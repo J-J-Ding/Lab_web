@@ -39,10 +39,10 @@ def validate_rows(rows):
     seen=set();errors=[];safe=[];default=settings.INITIAL_ACCOUNT_PASSWORD
     for row in rows:
         messages=list(row.pop('errors',[]));name=User.normalize_username(row['username'].strip());row['username']=name
-        row['role']={'teacher':'TEACHER','student':'STUDENT','custom':'CUSTOMER','customer':'CUSTOMER'}.get(row['role'].strip().lower(),'')
+        row['role']={'Teacher':'TEACHER','Student':'STUDENT','Customer':'CUSTOMER'}.get(row['role'].strip(),'')
         row['is_active']={'正常':True,'已注销':False}.get(row.pop('status').strip())
         row['name']=row['name'].strip();row['password']=row['password'] if row['password'].strip() else default
-        if not row['role']:messages.append('账号身份仅支持Teacher/student/custom。')
+        if not row['role']:messages.append('账号身份仅支持Teacher/Student/Customer，请注意大小写。')
         if row['is_active'] is None:messages.append('是否启用请选择正常或已注销。')
         if name in seen:messages.append('文件内用户名重复。')
         seen.add(name)

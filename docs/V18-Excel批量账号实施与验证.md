@@ -6,7 +6,7 @@
 
 Root登录 → 团队管理 → Excel批量创建账号（`/manage/account-import.html`）。下载模板后填写序号、用户名、初始密码、账号身份、是否启用、姓名；上传预览，全部校验通过后确认创建。每页显示5行，重新打开带batch参数的地址可查看结果。
 
-- xlsx，最多2 MiB、500个非空数据行。Teacher/student/custom（兼容customer，不分大小写），状态正常/已注销。
+- xlsx，最多2 MiB、500个非空数据行。Teacher/Student/Customer（区分大小写），状态正常/已注销。
 - 密码留空使用私有配置默认初始密码；非空按行使用并执行现有密码规则。姓名可空，非空创建账号后初始化成员姓名。不会改已有账号。
 - 预览无密码，错误可下载不含密码的CSV。重复用户名（包括已注销）、公式、外部链接、多数据表、错误表头、额外非空列、超限压缩内容均拒绝。无效行使整批不能确认。
 
@@ -46,3 +46,9 @@ Root登录 → 团队管理 → Excel批量创建账号（`/manage/account-impor
 - openpyxl读取参数与链接控制：https://openpyxl.readthedocs.io/en/3.1/api/openpyxl.reader.excel.html
 - openpyxl安全建议（defusedxml）：https://pypi.org/project/openpyxl/
 - Fernet有效期与认证加密：https://cryptography.io/en/latest/fernet/
+
+## 身份名称修正（2026-11-08）
+
+按用户要求，模板下拉选项、说明及导入规则统一为严格区分大小写的Teacher/Student/Customer，分别映射数据库TEACHER/STUDENT/CUSTOMER。移除小写及custom兼容写法；原账号角色不变。新增大小写拒绝用例，原导入测试与浏览器测试数据同步更新为规范值。
+
+修正验证：11项专项测试通过（9.820秒，/tmp/role-tests.log），真实浏览器模板与整批导入流程通过（53.164秒，/tmp/role-browser.log）。运行镜像已同步v18-20261108-02，备份/opt/lab-web-backups/v18-role-20261108-71730bba；实际运行环境核验模板下拉及三种角色映射正确，未创建额外账号，ready正常。

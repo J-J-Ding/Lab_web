@@ -19,10 +19,10 @@ def template():
     for col,width in zip('ABCDEF',[10,26,26,18,18,22]):sheet.column_dimensions[col].width=width
     for row in sheet.iter_rows(min_row=2,max_row=501,min_col=2,max_col=6):
         for cell in row:cell.number_format='@'
-    for col,formula in [('D','"Teacher,student,custom"'),('E','"正常,已注销"')]:
+    for col,formula in [('D','"Teacher,Student,Customer"'),('E','"正常,已注销"')]:
         rule=DataValidation(type='list',formula1=formula);rule.errorTitle='请选择规定值';rule.error='请使用下拉选项';rule.showErrorMessage=True;sheet.add_data_validation(rule);rule.add(f'{col}2:{col}501')
     info=book.create_sheet('填写说明')
-    for line in ['仅在账号导入表填写数据；最多500人、文件2 MiB。','用户名、初始密码按文本填写；密码留空使用系统默认初始密码。','身份Teacher/student/custom；状态正常/已注销；姓名可留空。','已有用户名（含已注销账号）不可复用；整批校验通过后才创建。','说明示例（不要复制为真实账号）：1 | example_student | 留空 | student | 正常 | 示例姓名','请妥善保管包含初始密码的原始Excel，不要上传到公开目录。']:
+    for line in ['仅在账号导入表填写数据；最多500人、文件2 MiB。','用户名、初始密码按文本填写；密码留空使用系统默认初始密码。','身份Teacher/Student/Customer；状态正常/已注销；姓名可留空。','已有用户名（含已注销账号）不可复用；整批校验通过后才创建。','说明示例（不要复制为真实账号）：1 | example_student | 留空 | Student | 正常 | 示例姓名','请妥善保管包含初始密码的原始Excel，不要上传到公开目录。']:
         info.append([line])
     info.column_dimensions['A'].width=100
     output=io.BytesIO();book.save(output);return output.getvalue()
