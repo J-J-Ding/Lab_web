@@ -19,7 +19,8 @@ Excel列名按以下顺序：序号、用户名、初始密码、账号身份、
 - 初始密码：可空；空白使用服务器私有配置的统一默认密码，填写则使用该行密码并执行现有密码规则。按文本读取，不把数字密码或用户名自动转换为科学计数法。
 - 账号身份：必填，接受Teacher／student／custom，忽略大小写和首尾空格；兼容customer，映射为TEACHER／STUDENT／CUSTOMER，不允许导入Root或ADMIN。
 - 是否启用：必填，只接受正常／已注销，分别创建可登录／不可登录账号。
-- 姓名：可空，空白不创建姓名值；非空在账号创建后通过当前成员资料服务写入姓名，不能伪造其他必填个人信息。若现有资料服务要求完整字段，新增仅初始化姓名的受限服务，不放宽普通资料保存规则。Student／Teacher在目录中的展示仍遵循现有账号、姓名及资料规则，不自动公开其他信息。
+- 姓名：可空，空白不设置；非空在账号创建后通过Root资料修改服务写入姓名，无需补齐邮箱、电话、性别、政治面貌等其他字段，不自动编造缺失资料。Student／Teacher在目录中的展示仍遵循现有账号与展示规则，不自动公开其他信息。
+- Root资料编辑特例（用户明确要求）：Root可自由修改本人或任意成员资料中的业务字段，支持部分更新、留空和保存不完整资料，不受普通成员必填及完整性规则限制；未提交字段保持原值。前端不得以required或整表校验阻止Root保存，后端也按Root身份免除完整性检查。普通成员仍执行原有必填规则；字段类型、合法选项、数据库唯一性、文件访问权限与审计继续执行。此例外适用于常规资料编辑、批量姓名初始化及恢复等资料保存入口。
 
 ## 方案
 
@@ -48,7 +49,7 @@ Excel列名按以下顺序：序号、用户名、初始密码、账号身份、
 ## 文件清单
 
 - backend/apps/accounts/ 新增Excel模板、校验、预览及确认服务、Root接口、批次模型／迁移、临时存储清理命令和测试。
-- backend/apps/members/ 必要的受限姓名初始化服务及测试。
+- backend/apps/members/ Root部分资料编辑与姓名初始化服务、前端对应校验及测试。
 - backend/requirements.txt 与锁定依赖说明；服务器私有加密配置及.env.example变量名（无真实密钥／密码）。
 - frontend/manage/index.html、新增批量账号页面及JS、必要CSS与缓存版本。
 - frontend/js/carousel-manager.js、frontend/manage/carousel.html：当前模式和保存结果提示。
@@ -67,7 +68,7 @@ Excel列名按以下顺序：序号、用户名、初始密码、账号身份、
 以下为计划命令，尚未执行：
 
 - `LAB_TEST_STAGE=v7 python3 tests/support/v4_environment.py manage test apps.accounts.tests.test_v18_batch_accounts apps.content.tests.test_v17_carousel --noinput`
-  - 预期：角色映射、默认／逐行密码、姓名初始化、注销状态、表内／库内重复、并发及重复确认、整批回滚、权限／CSRF、公式／外链／超限拒绝、过期清理均通过；审计和响应无密码。
+  - 预期：角色映射、默认／逐行密码、姓名初始化、Root仅修改任意单个业务字段／清空字段／保存不完整资料成功且未提交字段保留、普通成员仍校验必填、注销状态、表内／库内重复、并发及重复确认、整批回滚、权限／CSRF、公式／外链／超限拒绝、过期清理均通过；审计和响应无密码。
 - `LAB_TEST_STAGE=v7 python3 tests/support/v4_environment.py browser /tmp/lab-web-v3-venv/bin/python test_v18_batch_accounts.py`
   - 预期：Root下载模板、上传、预览、修复错误重传、确认；新账号实际登录、已注销拒绝、每页5行；轮播AUTO保存提示正确。
 - `LAB_TEST_STAGE=v7 python3 tests/support/v4_environment.py manage makemigrations --check --dry-run`，修改JS执行`node --check`，`git diff --check`。
@@ -77,6 +78,6 @@ Excel列名按以下顺序：序号、用户名、初始密码、账号身份、
 ## 风险与回退
 
 - 密码属于敏感信息：模板文件由Root妥善保管，预览及日志不回显；短期加密暂存须配置密钥与清理，不能持久保存上传原文件。
-- 批量初始化姓名不等于其他资料已经填写完整；保留现有必填校验，避免替成员编造资料。
+- 批量初始化姓名不等于其他资料已经填写完整；Root允许保存此状态，普通成员自行编辑时仍执行必填规则。不得自动填充虚构信息。
 - 导入失败不创建任何账号；成功账号若需撤销按批次明确选择并注销，不能回滚删除已有成果或审计。
 - 可关闭批量入口，保留已创建账号与批次摘要；新增表不做破坏性反向迁移。轮播仍可切AUTO恢复原来源。
