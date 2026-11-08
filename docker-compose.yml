@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: lab-web-backend:v18-20261108-02
+    image: lab-web-backend:v19-20261108-01
     command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "30", "--access-logfile", "-", "--access-logformat", "request_id=%({x-request-id}o)s method=%(m)s status=%(s)s duration=%(L)s", "--error-logfile", "-"]
     build:
       context: .
@@ -54,7 +54,7 @@ services:
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-flash}
       AI_CONNECT_TIMEOUT_SECONDS: ${AI_CONNECT_TIMEOUT_SECONDS:-5}
       AI_REQUEST_TIMEOUT_SECONDS: ${AI_REQUEST_TIMEOUT_SECONDS:-60}
-      AI_MAX_RETRIES: ${AI_MAX_RETRIES:-2}
+      AI_MAX_RETRIES: ${AI_MAX_RETRIES:-0}
       AI_MAX_INPUT_TOKENS: ${AI_MAX_INPUT_TOKENS:-24000}
       AI_MAX_OUTPUT_TOKENS: ${AI_MAX_OUTPUT_TOKENS:-4000}
       AI_USER_DAILY_LIMIT: ${AI_USER_DAILY_LIMIT:-10}
@@ -94,7 +94,7 @@ services:
     restart: unless-stopped
 
   migrate:
-    image: lab-web-backend:v18-20261108-02
+    image: lab-web-backend:v19-20261108-01
     profiles: ["maintenance"]
     command: ["python", "manage.py", "migrate", "--noinput"]
     environment:
@@ -108,8 +108,34 @@ services:
       db:
         condition: service_healthy
 
+  content-import-worker:
+    image: lab-web-backend:v19-20261108-01
+    command: ["python", "manage.py", "run_content_imports"]
+    environment: *backend_environment
+    volumes:
+      - private_media:/app/private_media
+    networks: [backend, host_access]
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 64
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import time,os; assert time.time()-os.stat('/tmp/content-import-heartbeat').st_mtime < 300"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   account-import-worker:
-    image: lab-web-backend:v18-20261108-02
+    image: lab-web-backend:v19-20261108-01
     command: ["python", "manage.py", "run_account_imports"]
     environment: *backend_environment
     volumes:
@@ -135,7 +161,7 @@ services:
         max-file: "3"
 
   worker:
-    image: lab-web-backend:v18-20261108-02
+    image: lab-web-backend:v19-20261108-01
     profiles: ["ai"]
     command: ["python", "manage.py", "run_ai_worker"]
     environment: *backend_environment

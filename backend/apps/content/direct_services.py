@@ -102,6 +102,13 @@ def save(request, data, pk=None, source_id=None):
             conflict=ContentIdentifier.objects.filter(scheme=scheme,value=value).exclude(item=item).exists()
             if conflict:raise ValidationError({field:'Identifier already belongs to another record.'})
             ContentIdentifier.objects.update_or_create(item=item,scheme=scheme,value=value,defaults={'is_current':True})
+    if kind=='PATENT' and detail.get('patent_number'):
+        from .models import ContentPatentReservation,PatentDetail
+        number=''.join(detail['patent_number'].split()).upper();detail['patent_number']=number
+        if any(''.join(n.split()).upper()==number for n in PatentDetail.objects.exclude(revision__item=item).exclude(patent_number='').values_list('patent_number',flat=True)):
+            raise ValidationError({'patent_number':'专利号已被其他记录使用。'})
+        reservation,_=ContentPatentReservation.objects.get_or_create(number=number,defaults={'item':item})
+        if reservation.item_id!=item.pk:raise ValidationError({'patent_number':'专利号已被其他记录预留。'})
     instance=DETAIL_MODELS[kind](revision=revision,**detail)
     try:instance.full_clean();instance.save()
     except ModelError as exc:raise ValidationError(exc.message_dict) from None

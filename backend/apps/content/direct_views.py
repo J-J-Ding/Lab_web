@@ -99,7 +99,7 @@ class Directory(TeamView):
         qs=services.directory();q=request.query_params.get('q','').strip()
         if len(q)>100:raise ValidationError('Search too long.')
         if q:qs=qs.filter(Q(published_revision__display_name__icontains=q)|Q(draft_revision__display_name__icontains=q))
-        return paged(request,qs,lambda p:{'user_id':p.user_id,'profile_id':str(p.pk),'display_name':services.name_for(p),'identity':'Teacher' if p.user.role=='TEACHER' else 'Student','selectable':bool(services.name_for(p)),'avatar_url':services.avatar_for(p)})
+        return paged(request,qs,lambda p:{'user_id':p.user_id,'username':p.user.username,'profile_id':str(p.pk),'display_name':services.name_for(p),'identity':'Teacher' if p.user.role=='TEACHER' else 'Student','selectable':bool(services.name_for(p)),'avatar_url':services.avatar_for(p)})
 
 
 class Profile(BusinessAPIView):

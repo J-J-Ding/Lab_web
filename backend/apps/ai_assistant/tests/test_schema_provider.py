@@ -30,6 +30,7 @@ class SchemaProviderTests(SimpleTestCase):
             self.assertNotIn('tools',payload);self.assertNotIn('fake-test-key',json.dumps(payload));self.assertGreater(payload['max_tokens'],0)
             self.assertEqual(result.input_tokens,10)
     @override_settings(DEEPSEEK_API_KEY='fake-test-key',DEEPSEEK_BASE_URL='https://api.deepseek.com',DEEPSEEK_MODEL='deepseek-flash')
+    @override_settings(AI_MAX_RETRIES=1)
     def test_only_known_rate_limit_is_retried(self):
         from apps.ai_assistant.providers.deepseek import DeepSeekProvider,ProviderError
         valid={'id':'fake','choices':[{'finish_reason':'stop','message':{'content':'{}'}}],'usage':{'prompt_tokens':10,'completion_tokens':20}}
@@ -39,3 +40,9 @@ class SchemaProviderTests(SimpleTestCase):
             with patch('apps.ai_assistant.providers.deepseek.send_request',side_effect=error) as send:
                 with self.assertRaises(ProviderError):DeepSeekProvider().extract_fields('Example','BLOG',{})
                 self.assertEqual(send.call_count,1)
+    @override_settings(DEEPSEEK_API_KEY='fake-test-key',DEEPSEEK_BASE_URL='https://api.deepseek.com',DEEPSEEK_MODEL='deepseek-flash',AI_MAX_RETRIES=0)
+    def test_default_zero_retries_never_resends(self):
+        from apps.ai_assistant.providers.deepseek import DeepSeekProvider,ProviderError
+        with patch('apps.ai_assistant.providers.deepseek.send_request',side_effect=ProviderError('provider_rate_limit')) as send:
+            with self.assertRaises(ProviderError):DeepSeekProvider().extract_fields('Example','BLOG',{})
+            self.assertEqual(send.call_count,1)

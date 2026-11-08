@@ -7,6 +7,13 @@ from ..schemas import prompt_schema
 
 
 def send_request(payload,request_digest):
+    from decimal import Decimal
+    from ..quota import pricing,amount
+    try:
+        prices,_=pricing();estimated=len(json.dumps(payload,ensure_ascii=False).encode())+1024
+        if estimated>settings.AI_MAX_INPUT_TOKENS or amount(estimated,payload.get('max_tokens',4000),prices)>Decimal('.10'):raise ProviderError('single_call_budget')
+    except ProviderError:raise
+    except Exception:raise ProviderError('provider_configuration') from None
     parsed=urlsplit(settings.DEEPSEEK_BASE_URL)
     if parsed.scheme!='https' or parsed.hostname!='api.deepseek.com' or parsed.username or parsed.password or parsed.port not in (None,443) or parsed.path.rstrip('/') not in ('','/v1') or parsed.query or parsed.fragment:raise ProviderError('provider_configuration')
     if not settings.DEEPSEEK_API_KEY or settings.DEEPSEEK_MODEL!='deepseek-flash':raise ProviderError('provider_configuration')
@@ -51,12 +58,12 @@ class DeepSeekProvider:
         if estimated>settings.AI_MAX_INPUT_TOKENS:raise ProviderError('input_too_large')
         payload={'model':settings.DEEPSEEK_MODEL,'messages':messages,'thinking':{'type':'disabled'},'response_format':{'type':'json_object'},'max_tokens':min(settings.AI_MAX_OUTPUT_TOKENS,4000),'stream':False}
         start=time.monotonic()
-        for attempt in range(min(max(settings.AI_MAX_RETRIES,0),2)+1):
+        for attempt in range(min(max(settings.AI_MAX_RETRIES,0),1)+1):
             try:
                 raw=send_request(payload,context.get('request_digest',''))
                 break
             except ProviderError as exc:
-                if exc.code!='provider_rate_limit' or attempt>=min(max(settings.AI_MAX_RETRIES,0),2) or time.monotonic()-start+exc.retry_after+60>180:raise
+                if exc.code!='provider_rate_limit' or attempt>=min(max(settings.AI_MAX_RETRIES,0),1) or time.monotonic()-start+exc.retry_after+60>180:raise
                 time.sleep(max(exc.retry_after,2**attempt))
         try:
             choice=raw['choices'][0];usage=raw['usage'];message=choice['message']

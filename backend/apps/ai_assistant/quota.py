@@ -17,6 +17,7 @@ def pricing():
         a=Decimal(settings.AI_PRICE_INPUT_CNY_PER_MILLION);b=Decimal(settings.AI_PRICE_OUTPUT_CNY_PER_MILLION);budget=Decimal(settings.AI_GLOBAL_DAILY_BUDGET_CNY)
         if day>today or (today-day).days>30 or not all(x.is_finite() and x>0 for x in (a,b,budget)):raise ValueError()
         if not 1<=settings.AI_MAX_INPUT_TOKENS<=24000 or not 1<=settings.AI_MAX_OUTPUT_TOKENS<=4000:raise ValueError()
+        if amount(settings.AI_MAX_INPUT_TOKENS,settings.AI_MAX_OUTPUT_TOKENS,{'input':str(a),'output':str(b)})>Decimal('.10'):raise ValueError()
         return {'input':str(a),'output':str(b),'effective_date':str(day),'model':settings.DEEPSEEK_MODEL},budget
     except (ValueError,TypeError,InvalidOperation):raise AIUnavailable() from None
 
