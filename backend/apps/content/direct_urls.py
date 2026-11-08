@@ -3,7 +3,9 @@ from . import direct_views as v
 from apps.members import submissions as submissions
 from apps.members import cv
 from apps.members.options import Options
+from .carousel import Carousel
 urlpatterns=[
+ path('admin/carousel/',Carousel.as_view()),path('admin/carousel/<uuid:pk>/',Carousel.as_view()),
  path('site/profile-options/',Options.as_view()),
  path('members/me/cv-data/',cv.CVData.as_view()),path('members/me/cv.docx',cv.GenerateCV.as_view()),path('members/me/cv-template.docx',cv.BlankCV.as_view()),
  path('members/me/resume-submissions/',submissions.Submissions.as_view()),

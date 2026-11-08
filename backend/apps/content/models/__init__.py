@@ -3,3 +3,4 @@ from .details import PatentDetail,PaperDetail,ProjectDetail,AwardDetail,Activity
 from .contributors import Contributor,RevisionContribution
 from .relations import ContentProjectLink,RevisionAsset
 from .legacy import ImportBatch,ImportRecord,LegacyURLMap
+from .carousel import CarouselSettings,CarouselSlide

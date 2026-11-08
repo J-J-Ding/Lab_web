@@ -96,6 +96,15 @@ class RegisterSerializer(ProfileSerializer):
 
 
 class AdminCreateSerializer(RegisterSerializer):
+    password=StrictString(max_length=128,trim_whitespace=False,write_only=True,required=False)
+
+    def validate(self,attrs):
+        from django.conf import settings
+        password=getattr(settings,'INITIAL_ACCOUNT_PASSWORD','')
+        if not password:raise serializers.ValidationError('初始密码尚未配置，请联系管理员。')
+        attrs['password']=password
+        return super().validate(attrs)
+
     role = serializers.ChoiceField(choices=[(r,r) for r in ('CUSTOMER','STUDENT','TEACHER')], default=UserRole.CUSTOMER)
     is_active = StrictBoolean(default=True)
 

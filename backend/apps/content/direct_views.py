@@ -211,6 +211,9 @@ class Home(PublicView):
                 if public['cover']:
                     slides.append({'id':public['id'],'title':public['title'],'image':public['cover'],'url':'/content.html?id='+public['id']})
                 if len(slides)>=5:break
+            from .carousel import public_slides
+            managed=public_slides()
+            if managed is not None:slides=managed
             result={'slides':slides,'schema_version':'v10.1','as_of':timezone.now(),'stats':{'members':people.count(),'papers':qs.filter(kind='PAPER').count(),'projects':qs.filter(kind='PROJECT').count(),'competitions':qs.filter(kind='AWARD',published_revision__award__category='COMPETITION').count()},'research_areas':list(MemberResearchArea.objects.filter(revision_id__in=people.values('published_revision_id')).values_list('area__name',flat=True).distinct()[:8]),'news':cards('NEWS'),'papers':cards('PAPER'),'projects':cards('PROJECT'),'competitions':cards('AWARD','COMPETITION'),'members':[member_data(p) for p in people[:5]],'resources':cards('BLOG','RESOURCE')}
             return Response(result)
 

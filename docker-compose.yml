@@ -25,12 +25,13 @@ services:
     restart: unless-stopped
 
   backend:
-    image: lab-web-backend:v16-rich-20261107-02
+    image: lab-web-backend:v17-20261108-01
     command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "2", "--timeout", "30", "--access-logfile", "-", "--access-logformat", "request_id=%({x-request-id}o)s method=%(m)s status=%(s)s duration=%(L)s", "--error-logfile", "-"]
     build:
       context: .
       dockerfile: deploy/docker/backend.Dockerfile
     environment: &backend_environment
+      INITIAL_ACCOUNT_PASSWORD: ${INITIAL_ACCOUNT_PASSWORD:-}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Set DJANGO_SECRET_KEY in .env}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-False}
       DJANGO_COOKIE_SECURE: ${DJANGO_COOKIE_SECURE:-False}
@@ -92,7 +93,7 @@ services:
     restart: unless-stopped
 
   migrate:
-    image: lab-web-backend:v16-rich-20261107-02
+    image: lab-web-backend:v17-20261108-01
     profiles: ["maintenance"]
     command: ["python", "manage.py", "migrate", "--noinput"]
     environment:
@@ -107,7 +108,7 @@ services:
         condition: service_healthy
 
   worker:
-    image: lab-web-backend:v16-rich-20261107-02
+    image: lab-web-backend:v17-20261108-01
     profiles: ["ai"]
     command: ["python", "manage.py", "run_ai_worker"]
     environment: *backend_environment

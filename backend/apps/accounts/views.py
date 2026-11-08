@@ -129,6 +129,9 @@ class UsersView(AccountAPIView):
         paginator = UserPagination()
         from django.db.models import Q
         users=services.visible_users(request.user)
+        state=request.query_params.get('state','active')
+        if state not in ('active','cancelled'):raise ValidationError({'state':'无效账号状态。'})
+        users=users.filter(is_active=state=='active')
         q=request.query_params.get('q','').strip()
         if len(q)>100:raise ValidationError({'q':'搜索内容不得超过100字。'})
         if q:users=users.filter(Q(username__icontains=q)|Q(first_name__icontains=q)|Q(last_name__icontains=q)|Q(member_profile__published_revision__display_name__icontains=q)|Q(member_profile__published_revision__isnull=True,member_profile__draft_revision__display_name__icontains=q)).distinct()
@@ -161,3 +164,14 @@ class ResetPasswordView(AccountAPIView):
     def post(self, request, pk):
         services.manage_user(request, pk, validated(PasswordSerializer, request), reset_password=True)
         return Response(status=204)
+
+
+class UsernameAvailableView(AccountAPIView):
+    permission_classes=[IsRoot]
+    http_method_names=['get']
+    def get(self,request):
+        from .models import User
+        from .serializers import RegisterSerializer
+        name=request.query_params.get('username','').strip()
+        RegisterSerializer().validate_username(name)
+        return Response({'available':True,'username':name})

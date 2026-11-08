@@ -133,3 +133,6 @@ LOGGING = {'version':1,'disable_existing_loggers':False,'handlers':{'console':{'
 
 FILE_SCAN_REQUIRED = env.bool('FILE_SCAN_REQUIRED', default=False)
 CLAMAV_SOCKET = env('CLAMAV_SOCKET', default='')
+
+# Root-created accounts only; configured privately on the deployment host.
+INITIAL_ACCOUNT_PASSWORD = env('INITIAL_ACCOUNT_PASSWORD', default='')

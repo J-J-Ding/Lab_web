@@ -16,7 +16,9 @@ class PublicAsset(PublicView):
         if asset.expires_at and asset.expires_at<=timezone.now():raise NotFound()
         member=member_queryset().filter(published_revision__avatar_asset=asset).exists()
         content=content_queryset().filter(published_revision__assets__asset=asset).exists() if asset.purpose in ('image','attachment') else False
-        if not member and not content:raise NotFound()
+        from apps.content.carousel import public_asset
+        carousel=asset.purpose=='image' and public_asset(asset)
+        if not member and not content and not carousel:raise NotFound()
         root=Path(settings.PRIVATE_MEDIA_ROOT).resolve();source=root/asset.storage_key
         if source.is_symlink():raise NotFound()
         path=source.resolve()
