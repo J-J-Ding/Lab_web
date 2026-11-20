@@ -23,5 +23,5 @@ def content_queryset():
 def member_queryset():
     return MemberProfile.objects.filter(Q(user__isnull=True,public_visible=True)|Q(user__is_active=True,user__is_superuser=False,user__role__in=['TEACHER','STUDENT']),merged_into__isnull=True,
         published_revision__state='PUBLISHED',published_revision__public_member_status__in=['ACTIVE','ALUMNI']).exclude(published_revision__display_name='').select_related(
-        'published_revision__avatar_asset','published_revision__alumni').prefetch_related(
+        'user','published_revision__avatar_asset','published_revision__alumni').prefetch_related(
         'published_revision__education','published_revision__research_links__area').order_by('published_revision__display_name','id')

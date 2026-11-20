@@ -73,7 +73,7 @@ class MemberList(PublicView):
         p=params(request,{'member_kind','direction','status','year','q'});qs=member_queryset()
         if 'member_kind' in p:
             if p['member_kind'] not in ('STUDENT','TEACHER'):raise ValidationError('Invalid member kind.')
-            qs=qs.filter(published_revision__member_kind=p['member_kind'])
+            qs=qs.filter(Q(user__role=p['member_kind'])|Q(user__isnull=True,published_revision__member_kind=p['member_kind']))
         if 'status' in p:
             if p['status'] not in ('ACTIVE','ALUMNI'):raise ValidationError('Invalid status.')
             qs=qs.filter(published_revision__public_member_status=p['status'])

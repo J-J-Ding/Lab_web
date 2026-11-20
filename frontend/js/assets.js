@@ -8,9 +8,16 @@
    else parent.append(P.link('下载附件',asset.url));
   }
  };
- window.renderPublicCard=function(row,{member=false}={}){
+ window.renderPublicCard=function(row,{member=false,portraitOnly=false}={}){
   const P=window.LabPublic,article=P.node('article',undefined,member?'member-teaser':'content-teaser');
-  const href=member?'/member.html?slug='+encodeURIComponent(row.slug):'/content.html?id='+encodeURIComponent(row.id),image=member?row.avatar:row.cover;
+  const href=member?'/member.html?v=20-20261117&slug='+encodeURIComponent(row.slug):'/content.html?id='+encodeURIComponent(row.id),image=member?row.avatar:row.cover;
+  if(member&&portraitOnly){
+    article.className='member-portrait-card';const a=P.link('',href);a.className='member-portrait-link';
+    const frame=P.node('div',undefined,'member-portrait-frame');
+    const fallback=()=>{frame.replaceChildren(P.node('span',(row.display_name||'团队').slice(0,1),'member-portrait-initial'));};
+    if(safe(image)){const img=P.node('img');img.src=image.url;img.alt=row.display_name;img.loading='lazy';img.onerror=fallback;frame.append(img);}else fallback();
+    a.append(frame,P.node('h2',row.display_name));article.append(a);return article;
+  }
   if(member){const portrait=safe(image)?P.node('img'):P.node('span',(row.display_name||'团队').slice(0,1),'member-initial');portrait.classList.add('member-avatar');if(safe(image)){portrait.src=image.url;portrait.alt=row.display_name;portrait.loading='lazy';}article.append(portrait);}
   else if(safe(image)){const a=P.link('',href);a.className='teaser-image';const img=P.node('img');img.src=image.url;img.alt=row.title+'封面';img.loading='lazy';img.onerror=()=>a.remove();a.append(img);article.append(a);}
   const body=P.node('div',undefined,'teaser-body');
